@@ -153,11 +153,54 @@ _STATUS_RANK = {"promoted": 0, "review": 1, "draft": 2}
 _CONFIDENCE_HALF_LIFE_DAYS = 180.0
 
 
+# Spellings that mean the same job but tokenize differently. Both sides of the
+# match run through ``_role_tokens``, so every entry works in either direction:
+# a title written "Front End Engineer" finds a ``frontend-engineer`` pack, and a
+# hypothetical ``front-end-engineer`` pack is found by "Frontend Engineer".
+#
+# Expansion is monotone (if A's tokens were a subset of B's before, they still
+# are after), so this can only ADD matches, never remove one that worked.
+_COMPOUND_FORMS: dict[str, tuple[str, ...]] = {
+    "frontend": ("front", "end"),
+    "backend": ("back", "end"),
+    "fullstack": ("full", "stack"),
+    "devops": ("dev", "ops"),
+    "qa": ("quality", "assurance"),
+    "ml": ("machine", "learning"),
+    "ai": ("artificial", "intelligence"),
+    "sre": ("site", "reliability", "engineer"),
+    "tpm": ("technical", "program", "manager"),
+}
+
+# Interchangeable words for the same role. "Backend Developer" and "Software
+# Engineering Intern" are ordinary JD titles that a strict token match misses
+# against `backend-engineer` / `software-engineer`.
+_SYNONYM_GROUPS: tuple[frozenset[str], ...] = (
+    frozenset({"engineer", "engineering", "developer", "dev"}),
+)
+
+
+def _expand_role_tokens(tokens: set[str]) -> set[str]:
+    """Add equivalent spellings so title and slug meet in the middle."""
+    expanded = set(tokens)
+    for joined, parts in _COMPOUND_FORMS.items():
+        if joined in tokens:
+            expanded.update(parts)
+        elif all(part in tokens for part in parts):
+            expanded.add(joined)
+    for group in _SYNONYM_GROUPS:
+        if expanded & group:
+            expanded |= group
+    return expanded
+
+
 def _role_tokens(text: str) -> set[str]:
-    """Lowercased alphanumeric tokens of a role string or slug.
+    """Lowercased alphanumeric tokens of a role string or slug, plus variants.
 
     ``"Senior Backend Engineer"`` and ``"backend-engineer"`` both tokenize into
-    comparable sets, so pack slugs can match live JD titles.
+    comparable sets, so pack slugs can match live JD titles. Real titles also
+    spell the same role differently — "Front End", "ML", "Developer" — so the
+    raw tokens are expanded with the equivalent forms above before comparison.
     """
     tokens: set[str] = set()
     current: list[str] = []
@@ -169,7 +212,7 @@ def _role_tokens(text: str) -> set[str]:
             current = []
     if current:
         tokens.add("".join(current))
-    return tokens
+    return _expand_role_tokens(tokens)
 
 
 def effective_confidence(

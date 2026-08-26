@@ -135,6 +135,72 @@ def test_find_relevant_matches_jd_titles_and_generic_fallback(tmp_path: Path) ->
     assert hits[0].frontmatter.id == "stripe-backend-engineer-senior"
 
 
+def test_find_relevant_matches_alternate_title_spellings(tmp_path: Path) -> None:
+    """Real JD titles spell roles differently than pack slugs do.
+
+    Strict token matching missed ordinary titles: "Front End Engineer" against a
+    `frontend-engineer` pack (front + end vs frontend), "Backend Developer"
+    (developer vs engineer), and "Software Engineering Intern" (engineering vs
+    engineer). Each miss is silent — the planner just gets no pack — so these
+    are pinned rather than left to be rediscovered.
+    """
+    frontend = _sample_skill().model_copy(deep=True)
+    frontend.frontmatter.id = "generic-frontend-engineer-mid"
+    frontend.frontmatter.company = "generic"
+    frontend.frontmatter.role = "frontend-engineer"
+    frontend.frontmatter.level = "mid"
+    save_skill(frontend, tmp_path / "generic-frontend-engineer-mid.md")
+
+    for title in ("Front End Engineer", "Frontend Developer", "Front-End Dev"):
+        hits = find_relevant(tmp_path, company="Acme", role=title)
+        assert [h.frontmatter.id for h in hits] == ["generic-frontend-engineer-mid"], title
+
+    ml = _sample_skill().model_copy(deep=True)
+    ml.frontmatter.id = "generic-machine-learning-engineer-senior"
+    ml.frontmatter.company = "generic"
+    ml.frontmatter.role = "machine-learning-engineer"
+    save_skill(ml, tmp_path / "generic-machine-learning-engineer-senior.md")
+
+    # "ML Engineer" is at least as common a title as the spelled-out form.
+    hits = find_relevant(tmp_path, company="Acme", role="Senior ML Engineer")
+    assert [h.frontmatter.id for h in hits] == ["generic-machine-learning-engineer-senior"]
+
+
+def test_role_token_expansion_does_not_match_unrelated_roles(tmp_path: Path) -> None:
+    """Expansion must add spellings of the same job, not blur different jobs.
+
+    The risk of loosening a matcher is a backend pack turning up for a designer.
+    A pack whose slug tokens are genuinely absent from the title still loses.
+    """
+    backend = _sample_skill().model_copy(deep=True)
+    backend.frontmatter.id = "generic-backend-engineer-senior"
+    backend.frontmatter.company = "generic"
+    save_skill(backend, tmp_path / "generic-backend-engineer-senior.md")
+
+    for title in ("Product Designer", "Sales Manager", "Data Scientist", "Frontend Engineer"):
+        assert find_relevant(tmp_path, company="Acme", role=title) == [], title
+
+
+def test_role_token_expansion_is_monotone() -> None:
+    """Expansion may only ADD matches — never break one that already worked.
+
+    Both the pack slug and the JD title run through the same expansion, so a
+    subset relation that held on raw tokens must still hold afterwards. If that
+    stops being true, packs silently stop being retrieved.
+    """
+    from deepinterview_agent.skilllib.store import _role_tokens
+
+    pairs = [
+        ("backend-engineer", "Senior Backend Engineer"),
+        ("software-engineer", "Software Engineer"),
+        ("data-engineer", "Staff Data Engineer"),
+        ("engineering-manager", "Engineering Manager, Platform"),
+        ("site-reliability-engineer", "Site Reliability Engineer"),
+    ]
+    for slug, title in pairs:
+        assert _role_tokens(slug) <= _role_tokens(title), (slug, title)
+
+
 def test_find_relevant_ranks_status_then_decayed_confidence(tmp_path: Path) -> None:
     """`promoted` beats `draft` even at lower confidence; staleness decays rank."""
     draft = _sample_skill().model_copy(deep=True)
