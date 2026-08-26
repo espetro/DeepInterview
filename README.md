@@ -133,6 +133,9 @@ Cloud, or `livekit-server --dev` for a fully offline stack), and local STT is
 batch, so captions appear per utterance rather than word by word. Turn latency
 on local models is not benchmarked, and Kokoro has no Vietnamese voice.
 Full setup, hardware notes and troubleshooting: **[docs/LOCAL_MODELS.md](docs/LOCAL_MODELS.md)**.
+Running against a hosted OpenAI-compatible gateway instead (OpenRouter and
+friends), or stuck on a **CPU-only machine** where the voice stack won't fit?
+See [docs/OPENROUTER_AND_CPU_ONLY.md](docs/OPENROUTER_AND_CPU_ONLY.md).
 
 > **Language routing is automatic — not something you configure.** If your chosen TTS doesn't cover the session language (e.g., Vietnamese on Cartesia), the agent reroutes that session to ElevenLabs or Gemini TTS when a key is present. Cartesia covers en, es, zh, fr, de, ja, pt, hi, it, ko, nl, pl, ru, sv, tr; Deepgram nova-3 covers English + many languages (Vietnamese validation in progress).
 
