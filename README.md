@@ -17,6 +17,8 @@
 
 **UI in English + Tiếng Việt · voice interviews in 7 languages incl. Vietnamese (more as packs land) · no sign-in required to self-host**
 
+**English** · [Tiếng Việt](README.vi.md)
+
 [Quickstart](#quickstart) · [Why](#why-deepinterview) · [Features](#features) · [Architecture](#architecture) · [Community](#community) · [Contributing](#contributing)
 
 **Contributions wanted** — [interview question-bank packs](https://github.com/ngoanpv/DeepInterview/issues/38) · [language packs & provider adapters](docs/GOOD_FIRST_ISSUES.md) · your packs get asked in real interviews, and no API keys are needed to develop.
