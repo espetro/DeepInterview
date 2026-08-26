@@ -37,6 +37,7 @@ import {
   useConnectionState,
   useLocalParticipant,
   useTranscriptions,
+  useVoiceAssistant,
 } from "@livekit/components-react";
 import {
   ConnectionState,
@@ -206,6 +207,38 @@ function Scaffold({
 /* LIVE session — descendant of <LiveKitRoom>; owns all LiveKit hooks. */
 /* ------------------------------------------------------------------ */
 
+/**
+ * True when the room has been connected for `afterMs` and the agent has NEVER
+ * joined it.
+ *
+ * The voice worker is a separate process (`docker compose --profile live up`),
+ * so a correctly-configured browser can join a room that no agent is listening
+ * on. LiveKit reports that as a perfectly healthy connection — the room is up,
+ * the mic works, nothing errors — and the stage sits on "Connecting your
+ * interviewer…" indefinitely with nothing to act on (issue #67).
+ *
+ * "Never" is deliberate: tracked with a ref so a mid-interview blip, or the
+ * agent leaving at the end, can't retroactively raise a "didn't join" notice.
+ */
+function useAgentNeverJoined(
+  connected: boolean,
+  agentPresent: boolean,
+  afterMs = 20_000,
+) {
+  const everJoined = React.useRef(false);
+  const [waitedTooLong, setWaitedTooLong] = React.useState(false);
+
+  if (agentPresent) everJoined.current = true;
+
+  React.useEffect(() => {
+    if (!connected || everJoined.current) return;
+    const t = setTimeout(() => setWaitedTooLong(true), afterMs);
+    return () => clearTimeout(t);
+  }, [connected, afterMs]);
+
+  return waitedTooLong && !everJoined.current;
+}
+
 function LiveSession({
   persona,
   sessionId,
@@ -227,6 +260,13 @@ function LiveSession({
 
   const { localParticipant, isMicrophoneEnabled } = useLocalParticipant();
   const transcriptions = useTranscriptions();
+  // `disconnected` is what useVoiceAssistant reports while no agent participant
+  // is in the room at all — the case the notice below explains.
+  const { state: agentState } = useVoiceAssistant();
+  const agentNeverJoined = useAgentNeverJoined(
+    connected,
+    agentState !== "disconnected",
+  );
 
   const [ending, setEnding] = React.useState(false);
 
@@ -346,6 +386,11 @@ function LiveSession({
           <ErrorNotice
             title="Microphone unavailable"
             message={`${micError} Until then, you can type your answers below.`}
+          />
+        ) : agentNeverJoined ? (
+          <ErrorNotice
+            title="Your interviewer hasn’t joined"
+            message="You’re connected to the room, but the voice worker never arrived. It runs as a separate process — start it with `docker compose --profile live up` and check LIVEKIT_URL / LIVEKIT_API_KEY / LIVEKIT_API_SECRET plus your STT/TTS/LLM keys in the root .env. You can type your answers below in the meantime."
           />
         ) : reconnecting ? (
           <div
