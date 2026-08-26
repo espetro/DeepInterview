@@ -607,6 +607,7 @@ def _local_settings(**overrides):
         "tts_provider": "mock",
         "ollama_base_url": "http://localhost:11434/v1",
         "ollama_model": "qwen3:8b",
+        "ollama_model_live": "",
         "whisper_base_url": "http://localhost:8000/v1",
         "whisper_model": "Systran/faster-whisper-small",
         "kokoro_base_url": "http://localhost:8880/v1",
@@ -635,6 +636,35 @@ def test_build_llm_ollama_points_at_local_server() -> None:
     pytest.importorskip("livekit.plugins.openai")
     llm = worker.build_llm(_local_settings(llm_provider="ollama"))
     assert str(llm._client.base_url).startswith("http://localhost:11434")
+    assert llm._opts.model == "qwen3:8b"
+
+
+def test_build_llm_local_live_tier_overrides_the_prep_model() -> None:
+    """OLLAMA_MODEL_LIVE must win on the turn path when it is set.
+
+    The prep model is sized for a pipeline nobody is waiting on; the live loop
+    needs time-to-first-token. If this override is ever dropped, the split
+    silently collapses back to one model and the latency work is undone with no
+    error to notice.
+    """
+    pytest.importorskip("livekit.plugins.openai")
+    llm = worker.build_llm(
+        _local_settings(llm_provider="ollama", ollama_model_live="qwen3:1.7b")
+    )
+    assert llm._opts.model == "qwen3:1.7b"
+    assert str(llm._client.base_url).startswith("http://localhost:11434")
+
+
+def test_build_llm_local_live_tier_falls_back_when_unset() -> None:
+    """Unset means "same model as prep" — never an empty model id.
+
+    The default is empty on purpose (a smaller default would 404 for anyone who
+    pulled only the prep model), so the fallback is what keeps every existing
+    local install working. Passing "" through to the plugin would break the
+    turn path for exactly the users who changed nothing.
+    """
+    pytest.importorskip("livekit.plugins.openai")
+    llm = worker.build_llm(_local_settings(llm_provider="ollama", ollama_model_live=""))
     assert llm._opts.model == "qwen3:8b"
 
 

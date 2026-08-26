@@ -60,6 +60,17 @@ class Settings(BaseSettings):
     # TTS_PROVIDER=kokoro; each needs its base URL, never an API key.
     ollama_base_url: str = "http://localhost:11434/v1"
     ollama_model: str = "qwen3:8b"
+    # Live tier, mirroring gemini_model / gemini_model_live: prep and scoring can
+    # afford a bigger model because nobody is waiting mid-sentence; the turn loop
+    # cannot. A smaller model here buys time-to-first-token on every turn.
+    #
+    # Deliberately EMPTY rather than a smaller default: unlike a cloud tier, the
+    # live model has to already be pulled on this machine. Defaulting to
+    # something like qwen3:4b would 404 the turn path for everyone who pulled
+    # only qwen3:8b — the "it worked yesterday" upgrade break. Empty means "same
+    # model as prep", so the local path behaves exactly as before until you opt
+    # in. Override: OLLAMA_MODEL_LIVE.
+    ollama_model_live: str = ""
     whisper_base_url: str = "http://localhost:8000/v1"
     # `base` (multilingual), NOT `small`. Measured on an M5 Pro with the LLM
     # generating concurrently — the condition that actually holds mid-interview,
