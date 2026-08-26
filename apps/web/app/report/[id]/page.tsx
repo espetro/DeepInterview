@@ -34,9 +34,16 @@ export const dynamic = "force-dynamic";
  * - `empty`   interview produced no answers (status `no_answers`, or a legacy
  *             `complete` row with a blank card) → honest empty state, NOT zeros.
  * - `scoring` interview done but scoring hasn't produced a card yet → poll.
+ * - `preparing` the prep pipeline is still building the plan — the interview
+ *             hasn't happened yet, so "scoring" would be a lie → poll.
+ * - `waiting` prep finished but no interview ever ran (status `ready`, zero
+ *             answers). NOT scoring, and polling can never change it: only the
+ *             voice worker writes a terminal status, so a session whose worker
+ *             never joined would spin forever. See issue #67.
  * - `error`   session errored (scoring failed — retriable) → honest notice.
  */
-type ReportState = "ready" | "sample" | "empty" | "scoring" | "error";
+type ReportState =
+  "ready" | "sample" | "empty" | "scoring" | "preparing" | "waiting" | "error";
 
 interface Loaded {
   state: ReportState;
@@ -125,7 +132,21 @@ async function load(id: string): Promise<Loaded> {
     if (view.status === "complete") {
       return { ...base, state: "error", scorecard: SAMPLE_SCORECARD };
     }
-    // Interview not scored yet — poll until a terminal state arrives.
+    // Prep still running: the interview hasn't happened, so don't claim to be
+    // scoring it. Genuinely transient — poll.
+    if (view.status === "prep") {
+      return { ...base, state: "preparing", scorecard: SAMPLE_SCORECARD };
+    }
+    // Prepped, but nothing was ever recorded. Only the voice worker writes a
+    // terminal status (`complete` / `no_answers`), so if it never joined the
+    // room this session stays `ready` forever — polling it was the infinite
+    // "Scoring your interview…" spinner in #67. Answer the user's real question
+    // instead: the interview hasn't run.
+    if (answers === 0) {
+      return { ...base, state: "waiting", scorecard: SAMPLE_SCORECARD };
+    }
+    // Answers exist but no card yet — scoring really is in flight. Poll, but
+    // the poller gives up and says so rather than spinning forever.
     return { ...base, state: "scoring", scorecard: SAMPLE_SCORECARD };
   } catch {
     return sample;
@@ -196,11 +217,13 @@ export default async function ReportPage({
   // sign-in. (Hosted/multi-tenant deployments add auth as a separate layer.)
   const loaded = await load(id);
 
-  // Still scoring: show a calm waiting state and auto-refresh until terminal.
-  if (loaded.state === "scoring") {
+  // Still scoring, or still prepping: auto-refresh until terminal. The poller
+  // stops after a bounded wait and says so — an indefinite spinner tells the
+  // user nothing and hides a stuck pipeline (#67).
+  if (loaded.state === "scoring" || loaded.state === "preparing") {
+    const preparing = loaded.state === "preparing";
     return (
       <StatusShell>
-        <ScoringPoll />
         <Card className="max-w-md text-center">
           <CardContent className="flex flex-col items-center gap-3 py-10">
             <span
@@ -208,12 +231,69 @@ export default async function ReportPage({
               aria-hidden
             />
             <h1 className="font-serif text-2xl text-ink">
-              Scoring your interview…
+              {preparing
+                ? "Preparing your interview…"
+                : "Scoring your interview…"}
             </h1>
             <p className="max-w-sm text-sm leading-relaxed text-muted">
-              Hang tight — we’re analyzing your answers. This page updates
-              automatically the moment your report is ready.
+              {preparing
+                ? "Reading your CV and the job description to build your question plan. This page updates automatically."
+                : "Hang tight — we’re analyzing your answers. This page updates automatically the moment your report is ready."}
             </p>
+            <ScoringPoll
+              stalledMessage={
+                preparing
+                  ? "Prep is taking longer than expected. It runs on your configured LLM provider — check the agent logs for a failing prep stage, then reload."
+                  : "Scoring is taking longer than expected. Check the agent API logs for a failing scoring stage, then reload this page."
+              }
+            />
+          </CardContent>
+        </Card>
+      </StatusShell>
+    );
+  }
+
+  // Prepped, but no interview ever ran. This is the state a session sits in
+  // when the voice worker never joined the room — the worker is a separate
+  // process (`docker compose --profile live up`), and nothing else writes a
+  // terminal status. Say that, instead of pretending to score nothing (#67).
+  if (loaded.state === "waiting") {
+    return (
+      <StatusShell>
+        <Card className="max-w-md text-center">
+          <CardContent className="flex flex-col items-center gap-4 py-10">
+            <h1 className="font-serif text-2xl text-ink">
+              This interview hasn’t run yet
+            </h1>
+            <p className="max-w-sm text-sm leading-relaxed text-muted">
+              {loaded.role && loaded.company ? (
+                <>
+                  Your {loaded.role} interview at {loaded.company} is prepped
+                  and ready, but no answers were recorded — so there’s nothing
+                  to score.{" "}
+                </>
+              ) : (
+                <>
+                  This interview is prepped and ready, but no answers were
+                  recorded — so there’s nothing to score.{" "}
+                </>
+              )}
+              Join the interview to start it. If you just finished one and are
+              seeing this, the voice worker didn’t save a result — it runs as a
+              separate process, so check that it’s running and that your LiveKit
+              keys are set.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Link
+                href={`/interview/${encodeURIComponent(id)}`}
+                className={buttonClasses()}
+              >
+                Join interview
+              </Link>
+              <Link href="/setup" className={buttonClasses({ variant: "out" })}>
+                Start over
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </StatusShell>
