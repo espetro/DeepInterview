@@ -247,6 +247,21 @@ you can name what you actually run (or just say `local`).
 *(verified)* means it was run end to end for the v0.3.0 release; the others
 implement the same endpoint but haven't been exercised here.
 
+### The contract also reaches remote gateways
+
+"OpenAI-format endpoint over a base URL" doesn't have to mean *local*. Point
+`OLLAMA_BASE_URL` at a hosted OpenAI-compatible gateway — OpenRouter, Together,
+Groq, your own vLLM box — and the same `ollama`/`vllm`/`local` providers drive it
+unchanged. You trade the privacy property for someone else's GPU: prompts (CV
+text, JD, answers) leave your machine.
+
+That path has its own failure modes worth reading before you debug them — free
+model slugs that rate-limit, and reasoning models that emit chain-of-thought
+*before* the JSON the prep pipeline parses, which degrades the question plan to a
+generic one without erroring. Both, plus what still works on a **CPU-only
+machine** that can't run the live voice stack, are covered in
+[`OPENROUTER_AND_CPU_ONLY.md`](OPENROUTER_AND_CPU_ONLY.md).
+
 ### Qwen3-ASR instead of Whisper
 
 [Qwen3-ASR](https://github.com/QwenLM/Qwen3-ASR) (Alibaba, 52 languages) is a
