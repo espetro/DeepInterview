@@ -117,6 +117,14 @@ async function collectLlm(existing: Values, values: Values): Promise<void> {
       existing.OLLAMA_MODEL || "qwen3:8b",
       "qwen3:8b",
     );
+    // Optional second tier for the turn loop. Blank stays blank: the worker
+    // reads that as "same model as prep", and a model the user has not pulled
+    // would 404 every turn.
+    values.OLLAMA_MODEL_LIVE = await field(
+      "Live-interview model (optional — blank = same as above; a smaller one answers faster)",
+      existing.OLLAMA_MODEL_LIVE ?? "",
+      "e.g. qwen3:1.7b",
+    );
   }
 }
 
@@ -298,6 +306,14 @@ async function runWizard(existing: Values): Promise<Values> {
       "Ollama model",
       existing.OLLAMA_MODEL || "qwen3:8b",
       "qwen3:8b",
+    );
+    // Optional second tier for the turn loop. Blank stays blank: the worker
+    // reads that as "same model as prep", and a model the user has not pulled
+    // would 404 every turn.
+    values.OLLAMA_MODEL_LIVE = await field(
+      "Live-interview model (optional — blank = same as above; a smaller one answers faster)",
+      existing.OLLAMA_MODEL_LIVE ?? "",
+      "e.g. qwen3:1.7b",
     );
     values.WHISPER_BASE_URL = await field(
       "Whisper server base URL (OpenAI-compatible)",

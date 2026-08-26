@@ -114,6 +114,7 @@ Or write it yourself:
 LLM_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434/v1
 OLLAMA_MODEL=qwen3:8b
+OLLAMA_MODEL_LIVE=        # optional; blank = same model live as in prep
 
 STT_PROVIDER=whisper
 WHISPER_BASE_URL=http://localhost:8001/v1
@@ -140,6 +141,37 @@ simply never speaks. `kokoro-fastapi` ignores the model name itself, so pinning
 it costs nothing. The worker coerces a wrong value back to `tts-1` and logs a
 warning rather than going silent.
 
+### Two model tiers: prep and live
+
+`OLLAMA_MODEL` runs the **prep pipeline and scoring**; `OLLAMA_MODEL_LIVE`, if
+set, runs the **live turn loop** instead. The two jobs have opposite constraints:
+
+- **Prep and scoring** are batch. They take minutes, nobody is waiting
+  mid-sentence, and quality shows up directly in the question plan — this is
+  where a bigger model earns its keep.
+- **The live loop** is judged on *time-to-first-token*. Every second before the
+  interviewer starts speaking is a second of dead air in a conversation, and a
+  model that reasons at length before its first word feels broken even when the
+  answer is good.
+
+This mirrors what the cloud path already does with `GEMINI_MODEL` /
+`GEMINI_MODEL_LIVE` (analytic Flash for prep, Flash-Lite for the turn loop).
+
+```bash
+OLLAMA_MODEL=qwen3:8b          # prep + scoring: quality
+OLLAMA_MODEL_LIVE=qwen3:1.7b   # turn loop: latency
+```
+
+**Blank is the default, and that is deliberate.** Unlike a cloud tier, the live
+model has to already be pulled on your machine — a default you never pulled
+would 404 every turn. Blank means "same model as prep", so nothing changes until
+you opt in. `ollama pull` the smaller model first, then set it.
+
+The trade is real in both directions: a smaller live model is quicker to speak
+but calls the `save_answer` tool less reliably (see §4). The shutdown-time
+transcript recovery catches that, so the report stays correct — but if you go
+very small, check the worker log for `recovered N answer(s) from transcript`.
+
 ---
 
 ## 3. Known differences from the cloud path
@@ -152,7 +184,7 @@ local path isn't oversold.
 | **Live captions** | word-by-word | **per utterance** — the OpenAI-compatible STT is a batch endpoint, so the worker VAD-segments your speech and transcribes each chunk. There are no interim results. |
 | **Barge-in** | word-gated on interim transcripts | fires later, since the gate can only run once a whole utterance is transcribed |
 | **Voice languages** | 7+, incl. Vietnamese | **Kokoro has no Vietnamese voice.** A `vi` session with `TTS_PROVIDER=kokoro` honestly falls through to a cloud voice rather than reading Vietnamese with an American accent. Kokoro covers en, ja, zh, es, fr, hi, it, pt. |
-| **Turn latency** | tuned and measured | **not benchmarked.** It depends heavily on your hardware and model size. |
+| **Turn latency** | tuned and measured | **not benchmarked.** It depends heavily on your hardware and model size. `OLLAMA_MODEL_LIVE` is the lever — a smaller model on the turn loop only (see §2). |
 | **CI coverage** | mock adapters, every PR | the local path is **maintainer-verified, not CI-tested** — CI has no models. |
 
 Because Kokoro encodes the language in the voice-id prefix (`af_`/`am_` = American

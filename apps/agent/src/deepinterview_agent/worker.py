@@ -325,8 +325,18 @@ def build_llm(settings):
         from livekit.plugins import openai
 
         # Local LLM on the turn path via Ollama's OpenAI-compatible endpoint.
+        # Live tier when set (see Settings.ollama_model_live): the prep model is
+        # sized for a pipeline nobody is waiting on, the turn loop is not.
+        # Falling back to ollama_model keeps the un-tuned path byte-identical.
+        model = settings.ollama_model_live or settings.ollama_model
+        if settings.ollama_model_live:
+            log.info(
+                "build_llm: local live tier — turn path on %r (prep/scoring stays on %r)",
+                settings.ollama_model_live,
+                settings.ollama_model,
+            )
         return openai.LLM(
-            model=settings.ollama_model,
+            model=model,
             base_url=settings.ollama_base_url,
             api_key=settings.local_api_key,
         )
