@@ -1,0 +1,12 @@
+{
+  "chat": [
+    {
+      "content": "Hello! I am the interview agent. Tell me about your background."
+    },
+    {
+      "content": "That is interesting. Can you elaborate on your most recent project?"
+    }
+  ],
+  "transcription": "I have five years of experience building distributed systems.",
+  "models": ["mock-llm", "mock-stt", "mock-tts"]
+}
