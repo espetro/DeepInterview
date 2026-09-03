@@ -13,6 +13,7 @@ from .api import kb as kb_api
 from .api import prep as prep_api
 from .api import score as score_api
 from .api import session as session_api
+from .api import metrics as metrics_api
 from .api import traces as traces_api
 from .api.auth import require_internal_secret
 from .core.config import get_settings
@@ -45,6 +46,8 @@ def create_app() -> FastAPI:
     # Unguarded like the session GET — trace files hold lengths/metadata, and
     # prompt text only when TRACE_INCLUDE_PROMPTS=1.
     app.include_router(traces_api.router)
+    # Metrics aggregation + viewer (read-only, same posture as traces).
+    app.include_router(metrics_api.router)
     return app
 
 

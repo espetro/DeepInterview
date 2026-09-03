@@ -36,6 +36,10 @@ if os.environ.get("DEEPINTERVIEW_TEST_USE_ENV") != "1":
     # ``get_repository()`` is False → deterministic in-memory ``MemoryRepository``.
     for _var in ("SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"):
         os.environ[_var] = ""
+    # Same for the local sqlite session store: blank it so tests always get the
+    # in-memory repo (conftest contract: hermetic, no on-disk state).
+    os.environ["SQLITE_SESSIONS_PATH"] = ""
+    os.environ["SQLITE_KB_PATH"] = ""
     # Tracing writes JSONL files per run — keep the offline suite hermetic.
     # Tests for tracing itself (test_tracing.py) opt back in per-test via
     # ``tracing.init_tracing(enabled=True, trace_dir=tmp_path)``.
