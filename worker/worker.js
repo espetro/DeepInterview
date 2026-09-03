@@ -84725,7 +84725,7 @@ var require_truncate = __commonJS({
     var parse4 = require_parse2();
     var constants2 = require_constants6();
     var SemVer = require_semver();
-    var truncate = (version4, truncation, options) => {
+    var truncate2 = (version4, truncation, options) => {
       if (!constants2.RELEASE_TYPES.includes(truncation)) {
         return null;
       }
@@ -84755,7 +84755,7 @@ var require_truncate = __commonJS({
     var isPrerelease = (type) => {
       return type.startsWith("pre");
     };
-    module.exports = truncate;
+    module.exports = truncate2;
   }
 });
 
@@ -85801,7 +85801,7 @@ var require_semver2 = __commonJS({
     var lte = require_lte();
     var cmp = require_cmp();
     var coerce = require_coerce();
-    var truncate = require_truncate();
+    var truncate2 = require_truncate();
     var Comparator = require_comparator();
     var Range = require_range();
     var satisfies = require_satisfies();
@@ -85840,7 +85840,7 @@ var require_semver2 = __commonJS({
       lte,
       cmp,
       coerce,
-      truncate,
+      truncate: truncate2,
       Comparator,
       Range,
       satisfies,
@@ -179277,6 +179277,10 @@ var CreateSessionRequestSchema = object3({
   duration_min: pipe2(number5(), integer3(), minValue(5), maxValue(120)),
   prompt: optional2(string5())
 });
+var ToolStateSchema = object3({
+  editor: string5(),
+  whiteboard: string5()
+});
 var SessionEventSchema = object3({
   session_id: SessionIdSchema,
   type: string5(),
@@ -179438,6 +179442,14 @@ var DiApiClient = class {
       throw new Error(`postTurn failed: ${res.status} ${await res.text().catch(() => "")}`);
     }
   }
+  /** Editor + whiteboard state the browser pushed to di. Empty strings when never pushed. */
+  async getToolState(sessionId) {
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/sessions/${sessionId}/tools`);
+    if (!res.ok) {
+      throw new Error(`getToolState failed: ${res.status} ${await res.text().catch(() => "")}`);
+    }
+    return parse3(ToolStateSchema, await res.json());
+  }
   async postEvent(sessionId, type, payload, at2 = (/* @__PURE__ */ new Date()).toISOString()) {
     const body = parse3(SessionEventSchema, {
       session_id: sessionId,
@@ -179486,7 +179498,32 @@ ${ctx.plan}`);
   return lines.join("\n");
 }
 
+// src/whiteboard.ts
+function describeWhiteboardSnapshot(json2) {
+  let snap;
+  try {
+    snap = JSON.parse(json2);
+  } catch {
+    return "(unparseable whiteboard snapshot)";
+  }
+  const shapes = Array.isArray(snap.shapes) ? snap.shapes : [];
+  if (shapes.length === 0) return "(empty whiteboard)";
+  const lines = [`whiteboard: ${shapes.length} shape(s)`];
+  for (const s2 of shapes) lines.push(describeShape(s2));
+  return lines.join("\n");
+}
+function describeShape(s2) {
+  const type = typeof s2.type === "string" ? s2.type : "unknown";
+  const text = typeof s2.text === "string" && s2.text.trim() !== "" ? ` text="${s2.text}"` : "";
+  const arrow = typeof s2.from === "string" || typeof s2.to === "string" ? ` from ${s2.from ?? "?"} to ${s2.to ?? "?"}` : "";
+  return `- ${type}${text}${arrow}`;
+}
+
 // src/agent.ts
+var MAX_TOOL_OUTPUT = 4e3;
+function truncate(text, max = MAX_TOOL_OUTPUT) {
+  return text.length <= max ? text : `${text.slice(0, max)}\u2026 [truncated]`;
+}
 var InterviewAgent = class extends Agent {
   constructor(config2, deps) {
     const updateQuestion = tool({
@@ -179506,9 +179543,33 @@ var InterviewAgent = class extends Agent {
         return { ok: true, question: args.question };
       }
     });
+    const readEditor = tool({
+      name: "read_editor",
+      description: "Read the candidate's current code editor contents from their shared browser workspace. Call when you need to review what they wrote.",
+      parameters: external_exports.object({}),
+      execute: async () => {
+        const state = await deps.api.getToolState(deps.sessionId);
+        await deps.api.postEvent(deps.sessionId, "tool.read_editor", {
+          length: state.editor.length
+        });
+        return { text: truncate(state.editor) };
+      }
+    });
+    const readWhiteboard = tool({
+      name: "read_whiteboard",
+      description: "Read the candidate's shared whiteboard (drawn shapes and their text/connections). Call when you need to see what they sketched.",
+      parameters: external_exports.object({}),
+      execute: async () => {
+        const state = await deps.api.getToolState(deps.sessionId);
+        await deps.api.postEvent(deps.sessionId, "tool.read_whiteboard", {
+          length: state.whiteboard.length
+        });
+        return { text: truncate(describeWhiteboardSnapshot(state.whiteboard)) };
+      }
+    });
     super({
       instructions: buildPrompt(deps.ctx),
-      tools: [updateQuestion]
+      tools: [updateQuestion, readEditor, readWhiteboard]
     });
     void config2;
   }

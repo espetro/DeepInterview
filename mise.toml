@@ -4,3 +4,51 @@ node = "24"
 
 [env]
 _.file = ".env"
+
+# Web dev server (TanStack Start/vite). Server + mock provider:
+#   cd server && DI_TEST_MODE=1 bun run src/cli.ts --config config.example.yaml --no-supervise
+#   bun run evals/mock-provider/main.ts --port 9000
+[tasks.dev]
+description = "Run web dev server (vite dev) in web/"
+run = "bun run dev"
+dir = "web"
+
+[tasks.build]
+description = "Build web SPA + esbuild worker bundle"
+run = """
+set -e
+cd web && bun run build
+cd ../worker && bun run build
+"""
+
+[tasks.test]
+description = "Run vitest across server, worker, web, evals"
+run = """
+set -e
+for pkg in server worker web evals; do
+  echo "== $pkg =="
+  (cd $pkg && bun run --bun vitest run)
+done
+"""
+
+[tasks.check]
+description = "Run tests + web typecheck (tsc --noEmit)"
+run = """
+set -e
+mise run test
+echo "== web typecheck =="
+cd web && bunx tsc --noEmit
+"""
+
+[tasks.evals]
+description = "Run evals vitest suite"
+run = "bun run --bun vitest run"
+dir = "evals"
+
+# Precondition: a DI server must already be running in test mode:
+#   cd server && DI_TEST_MODE=1 bun run src/cli.ts --config config.example.yaml --no-supervise
+# Override the target with DI_URL (default http://localhost:3000).
+[tasks.e2e]
+description = "Run Playwright e2e specs in tests/e2e (requires DI server in test mode running; DI_URL to override)"
+run = "bun x playwright test"
+dir = "tests/e2e"
