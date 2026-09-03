@@ -1,0 +1,22 @@
+{
+  "name": "@di/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": { "di": "./src/cli.ts" },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@di/shared": "workspace:*",
+    "@hono/valibot-validator": "^0.5",
+    "@libsql/client": "^0.15",
+    "drizzle-orm": "^0.45",
+    "hono": "^4",
+    "valibot": "^1",
+    "yaml": "^2"
+  },
+  "devDependencies": {
+    "livekit-server-sdk": "^2"
+  }
+}
