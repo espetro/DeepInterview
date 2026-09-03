@@ -1,0 +1,43 @@
+{
+  "name": "@di/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "test": "bun run --bun vitest run"
+  },
+  "dependencies": {
+    "@codemirror/lang-javascript": "^6",
+    "@codemirror/lang-python": "^6",
+    "@di/shared": "workspace:*",
+    "@formisch/react": "^1",
+    "@nanostores/persistent": "^1",
+    "@nanostores/react": "^1",
+    "@tanstack/react-query": "^5",
+    "@tanstack/react-router": "^1",
+    "@tanstack/react-start": "^1",
+    "clsx": "^2",
+    "codemirror": "^6",
+    "lucide-react": "^0.550",
+    "nanostores": "^1",
+    "react": "^19",
+    "react-dom": "^19",
+    "react-intl": "^7",
+    "recharts": "^3",
+    "sonner": "^2",
+    "tailwind-merge": "^3",
+    "tldraw": "^5.4.0",
+    "valibot": "^1"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5",
+    "tailwindcss": "^4",
+    "@tailwindcss/vite": "^4",
+    "vite": "^7",
+    "vitest": "^3"
+  }
+}
