@@ -6,6 +6,8 @@ export type ChildName = (typeof children)[number];
 export interface ChildSpec {
   name: ChildName;
   command: string[];
+  /** Extra env vars merged over process.env for the child. */
+  env?: Record<string, string>;
   healthy: () => Promise<boolean>;
 }
 
@@ -34,6 +36,7 @@ export class Supervisor {
     console.log(`[supervisor] spawning ${spec.name}: ${spec.command.join(" ")}`);
     const proc = Bun.spawn({
       cmd: spec.command,
+      env: spec.env ? { ...process.env, ...spec.env } : undefined,
       stdout: "inherit",
       stderr: "inherit",
       stdin: "ignore",

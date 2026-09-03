@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from "node:fs";
 import { Hono } from "hono";
 import type { Config } from "@di/shared";
 import type { Db } from "../store/db";
@@ -27,8 +28,13 @@ export async function createApp(deps: AppDeps): Hono {
 
   if (deps.webAssets) {
     const { serveStatic } = await import("@hono/node-server/serve-static");
-    app.use("*", serveStatic(deps.webAssets));
-    app.get("*", (c) => c.redirect("/"));
+    app.use("*", serveStatic({ root: deps.webAssets.root, rewriteRequestPath: (p) => (p === "/" ? "/index.html" : p) }));
+    // SPA fallback: any non-API GET serves the shell so deep links work.
+    app.get("*", (c) => {
+      const url = new URL(c.req.url);
+      if (url.pathname.startsWith("/v1") || url.pathname.startsWith("/api")) return c.next();
+      return c.html(readFileSync(`${deps.webAssets!.root}/index.html`, "utf8"));
+    });
   }
 
   app.notFound((c) => c.json({ error: "not found" }, 404));

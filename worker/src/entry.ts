@@ -114,6 +114,8 @@ async function main(): Promise<void> {
   }
 
   const { AgentServer, ServerOptions } = await import("@livekit/agents");
+  const { initializeLogger } = await import("@livekit/agents");
+  initializeLogger({ level: "info" });
   const { fileURLToPath } = await import("node:url");
   const server = new AgentServer(
     new ServerOptions({

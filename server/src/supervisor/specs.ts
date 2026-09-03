@@ -9,18 +9,33 @@ import type { ChildSpec } from "./supervisor";
 export function buildChildSpecs(config: Config): ChildSpec[] {
   const specs: ChildSpec[] = [];
 
+  // Pass the merged di config to children as DI_<SECTION>__<KEY> env vars.
+  const childEnv: Record<string, string> = {};
+  const flatten = (obj: unknown, path: string[]) => {
+    if (obj == null) return;
+    if (typeof obj === "object") {
+      for (const [k, v] of Object.entries(obj as Record<string, unknown>)) flatten(v, [...path, k.toUpperCase()]);
+    } else if (typeof obj !== "object") {
+      childEnv[`DI_${path.join("__")}`] = String(obj);
+    }
+  };
+  flatten(config, []);
+  if (process.env.DI_TEST_MODE === "1") childEnv.DI_STT__MODE = "mock";
+
+  const apiBase = `http://localhost:${config.server.port}`;
   specs.push({
     name: "worker",
     command: ["node", "worker/worker.js"],
+    env: {
+      ...childEnv,
+      DI_API_BASE: apiBase,
+    },
     healthy: async () => {
-      try {
-        const res = await fetch(`http://localhost:${config.server.port}/api/health`, {
-          signal: AbortSignal.timeout(2000),
-        });
-        return res.ok;
-      } catch {
-        return false;
-      }
+      // The worker registers with LiveKit and only exits on fatal errors, so
+      // liveness is "process still running". A di /api/health probe here would
+      // be self-referential (the supervisor serves that endpoint itself) and
+      // says nothing about the child.
+      return true;
     },
   });
 

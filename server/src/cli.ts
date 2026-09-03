@@ -1,4 +1,5 @@
 import { parseArgs } from "node:util";
+import { existsSync, readFileSync } from "node:fs";
 import { createDatabase, migrate, ping } from "./store/db";
 import { loadConfig, ConfigError } from "./config/load";
 import { probeProviders } from "./check/probe";
@@ -41,7 +42,13 @@ export async function main(argv: string[]): Promise<number> {
     : new Supervisor(buildChildSpecs(config) as ChildSpec[]);
   supervisor?.start();
 
-  const app = await createApp({ config, db, supervisor, testMode });
+  let webAssets;
+  const spaDir = new URL("../../web/dist/client", import.meta.url).pathname;
+  if (existsSync(spaDir)) {
+    webAssets = { root: spaDir, path: "" };
+  }
+
+  const app = await createApp({ config, db, supervisor, testMode, webAssets });
   const server = serveApp(app, config.server.port);
   console.log(`[di] listening on http://localhost:${config.server.port}${testMode ? " (test mode)" : ""}`);
 
