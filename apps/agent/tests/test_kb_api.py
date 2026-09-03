@@ -24,6 +24,9 @@ def _no_local_dotenv(monkeypatch, tmp_path):
     """
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("LIGHTRAG_URL", raising=False)
+    # SQLITE_KB_PATH is the default backend now; clear it so these tests
+    # exercise the offline MockKnowledge fallback with a guaranteed-empty store.
+    monkeypatch.setenv("SQLITE_KB_PATH", "")
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()

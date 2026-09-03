@@ -10,11 +10,10 @@ dependencies = [
     "uvicorn>=0.51",
     "httpx>=0.28",
     "pydantic-settings>=2.14",
-    "langgraph>=1.2",
-    "langchain-core>=1.5",
     # Server-side CV/résumé document parsing (PDF/DOCX -> text). Core, not
     # optional: an uploaded CV is useless until it's converted to text.
     "markitdown[pdf,docx]>=0.1.6",
+    "sqlite-vec>=0.1.9",
 ]
 
 [project.optional-dependencies]

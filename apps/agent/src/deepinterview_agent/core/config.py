@@ -142,6 +142,10 @@ class Settings(BaseSettings):
     # unset here (and there) keeps the offline/local path open. Set both to the
     # same value in a hosted deployment.
     lightrag_api_secret: str | None = None
+    # --- knowledge (local sqlite-vec RAG) --------------------------------------
+    # When set, the knowledge adapter stores/queries a local sqlite DB with a
+    # sqlite-vec virtual table (no Docker, no sidecar). Env: SQLITE_KB_PATH.
+    sqlite_kb_path: str = ".deepinterview/kb.sqlite3"
 
     # --- internal API auth (opt-in) ------------------------------------------
     # The agent API is trust-the-network by design (reads are capability-guarded

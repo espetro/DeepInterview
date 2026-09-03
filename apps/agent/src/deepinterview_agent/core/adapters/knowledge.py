@@ -131,9 +131,11 @@ class MockKnowledge:
 
 
 def get_knowledge(settings: Settings) -> KnowledgeClient:
-    """Choose a knowledge client. ``MockKnowledge`` unless a LightRAG URL is set."""
-    url = getattr(settings, "lightrag_url", None) or None
-    if url:
-        return HttpKnowledge(url, getattr(settings, "lightrag_api_secret", None))
-    log.info("No LIGHTRAG_URL configured; using MockKnowledge (offline).")
-    return MockKnowledge()
+    """Deprecated shim: prefer :func:`knowledge_sqlite.get_knowledge`.
+
+    Kept so existing imports keep working; it delegates to the sqlite-vec
+    implementation, which is the default knowledge backend now.
+    """
+    from .knowledge_sqlite import get_knowledge as _get
+
+    return _get(settings)
