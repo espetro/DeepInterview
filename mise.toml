@@ -22,10 +22,10 @@ cd ../worker && bun run build
 """
 
 [tasks.test]
-description = "Run vitest across server, worker, web, evals"
+description = "Run vitest across server, worker, web, evals, shared"
 run = """
 set -e
-for pkg in server worker web evals; do
+for pkg in shared server worker web evals; do
   echo "== $pkg =="
   (cd $pkg && bun run --bun vitest run)
 done
