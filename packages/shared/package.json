@@ -20,7 +20,7 @@
     "fixtures"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "gen:schema": "tsx scripts/gen-schema.mts"
@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "tsdown": "^0.22.14",
     "tsup": "^8.5.1",
     "tsx": "^4.23.1",
     "typescript": "~5.9.3",
