@@ -16,11 +16,16 @@ export type StartSessionResult =
  * OSS is self-host, bring-your-own-keys, and UNCAPPED: there is no billing and
  * no per-tier interview limit. No auth: the session id is the capability.
  */
+/**
+ * Kick off the fast prep path (`POST /api/prep?fast=true`): facts are ingested
+ * into the KB and the session is marked `ready` immediately — no LLM prep
+ * graph — so the client can navigate straight to `/session/{id}`.
+ */
 export async function startSession(
   input: PrepRequest,
 ): Promise<StartSessionResult> {
   try {
-    const { session_id } = await requestPrep(input);
+    const { session_id } = await requestPrep(input, { fast: true });
     return { ok: true, session_id };
   } catch (err) {
     const message =

@@ -51,25 +51,13 @@ export default async function InterviewPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ persona?: string; duration?: string }>;
+  searchParams: Promise<{ duration?: string }>;
 }) {
   const { id } = await params;
-  const { persona: personaId, duration: durationParam } = await searchParams;
-
- // Requested interview length in minutes. Query-param driven (minimal path:
- // no setup→prep→session plumbing). Clamped to the same [20, 45] band the
- // agent enforces on room metadata; anything invalid falls back to undefined
- // so the agent applies its own default.
- const parsedDuration = Number.parseInt(durationParam ?? "", 10);
- const durationMin =
-   Number.isFinite(parsedDuration)
-     ? Math.min(45, Math.max(20, parsedDuration))
-     : undefined;
+  const { duration: durationParam } = await searchParams;
 
   const identity = "dev-local";
   const name: string | undefined = undefined;
-
-  const persona = getPersona(personaId);
 
   // Mint a token only when LiveKit is configured; otherwise preview mode.
   let token: string | null = null;
@@ -81,6 +69,21 @@ export default async function InterviewPage({
     const session = await loadSession(id);
     if (!session || session.session_id !== id) notFound();
 
+    // Difficulty / voice / duration come from the persisted InterviewContext
+    // (stamped at prep), not from query params.
+    const context = session.context;
+    const difficulty = context?.difficulty ?? undefined;
+
+    // Duration: prefer duration_min from the session context; the legacy
+    // `?duration=` query param still works as an override, clamped to [5, 60]
+    // (the band PrepRequest allows).
+    const parsedParam = Number.parseInt(durationParam ?? "", 10);
+    const durationMin =
+      context?.duration_min ??
+      (Number.isFinite(parsedParam)
+        ? Math.min(60, Math.max(5, parsedParam))
+        : undefined);
+
     // Only mint a publish-capable token for a session that is still joinable.
     // A shared report/prep link points at the same id; without this a finished
     // (or errored) session's link would still open a live mic into the room.
@@ -89,7 +92,7 @@ export default async function InterviewPage({
       return (
         <LiveRoom
           sessionId={id}
-          persona={persona}
+          persona={getPersona(undefined)}
           token={null}
           url={null}
           previewReason="ended"
@@ -102,11 +105,17 @@ export default async function InterviewPage({
       room,
       identity,
       name,
-      metadata: { session_id: room, duration_min: durationMin },
+      metadata: {
+        session_id: room,
+        duration_min: durationMin,
+        difficulty,
+        // voice is nullable on InterviewContext (null -> worker picks default).
+        voice: context?.voice ?? undefined,
+      },
     });
     token = minted.token;
     url = minted.url;
   }
 
-  return <LiveRoom sessionId={id} persona={persona} token={token} url={url} />;
+  return <LiveRoom sessionId={id} persona={getPersona(undefined)} token={token} url={url} />;
 }

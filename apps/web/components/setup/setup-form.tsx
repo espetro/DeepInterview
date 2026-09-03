@@ -1,18 +1,25 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { UploadCloud, FileText, X } from "lucide-react";
-import {
-  LANGUAGES,
-  type Language,
-  type LanguageMode,
-} from "@deepinterview/shared";
+import type { LanguageMode } from "@deepinterview/shared";
 import { startSession } from "@/app/setup/actions";
-import { PERSONAS, DEFAULT_PERSONA_ID } from "@/lib/personas";
 import { useMessages } from "@/lib/i18n/client";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
+import {
+  buildPrepRequest,
+  clampDuration,
+  coerceDifficulty,
+  defaultVoiceId,
+  fetchUiConfig,
+  DURATION_PRESETS,
+  DEFAULT_DIFFICULTY,
+  DEFAULT_DURATION,
+  type Difficulty,
+  type UiConfig,
+} from "@/lib/setup-config";
 import {
   Card,
   CardContent,
@@ -27,115 +34,105 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { DeviceCheck } from "@/components/setup/device-check";
 
-// A small, friendly subset for the picker; full set still lives in LANGUAGES.
-const LANGUAGE_LABELS: Partial<Record<Language, string>> = {
-  en: "English",
-  vi: "Tiếng Việt",
-  es: "Español",
-  zh: "中文",
-  fr: "Français",
-  de: "Deutsch",
-  ja: "日本語",
-};
-const OFFERED: Language[] = (
-  ["en", "vi", "es", "zh", "fr", "de", "ja"] as Language[]
-).filter((l) => (LANGUAGES as readonly string[]).includes(l));
+// Acceptable CV uploads. The file is sent as a base64 data-URL of its RAW
+// bytes and parsed server-side (pdf/docx), never via file.text().
+const CV_ACCEPT =
+  ".pdf,.docx,.md,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown";
 
-type Step = { key: string; label: string };
+// Client-side minimums for PASTED facts only (we can't cheaply size a parsed
+// PDF client-side). The backend is the real guard — these just block
+// obviously-empty / garbage-short submits with a helpful nudge.
+const MIN_FACTS_CHARS = 30;
 
-// Friendly client-side minimums. The backend is the real guard — these just
-// block obviously-empty / garbage-short submits with a helpful nudge.
-const MIN_JD_CHARS = 40;
-const MIN_CV_CHARS = 30;
 // Max CV file size. Keeps the base64 data-URL path (base64 is ~+33%) under
 // the Next server-action body limit.
 const MAX_CV_BYTES = 10 * 1024 * 1024;
 
-// One-click sample inputs for fast testing / demos. Each is a matched CV + JD +
-// company so the prep pipeline gets a coherent pair. Pure UX sugar — clicking a
-// sample just fills the form fields; nothing is submitted.
-const SAMPLES = [
-  {
-    id: "backend",
-    label: "Backend Engineer · Stripe",
-    company: "Stripe",
-    cv: "Jordan Rivera — Senior Backend Engineer. 7 years building high-throughput payment and API platforms. Led a ledger service at 5k req/s; cut p99 latency 40% with async batching; owned idempotency and reconciliation. Skills: Python, Go, PostgreSQL, Kafka, gRPC, Kubernetes, distributed systems.",
-    jd: "Senior Backend Engineer to build payment APIs at scale. Own services in Python/Go, design event-driven systems with Kafka, and ensure reliability, idempotency, and low p99 latency on PostgreSQL. Strong distributed-systems background required.",
-  },
-  {
-    id: "frontend",
-    label: "Frontend Engineer · Vercel",
-    company: "Vercel",
-    cv: "Sam Chen — Senior Frontend Engineer. 6 years shipping performant React/Next.js apps. Built a design system used across 30+ surfaces; improved LCP 35% with streaming SSR and image optimization. Skills: TypeScript, React, Next.js, Tailwind, accessibility, Core Web Vitals.",
-    jd: "Senior Frontend Engineer to build fast, delightful web experiences with Next.js and React. Own component architecture, Core Web Vitals, accessibility, and design-system work. Deep TypeScript and modern rendering (SSR/streaming) experience expected.",
-  },
-  {
-    id: "ml",
-    label: "ML Engineer · OpenAI",
-    company: "OpenAI",
-    cv: "Priya Nair — Machine Learning Engineer. 5 years in production ML: built feature pipelines and model serving for ranking at scale; owned offline/online evaluation and safe rollback. Skills: Python, PyTorch, Ray, feature stores, evaluation, MLOps, monitoring.",
-    jd: "Machine Learning Engineer to build and ship production ML systems: data pipelines, training, evaluation, and low-latency serving. You will own offline/online metrics, monitoring, and safe rollouts. Strong Python + PyTorch and MLOps experience required.",
-  },
-] as const;
+const DIFFICULTY_LABELS: Record<string, string> = {
+  easy: "Easy",
+  medium: "Medium",
+  hard: "Hard",
+};
+
+const DIFFICULTY_HINTS: Record<string, string> = {
+  easy: "Warm, supportive questions",
+  medium: "A realistic screening",
+  hard: "Senior-level pressure",
+};
 
 export function SetupForm() {
   const router = useRouter();
   const messages = useMessages();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // --- Block 1: facts ---
   const [file, setFile] = useState<File | null>(null);
   const [cvText, setCvText] = useState("");
   const [jdText, setJdText] = useState("");
   const [company, setCompany] = useState("");
-  const [primary, setPrimary] = useState<Language>("en");
+
+  // --- Block 2: difficulty ---
+  const [difficulty, setDifficulty] = useState<Difficulty>(DEFAULT_DIFFICULTY);
+
+  // --- Block 3: voice + language + duration (from GET /api/config/ui) ---
+  const [config, setConfig] = useState<UiConfig | null>(null);
+  const [primary, setPrimary] = useState("en");
+  const [voice, setVoice] = useState("");
+  const [duration, setDuration] = useState<number>(DEFAULT_DURATION);
   const [mixed, setMixed] = useState(false);
-  const [personaId, setPersonaId] = useState(DEFAULT_PERSONA_ID);
 
   const [dragging, setDragging] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  // Surface inline field errors once the user has interacted with a field (or
-  // attempted submit) — not on first load. Decoupled from submit because the
-  // submit button is disabled while invalid, so it never fires onSubmit.
-  const [cvTouched, setCvTouched] = useState(false);
-  const [jdTouched, setJdTouched] = useState(false);
+  const [factsTouched, setFactsTouched] = useState(false);
 
-  // --- Client-side input validation (friendly; backend is the real guard) ---
-  // CV is satisfied by a chosen file (length unknown synchronously) OR pasted
-  // text of at least MIN_CV_CHARS. JD must be present + reasonably long.
-  // Company is optional.
+  // Load the agent's file-driven UI options once. fetchUiConfig never throws;
+  // on failure it resolves the fallback config (English + "Alba").
+  useEffect(() => {
+    let cancelled = false;
+    fetchUiConfig().then((cfg) => {
+      if (cancelled) return;
+      setConfig(cfg);
+      setPrimary((lang) => (cfg.languages.includes(lang) ? lang : cfg.languages[0] ?? "en"));
+      setVoice((v) => (cfg.voices[primary]?.options.some((o) => o.id === v) ? v : defaultVoiceId(cfg, primary)));
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keep the voice valid whenever the language changes.
+  useEffect(() => {
+    setVoice((v) =>
+      config?.voices[primary]?.options.some((o) => o.id === v)
+        ? v
+        : defaultVoiceId(config ?? fallbackConfig(), primary),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [primary, config]);
+
+  const voiceSet = config?.voices[primary];
+  const voices: { id: string; label: string }[] = voiceSet?.options ?? [
+    { id: "Alba", label: "Alba" },
+  ];
+  const languages = config?.languages ?? ["en"];
+  const difficulties = (config?.difficulties ?? ["easy", "medium", "hard"]).filter((d) =>
+    ["easy", "medium", "hard"].includes(d),
+  );
+
+  // --- Client-side validation (friendly; backend is the real guard) ---
   const cvLen = cvText.trim().length;
-  const jdLen = jdText.trim().length;
-  const cvError = !file
+  const factsError = !file
     ? cvLen === 0
       ? t(messages, "setup.needCv")
-      : cvLen < MIN_CV_CHARS
-        ? `Add a bit more — your CV text looks too short (at least ${MIN_CV_CHARS} characters).`
+      : cvLen < MIN_FACTS_CHARS
+        ? `Add a bit more — your CV text looks too short (at least ${MIN_FACTS_CHARS} characters).`
         : null
     : file.size > MAX_CV_BYTES
       ? `That file is too large (max ${Math.floor(MAX_CV_BYTES / (1024 * 1024))} MB). Upload a smaller CV or paste the text.`
       : null;
-  const jdError =
-    jdLen === 0
-      ? t(messages, "setup.needJd")
-      : jdLen < MIN_JD_CHARS
-        ? `Paste the full posting — this looks too short (at least ${MIN_JD_CHARS} characters).`
-        : null;
-  const canSubmit = !cvError && !jdError && !submitting;
-
-  // Fill the form with a matched sample (testing / demo). Clears any chosen file
-  // so the pasted sample CV text is what gets submitted.
-  function loadSample(s: (typeof SAMPLES)[number]) {
-    setFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    setCvText(s.cv);
-    setJdText(s.jd);
-    setCompany(s.company);
-    setCvTouched(false);
-    setJdTouched(false);
-    setError(null);
-  }
+  const canSubmit = !factsError && !submitting;
 
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -163,39 +160,41 @@ export function SetupForm() {
     e.preventDefault();
     setError(null);
 
-    // Client-side validation. CV can be a file OR pasted text; JD required +
-    // min length; company is optional. Surface inline field errors and bail.
-    if (cvError || jdError) {
-      setCvTouched(true);
-      setJdTouched(true);
+    if (factsError) {
+      setFactsTouched(true);
       return;
     }
 
     setSubmitting(true);
-    setActiveStep(0);
 
     try {
-      // CV resolution: pass the pasted text directly as cv_url — the prep
-      // pipeline treats a non-URL cv_url as the document itself. When a file
-      // is chosen, send the RAW bytes as a base64 data URL so the agent can
-      // parse the real document (NOT file.text(), which turns a PDF/DOCX into
-      // binary garbage).
-      let cv_url: string;
-      if (cvText.trim()) {
-        cv_url = cvText.trim();
-      } else if (file) {
-        cv_url = await fileToDataUrl(file);
-      } else {
-        cv_url = "";
+      // Body construction + CV resolution live in buildPrepRequest; the file's
+      // data-URL is added here because FileReader is browser-only and async.
+      // Difficulty/voice/duration ride in the body, not the URL — no persona
+      // param (difficulty comes from the session context on /interview).
+      const body = buildPrepRequest({
+        cvText,
+        // jd_text/company remain required strings in PrepRequest — kept as
+        // small optional UI fields; the fast path ingests them as facts.
+        jdText,
+        company,
+        languageMode: { primary, mixed },
+        difficulty,
+        voice,
+        duration,
+      });
+      if (!body.cv_url && file) {
+        body.cv_url = await fileToDataUrl(file);
       }
 
-      setActiveStep(1);
-      const language_mode: LanguageMode = { primary, mixed };
+      // `primary` comes from the agent config (plain string). The agent's prep
+      // route rejects unsupported languages (STT gate), so this cast is safe.
       const result = await startSession({
-        cv_url,
-        jd_text: jdText.trim(),
-        company: company.trim(),
-        language_mode,
+        ...body,
+        language_mode: {
+          ...body.language_mode,
+          primary: body.language_mode.primary as LanguageMode["primary"],
+        },
       });
 
       if (!result.ok) {
@@ -204,16 +203,9 @@ export function SetupForm() {
         return;
       }
 
-      setActiveStep(2);
-      // Carry the chosen persona forward (PrepRequest has no persona field yet;
-      // WP-2 will persist it server-side). Query param keeps P1 stateless.
-      // Route to the prep screen — it polls the agent, shows the agents
-      // working, then the "what we found" bento, then hands off to /interview.
-      router.push(
-        `/session/${result.session_id}${
-          personaId ? `?persona=${encodeURIComponent(personaId)}` : ""
-        }`,
-      );
+      // Fast path returns quickly with a ready session — no persona param
+      // (difficulty/voice ride in the session context, not the URL).
+      router.push(`/session/${result.session_id}`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t(messages, "common.error"),
@@ -222,49 +214,14 @@ export function SetupForm() {
     }
   }
 
-  const steps: Step[] = [
-    { key: "cv", label: t(messages, "setup.stepCv") },
-    { key: "company", label: t(messages, "setup.stepCompany") },
-    { key: "plan", label: t(messages, "setup.stepPlan") },
-  ];
-
   if (submitting) {
-    const researching = t(messages, "setup.researching").replace(
-      "{company}",
-      company.trim() || "the company",
-    );
     return (
       <Card className="mt-8">
         <CardContent className="flex flex-col items-center gap-5 py-12 text-center">
           <Spinner className="h-6 w-6" />
-          <p className="serif text-xl text-ink">{researching}</p>
-          <ol className="flex flex-col gap-2 text-left">
-            {steps.map((s, i) => (
-              <li
-                key={s.key}
-                className={cn(
-                  "flex items-center gap-2 text-[13px]",
-                  i < activeStep
-                    ? "text-ok"
-                    : i === activeStep
-                      ? "text-ink"
-                      : "text-faint",
-                )}
-              >
-                <span
-                  className={cn(
-                    "h-1.5 w-1.5 rounded-full",
-                    i < activeStep
-                      ? "bg-ok"
-                      : i === activeStep
-                        ? "bg-accent"
-                        : "bg-line",
-                  )}
-                />
-                {s.label}
-              </li>
-            ))}
-          </ol>
+          <p className="serif text-xl text-ink">
+            {t(messages, "setup.fastPreparing")}
+          </p>
           {error && (
             <p className="text-[13px] text-ink-soft" role="alert">
               {error}
@@ -284,31 +241,7 @@ export function SetupForm() {
         <p className="mt-2 text-ink-soft">{t(messages, "setup.subtitle")}</p>
       </div>
 
-      {/* Quick demo: one-click sample CV + JD + company for fast testing */}
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-[13px] font-medium text-ink">Quick demo</p>
-            <p className="text-[12px] text-muted">
-              Load a matched sample CV + job description to try it fast.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {SAMPLES.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => loadSample(s)}
-                className="rounded-[10px] border border-line px-3 py-1.5 text-[12px] text-ink-soft transition-colors hover:border-ink"
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* CV */}
+      {/* 1. Facts: CV upload + paste, JD + company */}
       <Card>
         <CardHeader>
           <CardTitle>{t(messages, "setup.cvLabel")}</CardTitle>
@@ -368,7 +301,7 @@ export function SetupForm() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept={CV_ACCEPT}
               className="hidden"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
@@ -382,81 +315,157 @@ export function SetupForm() {
               placeholder={t(messages, "setup.cvPasteHint")}
               value={cvText}
               onChange={(e) => setCvText(e.target.value)}
-              onBlur={() => setCvTouched(true)}
-              aria-invalid={cvTouched && Boolean(cvError)}
+              onBlur={() => setFactsTouched(true)}
+              aria-invalid={factsTouched && Boolean(factsError)}
             />
+            {/* If both exist, pasted text is sent (see onSubmit). */}
+            {file && cvText.trim() && (
+              <p className="mt-1 text-[12px] text-muted">
+                Pasted text will be used instead of the uploaded file.
+              </p>
+            )}
           </div>
-          {cvTouched && cvError && (
+          {factsTouched && factsError && (
             <p className="text-[13px] text-accent" role="alert">
-              {cvError}
+              {factsError}
             </p>
           )}
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="jdText">{t(messages, "setup.jdLabel")}</Label>
+              <Textarea
+                id="jdText"
+                rows={4}
+                className="mt-1"
+                placeholder={t(messages, "setup.jdHint")}
+                value={jdText}
+                onChange={(e) => setJdText(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="company">{t(messages, "setup.companyLabel")}</Label>
+              <Input
+                id="company"
+                className="mt-1"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="Stripe (optional)"
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {/* JD */}
+      {/* 2. Difficulty */}
       <Card>
         <CardHeader>
-          <CardTitle>{t(messages, "setup.jdLabel")}</CardTitle>
-          <CardDescription>{t(messages, "setup.jdHint")}</CardDescription>
+          <CardTitle>{t(messages, "setup.difficultyLabel")}</CardTitle>
+          <CardDescription>{t(messages, "setup.difficultyHint")}</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-2 pb-6">
-          <Textarea
-            rows={6}
-            value={jdText}
-            onChange={(e) => setJdText(e.target.value)}
-            onBlur={() => setJdTouched(true)}
-            aria-label={t(messages, "setup.jdLabel")}
-            aria-invalid={jdTouched && Boolean(jdError)}
-          />
-          {jdTouched && jdError && (
-            <p className="text-[13px] text-accent" role="alert">
-              {jdError}
-            </p>
-          )}
+        <CardContent className="grid grid-cols-1 gap-3 pb-6 sm:grid-cols-3">
+          {difficulties.map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => setDifficulty(coerceDifficulty(d))}
+              aria-pressed={difficulty === d}
+              className={cn(
+                "rounded-[10px] border p-3 text-left transition-colors",
+                difficulty === d
+                  ? "border-accent bg-accent-soft"
+                  : "border-line hover:border-ink",
+              )}
+            >
+              <p className="text-[14px] font-medium text-ink">
+                {DIFFICULTY_LABELS[d] ?? d}
+              </p>
+              <p className="text-[12px] leading-snug text-muted">
+                {DIFFICULTY_HINTS[d] ?? ""}
+              </p>
+            </button>
+          ))}
         </CardContent>
       </Card>
 
-      {/* Company */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t(messages, "setup.companyLabel")}</CardTitle>
-          <CardDescription>{t(messages, "setup.companyHint")}</CardDescription>
-        </CardHeader>
-        <CardContent className="pb-6">
-          <Input
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-            placeholder="Stripe (optional)"
-            aria-label={t(messages, "setup.companyLabel")}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Language mode */}
+      {/* 3. Voice + language + duration */}
       <Card>
         <CardHeader>
           <CardTitle>{t(messages, "setup.languageLabel")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 pb-6">
           <div className="flex flex-wrap gap-2">
-            {OFFERED.map((lang) => (
+            {languages.map((lang) => (
               <button
                 key={lang}
                 type="button"
                 onClick={() => setPrimary(lang)}
                 aria-pressed={primary === lang}
                 className={cn(
-                  "rounded-[10px] border px-3.5 py-2 text-[13px] transition-colors",
+                  "rounded-[10px] border px-3.5 py-2 text-[13px] uppercase transition-colors",
                   primary === lang
                     ? "border-accent bg-accent-soft text-accent"
                     : "border-line text-ink-soft hover:border-ink",
                 )}
               >
-                {LANGUAGE_LABELS[lang] ?? lang}
+                {lang}
               </button>
             ))}
           </div>
+
+          <div>
+            <Label htmlFor="voice">{t(messages, "setup.voiceLabel")}</Label>
+            <select
+              id="voice"
+              value={voice}
+              onChange={(e) => setVoice(e.target.value)}
+              className="mt-1 rounded-[10px] border border-line bg-paper px-3 py-2 text-[14px] text-ink"
+            >
+              {voices.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label htmlFor="duration">
+              {t(messages, "setup.durationLabel")} ({t(messages, "setup.durationMinutes")})
+            </Label>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <Input
+                id="duration"
+                type="number"
+                min={5}
+                max={60}
+                value={duration}
+                onChange={(e) =>
+                  setDuration(
+                    e.target.value === "" ? DEFAULT_DURATION : clampDuration(Number(e.target.value)),
+                  )
+                }
+                className="w-24"
+              />
+              {DURATION_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setDuration(preset)}
+                  aria-pressed={duration === preset}
+                  className={cn(
+                    "rounded-[10px] border px-3 py-1.5 text-[12px] transition-colors",
+                    duration === preset
+                      ? "border-accent bg-accent-soft text-accent"
+                      : "border-line text-ink-soft hover:border-ink",
+                  )}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <label className="flex items-center gap-2 text-[13px] text-ink-soft">
             <input
               type="checkbox"
@@ -469,41 +478,7 @@ export function SetupForm() {
         </CardContent>
       </Card>
 
-      {/* Persona */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t(messages, "setup.personaLabel")}</CardTitle>
-          <CardDescription>{t(messages, "setup.personaHint")}</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-3 pb-6 sm:grid-cols-3">
-          {PERSONAS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => setPersonaId(p.id)}
-              aria-pressed={personaId === p.id}
-              className={cn(
-                "flex flex-col gap-2 rounded-[10px] border p-3 text-left transition-colors",
-                personaId === p.id
-                  ? "border-accent bg-accent-soft"
-                  : "border-line hover:border-ink",
-              )}
-            >
-              <div
-                className="aspect-[4/3] w-full rounded-md border border-line bg-paper bg-cover bg-center"
-                style={{ backgroundImage: `url(${p.poster_url})` }}
-                aria-hidden
-              />
-              <div>
-                <p className="text-[14px] font-medium text-ink">{p.name}</p>
-                <p className="text-[12px] leading-snug text-muted">{p.style}</p>
-              </div>
-            </button>
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* Device check */}
+      {/* 4. Device check + start */}
       <Card>
         <CardHeader>
           <CardTitle>{t(messages, "setup.deviceLabel")}</CardTitle>
@@ -530,4 +505,14 @@ export function SetupForm() {
       </Button>
     </form>
   );
+}
+
+// Local fallback matching lib/setup-config's fallback voice; used only before
+// the config fetch resolves.
+function fallbackConfig(): UiConfig {
+  return {
+    languages: ["en"],
+    voices: { en: { default: "Alba", options: [{ id: "Alba", label: "Alba" }] } },
+    difficulties: ["easy", "medium", "hard"],
+  };
 }

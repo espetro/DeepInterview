@@ -39,9 +39,21 @@ async function postJson<T>(
   return parse(await res.json());
 }
 
-/** Kick off the prep pipeline for a CV + JD + company. */
-export function requestPrep(body: PrepRequest): Promise<PrepResponse> {
-  return postJson("/api/prep", body, (d) => PrepResponseSchema.parse(d));
+/** Kick off the prep pipeline for a CV + JD + company.
+ *
+ * `fast: true` hits the agent's fast path (no LLM prep graph): facts are
+ * ingested into the KB and the session is marked `ready` immediately, so the
+ * candidate can join the live room right away.
+ */
+export function requestPrep(
+  body: PrepRequest,
+  { fast = false }: { fast?: boolean } = {},
+): Promise<PrepResponse> {
+  return postJson(
+    fast ? "/api/prep?fast=true" : "/api/prep",
+    body,
+    (d) => PrepResponseSchema.parse(d),
+  );
 }
 
 /** Score a completed interview session. */
