@@ -89,6 +89,8 @@ export const en = {
     connected: "Connected — live interview UI lands in WP-2.",
     sessionId: "Session",
     transcript: "Transcript",
+    whiteboardTab: "Whiteboard",
+    agentSeesBoard: "the agent can see this",
     transcriptEmpty: "The conversation will appear here as you speak.",
     roleInterviewer: "Interviewer",
     roleYou: "You",
@@ -98,6 +100,7 @@ export const en = {
     unmute: "Unmute microphone",
     enableAudio: "Enable interview audio",
     elapsed: "Interview elapsed time",
+    remaining: "Time remaining",
     micUnavailable: "Microphone unavailable",
     micTypeFallback: "Until then, you can type your answers below.",
     micBlocked:

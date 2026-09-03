@@ -105,6 +105,8 @@ export const vi: Localized<Messages> = {
     connected: "Đã kết nối — giao diện phỏng vấn trực tiếp sẽ có ở WP-2.",
     sessionId: "Phiên",
     transcript: "Bản ghi",
+    whiteboardTab: "Bảng vẽ",
+    agentSeesBoard: "trợ lý có thể thấy bảng này",
     transcriptEmpty: "Cuộc trò chuyện sẽ hiện ở đây khi bạn nói.",
     roleInterviewer: "Người phỏng vấn",
     roleYou: "Bạn",
@@ -114,6 +116,7 @@ export const vi: Localized<Messages> = {
     unmute: "Bật micro",
     enableAudio: "Bật âm thanh phỏng vấn",
     elapsed: "Thời gian phỏng vấn đã qua",
+    remaining: "Thời gian còn lại",
     micUnavailable: "Không dùng được micro",
     micTypeFallback: "Trong lúc đó, bạn có thể gõ câu trả lời bên dưới.",
     micBlocked:

@@ -23,6 +23,8 @@ from __future__ import annotations
 
 from livekit.agents import Agent, RunContext, function_tool
 
+import time as time_mod
+
 from . import state
 from .state import InterviewUserdata
 
@@ -210,6 +212,64 @@ class Interviewer(Agent):
         return "Interview ended. Say nothing further."
 
     @function_tool
+    async def get_remaining_time(self, context: RunContext[InterviewUserdata]) -> str:
+        """Report how much interview time is left.
+
+        Returns remaining seconds/minutes and elapsed. Call it when the
+        candidate asks about time, or before deciding to start a long section.
+        """
+        ud = context.userdata
+        snapshot = state.remaining_time(ud, now=self._now())
+        if snapshot is None:
+            return "No time limit is configured for this session."
+        minutes = snapshot["remaining_sec"] // 60
+        return (
+            f"Remaining: {snapshot['remaining_sec']}s (~{minutes} min). "
+            f"Elapsed: {snapshot['elapsed_sec']}s of {snapshot['total_sec']}s."
+        )
+
+    @function_tool
+    async def time_checkpoint(
+        self, context: RunContext[InterviewUserdata], phase: str
+    ) -> str:
+        """Announce pacing at a phase change.
+
+        Call when moving to a new section or wrapping up a round; ``phase`` is a
+        short label like "coding" or "wrap-up". The result includes the time
+        left — mention it to the candidate naturally (e.g. "about 5 minutes
+        left").
+        """
+        ud = context.userdata
+        snapshot = state.remaining_time(ud, now=self._now())
+        if snapshot is None:
+            return f"Phase: {phase}. No time limit configured."
+        self._publish_timer(ud, snapshot)
+        minutes = snapshot["remaining_sec"] // 60
+        return (
+            f"Phase: {phase}. {snapshot['remaining_sec']}s remaining "
+            f"(~{minutes} min) of {snapshot['total_sec']}s total. Tell the "
+            "candidate the pacing in one natural sentence."
+        )
+
+    def _now(self) -> float:
+        """Session-clock reading consistent with the guard's monotonic clock."""
+        return time_mod.monotonic()
+
+    @staticmethod
+    def _publish_timer(ud: InterviewUserdata, snapshot: dict | None) -> None:
+        """Best-effort push of a timer snapshot to the web client (fire/forget)."""
+        if snapshot is None or ud.publish_timer is None:
+            return
+        try:
+            result = ud.publish_timer(snapshot)
+            if result is not None and hasattr(result, "__await__"):
+                import asyncio
+
+                asyncio.get_running_loop().create_task(result)  # type: ignore[arg-type]
+        except Exception:  # noqa: BLE001, S110 - publishing must never break a turn
+            pass
+
+    @function_tool
     async def start_coding_round(self, context: RunContext[InterviewUserdata]) -> Agent:
         """Hand off to the coding-round persona (native LiveKit agent handoff)."""
         from .handoffs import CodingRoundAgent
@@ -224,3 +284,19 @@ class Interviewer(Agent):
         from .handoffs import BehavioralAgent
 
         return BehavioralAgent(context.userdata, chat_ctx=self.chat_ctx)
+
+    # --- whiteboard (WP-5 v1): read-only view of the candidate's shared board.
+
+    @function_tool
+    async def read_whiteboard(self, context: RunContext[InterviewUserdata]) -> str:
+        """Read the candidate's shared whiteboard, if they opened it.
+
+        Returns a textual inventory of the board: shape counts, every text
+        label, and arrow connections. Use it when the candidate mentions the
+        whiteboard, asks you to look at what they drew, or you want to reference
+        their diagram in a follow-up question. Returns a clear empty-board
+        message when the candidate has not drawn anything.
+        """
+        from .whiteboard import render_whiteboard_text
+
+        return render_whiteboard_text(context.userdata.whiteboard_snapshot)

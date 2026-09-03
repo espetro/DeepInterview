@@ -36,6 +36,7 @@ import {
   RoomAudioRenderer,
   StartAudio,
   useConnectionState,
+  useDataChannel,
   useLocalParticipant,
   useTranscriptions,
   useVoiceAssistant,
@@ -58,11 +59,21 @@ import {
 } from "@/components/interview/transcript-panel";
 import { ControlBar } from "@/components/interview/control-bar";
 import { SessionTimer } from "@/components/interview/session-timer";
+import { parseTimerPayload, type TimerPayload } from "@/lib/timer";
 import { TextFallback } from "@/components/interview/text-fallback";
+// Whiteboard (v1): lazy, client-only tab next to the transcript. Kept as a
+// separate additive block so it never touches the timer/control areas.
+import {
+  WhiteboardPanel,
+  WHITEBOARD_TOPIC,
+} from "@/components/interview/whiteboard-panel";
 
 // The text-stream topic livekit-agents' RoomIO registers its chat handler on
 // (TOPIC_CHAT in the Python SDK). Typed answers MUST go here to reach the agent.
 const AGENT_CHAT_TOPIC = "lk.chat";
+// The agent publishes remaining-time snapshots on this topic (~every 30s and
+// at phase checkpoints) — see worker.py _publish_timer.
+const TIMER_TOPIC = "timer";
 
 const SAMPLE_TURNS: Turn[] = [
   {
@@ -251,6 +262,46 @@ function useAgentNeverJoined(
   return waitedTooLong && !everJoined.current;
 }
 
+/**
+ * Right-hand side panel (v1): a Transcript / Whiteboard tab pair. The tabs
+ * swap the panel content instead of splitting space, so neither view loses
+ * height. Live-only wrapper: `<WhiteboardPanel>` renders only under the
+ * connected room.
+ */
+function SidePanel({ turns, publishSnapshot }: { turns: Turn[]; publishSnapshot: (json: string) => void }) {
+  const messages = useMessages();
+  const [tab, setTab] = React.useState<"transcript" | "whiteboard">("transcript");
+  const tabBtn = (active: boolean) =>
+    cn(
+      "rounded-full px-3 py-1 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+      active
+        ? "bg-accent-soft text-accent"
+        : "text-faint hover:text-muted",
+    );
+  return (
+    <div className="flex h-full flex-col gap-2">
+      <div className="flex items-center gap-1" role="tablist" aria-label="Side panel">
+        <button type="button" role="tab" aria-selected={tab === "transcript"} className={tabBtn(tab === "transcript")} onClick={() => setTab("transcript")}>
+          {t(messages, "interview.transcriptTab")}
+        </button>
+        <button type="button" role="tab" aria-selected={tab === "whiteboard"} className={tabBtn(tab === "whiteboard")} onClick={() => setTab("whiteboard")}>
+          {t(messages, "interview.whiteboardTab")}
+        </button>
+      </div>
+      <div className="min-h-0 flex-1">
+        {tab === "transcript" ? (
+          <TranscriptPanel turns={turns} live className="h-full" />
+        ) : (
+          <WhiteboardPanel
+            className="h-full"
+            publish={publishSnapshot}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 function LiveSession({
   persona,
   sessionId,
@@ -294,6 +345,33 @@ function LiveSession({
   const [typedTurns, setTypedTurns] = React.useState<
     { id: string; text: string; at: number }[]
   >([]);
+
+/**
+ * Timer chip for the connected session: shows a countdown once the agent
+ * publishes "timer" payloads on the data channel, falling back to the plain
+ * elapsed clock until (or unless) one arrives (e.g. an older agent without
+ * timer support).
+ */
+function ConnectedTimer({ connected }: { connected: boolean }) {
+  const [timer, setTimer] = React.useState<TimerPayload | null>(null);
+  const onMessage = React.useCallback((msg: { payload: Uint8Array }) => {
+    try {
+      const parsed = parseTimerPayload(
+        JSON.parse(new TextDecoder().decode(msg.payload)),
+      );
+      if (parsed !== null) setTimer(parsed);
+    } catch {
+      // Not our payload (or malformed) — keep the last known state.
+    }
+  }, []);
+  useDataChannel(TIMER_TOPIC, onMessage);
+  return (
+    <SessionTimer
+      running={connected}
+      remainingOverride={timer !== null ? timer.remaining_sec : null}
+    />
+  );
+}
 
   // Map streaming transcriptions + typed answers → turns, in send/receive
   // order. "You" when the segment belongs to the local participant, otherwise
@@ -377,7 +455,21 @@ function LiveSession({
     <Scaffold
       persona={persona}
       stage={<VoiceStage persona={persona} />}
-      transcript={<TranscriptPanel turns={turns} live className="h-full" />}
+      transcript={
+        <SidePanel
+          turns={turns}
+          publishSnapshot={(json) => {
+            try {
+              localParticipant.publishData(new TextEncoder().encode(json), {
+                topic: WHITEBOARD_TOPIC,
+                reliable: false,
+              });
+            } catch {
+              // no-op if the room isn't ready
+            }
+          }}
+        />
+      }
       timer={<SessionTimer running={connected} />}
       controls={
         <div className="flex flex-col items-center gap-3">
