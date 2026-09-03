@@ -35,8 +35,8 @@ describe("parseUiConfig", () => {
   it("parses a well-formed agent payload", () => {
     const cfg = parseUiConfig(AGENT_PAYLOAD);
     expect(cfg.languages).toEqual(["en", "fr"]);
-    expect(cfg.voices.en.default).toBe("alba");
-    expect(cfg.voices.en.options[1]).toEqual({ id: "mariam", label: "Mariam" });
+    expect(cfg.voices.en?.default).toBe("alba");
+    expect(cfg.voices.en?.options[1]).toEqual({ id: "mariam", label: "Mariam" });
     expect(cfg.difficulties).toEqual(["easy", "medium", "hard"]);
   });
 
