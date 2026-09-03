@@ -1,5 +1,5 @@
 import { parseArgs } from "node:util";
-import { createDatabase, ping } from "./store/db";
+import { createDatabase, migrate, ping } from "./store/db";
 import { loadConfig, ConfigError } from "./config/load";
 import { probeProviders } from "./check/probe";
 import { Supervisor, type ChildSpec } from "./supervisor/supervisor";
@@ -33,6 +33,7 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   const db = createDatabase(config.files.db_path);
+  await migrate(db);
   const testMode = process.env.DI_TEST_MODE === "1";
 
   const supervisor = values["no-supervise"]

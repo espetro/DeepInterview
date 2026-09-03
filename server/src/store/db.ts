@@ -78,6 +78,13 @@ const MIGRATIONS = [
     whiteboard TEXT NOT NULL DEFAULT '',
     updated_at TEXT NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS reports (
+    session_id TEXT PRIMARY KEY REFERENCES sessions(id),
+    overall_score INTEGER NOT NULL,
+    coverage_pct INTEGER NOT NULL,
+    data TEXT NOT NULL,
+    generated_at TEXT NOT NULL
+  )`,
 ];
 
 /**
