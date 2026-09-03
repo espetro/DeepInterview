@@ -22,5 +22,9 @@ export const RoomMetadataSchema = z.object({
    * effective value to [20, 45] minutes.
    */
   duration_min: z.number().int().nullable().default(null),
+  /** Interview difficulty level (easy/medium/hard). Null when unset. */
+  difficulty: z.enum(["easy", "medium", "hard"]).nullable().default(null),
+  /** Preferred TTS voice id. Null when the worker should pick the default. */
+  voice: z.string().nullable().default(null),
 });
 export type RoomMetadata = z.infer<typeof RoomMetadataSchema>;

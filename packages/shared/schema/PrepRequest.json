@@ -38,6 +38,23 @@
         "mixed"
       ]
     },
+    "difficulty": {
+      "default": "medium",
+      "type": "string",
+      "enum": [
+        "easy",
+        "medium",
+        "hard"
+      ]
+    },
+    "voice": {
+      "type": "string"
+    },
+    "duration_min": {
+      "type": "integer",
+      "minimum": 5,
+      "maximum": 60
+    },
     "user_id": {
       "type": "string"
     }

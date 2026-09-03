@@ -17,6 +17,7 @@ Language = Literal["en", "vi", "es", "zh", "hi", "id", "pt", "fr", "de", "ja"]
 Section = Literal["intro", "behavioral", "technical", "coding", "wrap"]
 Seniority = Literal["intern", "junior", "mid", "senior", "staff", "principal"]
 MasteryLevel = Literal["weak", "developing", "solid", "strong"]
+Difficulty = Literal["easy", "medium", "hard"]
 
 
 def _validate_localized_text(v: dict[str, str]) -> dict[str, str]:
@@ -288,6 +289,11 @@ class RoomMetadata(BaseModel):
     # its default (max_interview_duration_sec) when absent, and clamps the
     # effective value to [20, 45] minutes. Mirrors packages/shared/src/room.ts.
     duration_min: int | None = None
+    # Interview difficulty level; None when unset. The live worker uses it to
+    # frame the interviewer prompt and clamp question depth.
+    difficulty: Difficulty | None = None
+    # Preferred TTS voice id; None -> the worker picks the language default.
+    voice: str | None = None
 
 
 # --- api ---------------------------------------------------------------------
@@ -303,6 +309,12 @@ class PrepRequest(BaseModel):
     # still validates; when present it is stamped on the `sessions` row so the
     # report's RLS read (auth.uid() = user_id) can see the row. Mirrors api.ts.
     user_id: str | None = None
+    # Interview difficulty level. Default "medium" so old callers validate.
+    difficulty: Difficulty = "medium"
+    # Optional preferred TTS voice id (see GET /api/config/ui voices).
+    voice: str | None = None
+    # Optional requested interview length in minutes (5-60; clamped server-side).
+    duration_min: int | None = None
 
 
 class PrepResponse(BaseModel):

@@ -17,6 +17,33 @@
           "type": "null"
         }
       ]
+    },
+    "difficulty": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "easy",
+            "medium",
+            "hard"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "voice": {
+      "default": null,
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "required": [

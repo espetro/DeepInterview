@@ -8,6 +8,13 @@ export const PrepRequestSchema = z.object({
   jd_text: z.string(),
   company: z.string(),
   language_mode: LanguageModeSchema,
+  // Interview difficulty level (mirrors config/ui.toml [difficulties].levels).
+  // Defaults to "medium" so old callers still validate.
+  difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
+  // Optional preferred TTS voice id (see GET /api/config/ui voices).
+  voice: z.string().optional(),
+  // Optional requested interview length in minutes (clamped server-side).
+  duration_min: z.number().int().min(5).max(60).optional(),
   // Owning user (Supabase auth uid). Optional so the offline/dev path (no auth)
   // still validates; when present the agent stamps it on the `sessions` row so
   // the report's RLS read (`auth.uid() = user_id`) can see the row.
