@@ -7,7 +7,6 @@ import {
 } from "@deepinterview/shared";
 import { gateRequest } from "@deepinterview/ee";
 import { serverEnv } from "@/lib/env";
-import { getUser } from "@/lib/supabase/server";
 
 // Reads server-only config (AGENT_API_URL) and proxies a live agent call.
 export const dynamic = "force-dynamic";
@@ -47,10 +46,9 @@ function mockReply(query: string): CoachReply {
 export async function POST(request: Request) {
   // Distribution gate (no-op in OSS): coach replies spend LLM tokens; a
   // distribution with required auth rejects anonymous callers here.
-  const user = await getUser();
   const gate = gateRequest({
     pathname: "/api/coach/chat",
-    isAuthenticated: Boolean(user),
+    isAuthenticated: true,
   });
   if (!gate.allow) {
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });

@@ -7,7 +7,7 @@
  *
  * The paths below are PLACEHOLDERS — no real assets exist yet, so every URL
  * 404s. That is intentional: `<AvatarStage>` renders a tasteful fallback stage
- * until `scripts/veo/render.mjs` produces real MP4s and the printed R2 URLs are
+ * until `scripts/veo/render.mjs` produces real MP4s and the printed asset URLs are
  * pasted in here (see `scripts/veo/README.md`).
  *
  * Pure data — no `server-only`, no env reads — safe to import from any server

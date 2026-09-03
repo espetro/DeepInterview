@@ -5,13 +5,12 @@ export const dynamic = "force-dynamic";
 
 /**
  * Prep screen shell (the step BETWEEN setup and the live interview). Server
- * component: gates auth, then hands the session id + chosen persona to the
+ * component: hands the session id + chosen persona to the
  * `<PrepSummary>` client poller, which shows the agents working and then the
  * "what we found" bento.
  *
- * Next 15: `params`/`searchParams` are Promises — await them. Page-level auth:
- * when Supabase is configured and there's no user, redirect to /login; offline
- * (dev) we proceed without auth.
+ * Next 15: `params`/`searchParams` are Promises — await them. No auth gate: OSS
+ * runs without sign-in (the unguessable session id is the capability).
  */
 export default async function SessionPage({
   params,

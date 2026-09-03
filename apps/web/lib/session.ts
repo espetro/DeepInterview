@@ -25,7 +25,7 @@ export const SessionViewSchema = z.object({
   prep_warnings: z.array(z.string()),
   context: InterviewContextSchema.nullable(),
   // Present once post-interview scoring has run; the report reads it from here
-  // (via the agent API) so no Supabase/auth is needed on the read path.
+  // (via the agent API) so no auth is needed on the read path.
   scorecard: ScoreCardSchema.nullish(),
 });
 export type SessionView = z.infer<typeof SessionViewSchema>;

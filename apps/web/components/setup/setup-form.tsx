@@ -47,8 +47,8 @@ type Step = { key: string; label: string };
 // block obviously-empty / garbage-short submits with a helpful nudge.
 const MIN_JD_CHARS = 40;
 const MIN_CV_CHARS = 30;
-// Max CV file size. Matches the /api/upload ceiling; also keeps the no-R2
-// data-URL fallback (base64 is ~+33%) under the Next server-action body limit.
+// Max CV file size. Keeps the base64 data-URL path (base64 is ~+33%) under
+// the Next server-action body limit.
 const MAX_CV_BYTES = 10 * 1024 * 1024;
 
 // One-click sample inputs for fast testing / demos. Each is a matched CV + JD +
@@ -78,7 +78,7 @@ const SAMPLES = [
   },
 ] as const;
 
-export function SetupForm({ r2Configured }: { r2Configured: boolean }) {
+export function SetupForm() {
   const router = useRouter();
   const messages = useMessages();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -145,9 +145,9 @@ export function SetupForm({ r2Configured }: { r2Configured: boolean }) {
   }, []);
 
   /**
-   * Read a file as a base64 `data:` URL of its RAW bytes (no R2 configured).
-   * The agent base64-decodes this and parses the real document (PDF/DOCX) —
-   * unlike `file.text()`, which mangles binary formats into garbage.
+   * Read a file as a base64 `data:` URL of its RAW bytes. The agent
+   * base64-decodes this and parses the real document (PDF/DOCX) — unlike
+   * `file.text()`, which mangles binary formats into garbage.
    */
   function fileToDataUrl(f: File): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -157,31 +157,6 @@ export function SetupForm({ r2Configured }: { r2Configured: boolean }) {
         reject(reader.error ?? new Error("Could not read file."));
       reader.readAsDataURL(f);
     });
-  }
-
-  /** Upload the chosen file to R2 (presign → PUT) and return its public URL. */
-  async function uploadToR2(f: File): Promise<string> {
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        filename: f.name,
-        content_type: f.type || "application/octet-stream",
-        size: f.size,
-      }),
-    });
-    if (!res.ok) throw new Error("Upload could not be prepared.");
-    const { uploadUrl, publicUrl } = (await res.json()) as {
-      uploadUrl: string;
-      publicUrl: string;
-    };
-    const put = await fetch(uploadUrl, {
-      method: "PUT",
-      headers: { "content-type": f.type || "application/octet-stream" },
-      body: f,
-    });
-    if (!put.ok) throw new Error("File upload failed.");
-    return publicUrl;
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -200,18 +175,15 @@ export function SetupForm({ r2Configured }: { r2Configured: boolean }) {
     setActiveStep(0);
 
     try {
-      // CV resolution: upload only when a file is chosen AND R2 is configured.
-      // Otherwise pass the pasted text directly as cv_url — the prep pipeline
-      // treats a non-URL cv_url as the document itself (offline-friendly).
+      // CV resolution: pass the pasted text directly as cv_url — the prep
+      // pipeline treats a non-URL cv_url as the document itself. When a file
+      // is chosen, send the RAW bytes as a base64 data URL so the agent can
+      // parse the real document (NOT file.text(), which turns a PDF/DOCX into
+      // binary garbage).
       let cv_url: string;
-      if (file && r2Configured) {
-        cv_url = await uploadToR2(file);
-      } else if (cvText.trim()) {
+      if (cvText.trim()) {
         cv_url = cvText.trim();
       } else if (file) {
-        // File chosen but no storage — send the RAW bytes as a base64 data URL
-        // so the agent can parse the real document (NOT file.text(), which
-        // turns a PDF/DOCX into binary garbage).
         cv_url = await fileToDataUrl(file);
       } else {
         cv_url = "";
@@ -227,12 +199,6 @@ export function SetupForm({ r2Configured }: { r2Configured: boolean }) {
       });
 
       if (!result.ok) {
-        // Required-auth distribution and the session expired mid-form →
-        // sign back in, then return to setup.
-        if (result.reason === "auth_required") {
-          router.push("/login?next=/setup");
-          return;
-        }
         setError(result.error);
         setSubmitting(false);
         return;

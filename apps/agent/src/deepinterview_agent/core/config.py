@@ -146,6 +146,12 @@ class Settings(BaseSettings):
     # When set, the knowledge adapter stores/queries a local sqlite DB with a
     # sqlite-vec virtual table (no Docker, no sidecar). Env: SQLITE_KB_PATH.
     sqlite_kb_path: str = ".deepinterview/kb.sqlite3"
+    # --- sessions (durable local store) -----------------------------------------
+    # When set, the session repository persists sessions to this local SQLite
+    # file so the API process and the live worker (separate processes) share
+    # state across restarts. Empty -> Supabase (if configured) or in-memory.
+    # Env: SQLITE_SESSIONS_PATH.
+    sqlite_sessions_path: str = ""
 
     # --- internal API auth (opt-in) ------------------------------------------
     # The agent API is trust-the-network by design (reads are capability-guarded

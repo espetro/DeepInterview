@@ -1,10 +1,5 @@
 import { notFound } from "next/navigation";
-import {
-  isLiveKitConfigured,
-  isSupabaseConfigured,
-  serverEnv,
-} from "@/lib/env";
-import { getUser } from "@/lib/supabase/server";
+import { isLiveKitConfigured, serverEnv } from "@/lib/env";
 import { createInterviewToken } from "@/lib/livekit";
 import { getPersona } from "@/lib/personas";
 import { SessionViewSchema, type SessionView } from "@/lib/session";
@@ -16,9 +11,8 @@ export const dynamic = "force-dynamic";
 /**
  * Live interview screen (WP-2). Server component.
  *
- * Next 15: `params`/`searchParams` are Promises — await them. Page-level auth:
- * when Supabase is configured and there's no user, we still proceed — OSS runs
- * with no sign-in, and the unguessable session id IS the capability (see below).
+ * Next 15: `params`/`searchParams` are Promises — await them. No auth gate:
+ * OSS runs with no sign-in, and the unguessable session id IS the capability.
  *
  * Token: minted server-side via `createInterviewToken` behind an
  * `isLiveKitConfigured()` guard, only after the session is verified to exist and
@@ -57,26 +51,23 @@ export default async function InterviewPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ persona?: string }>;
+  searchParams: Promise<{ persona?: string; duration?: string }>;
 }) {
   const { id } = await params;
-  const { persona: personaId } = await searchParams;
+  const { persona: personaId, duration: durationParam } = await searchParams;
 
-  let identity = `dev-${id}`;
-  let name: string | undefined;
+ // Requested interview length in minutes. Query-param driven (minimal path:
+ // no setup→prep→session plumbing). Clamped to the same [20, 45] band the
+ // agent enforces on room metadata; anything invalid falls back to undefined
+ // so the agent applies its own default.
+ const parsedDuration = Number.parseInt(durationParam ?? "", 10);
+ const durationMin =
+   Number.isFinite(parsedDuration)
+     ? Math.min(45, Math.max(20, parsedDuration))
+     : undefined;
 
-  // No auth gate (OSS): an anonymous visitor joins with a session-scoped dev
-  // identity. When a user IS signed in (hosted) we use their real identity.
-  if (isSupabaseConfigured()) {
-    const user = await getUser();
-    if (user) {
-      identity = user.id;
-      name =
-        (user.user_metadata?.name as string | undefined) ??
-        user.email ??
-        undefined;
-    }
-  }
+  const identity = "dev-local";
+  const name: string | undefined = undefined;
 
   const persona = getPersona(personaId);
 
@@ -111,7 +102,7 @@ export default async function InterviewPage({
       room,
       identity,
       name,
-      metadata: { session_id: room },
+      metadata: { session_id: room, duration_min: durationMin },
     });
     token = minted.token;
     url = minted.url;

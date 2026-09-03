@@ -15,8 +15,7 @@ import { Flashcards } from "@/components/prep/flashcards";
 import { MasteryGraphView } from "@/components/prep/mastery-graph";
 import { SocraticCta } from "@/components/prep/socratic-cta";
 
-// Reads server-only config (`isSupabaseConfigured()`) and the per-request user;
-// must not be statically prerendered.
+// Reads server-only config; must not be statically prerendered.
 export const dynamic = "force-dynamic";
 
 /**
@@ -46,8 +45,7 @@ async function loadScorecard(id: string): Promise<ScoreCard | null> {
  * chat, a spaced-repetition deck, a mastery graph, and a voice Socratic mode —
  * then loops the learner back into a new mock.
  *
- * Server shell: auth-gates only when Supabase is configured (offline it
- * proceeds), then composes the client islands. The report's "Coach me" CTA
+ * Server shell: composes the client islands (no auth — OSS runs without sign-in). The report's "Coach me" CTA
  * links here with `?session=`, so the plan is built from THAT interview's real
  * scorecard; the sample card is ONLY the no-session (or lookup-miss) fallback,
  * and is labeled as a preview.

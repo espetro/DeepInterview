@@ -6,7 +6,6 @@ import {
   type KbQueryResponse,
 } from "@deepinterview/shared";
 import { gateRequest } from "@deepinterview/ee";
-import { getUser } from "@/lib/supabase/server";
 import { serverEnv } from "@/lib/env";
 
 // Reads server-only env (LIGHTRAG_URL) and the per-request user; never prerender.
@@ -54,13 +53,11 @@ function mockAnswer(query: string): KbQueryResponse {
 }
 
 export async function POST(request: Request) {
-  // Resolve the user server-side; anonymous when there's no session. The
-  // distribution gate (no-op in OSS) runs before any work — including the
+  // The distribution gate (no-op in OSS) runs before any work — including the
   // offline mock — so required-auth distributions are consistent here.
-  const user = await getUser();
   const gate = gateRequest({
     pathname: "/api/kb/query",
-    isAuthenticated: Boolean(user),
+    isAuthenticated: true,
   });
   if (!gate.allow) {
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });

@@ -10,6 +10,8 @@ lazy-imports the ``supabase`` SDK.
 
 from __future__ import annotations
 
+import asyncio
+import json
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 from uuid import uuid4
@@ -309,12 +311,226 @@ class SupabaseRepository:
         await self._exec(lambda: self._table().update(values).eq("id", session_id).execute())
 
 
+# --- SQLite (local durable) repository -----------------------------------------
+
+
+class SqliteRepository:
+    """Persist sessions to a local SQLite file (single JSON doc per session).
+
+    The fully-local run has no Supabase: the API process and the live worker
+    are separate processes that must see the same sessions, so a process-local
+    :class:`MemoryRepository` is not enough. Each operation opens its own
+    connection (multiprocess-safe with WAL + busy_timeout), and the whole
+    session row is stored as one JSON document updated via read-modify-write —
+    mirroring the Memory/Supabase semantics exactly.
+    """
+
+    def __init__(self, path: str) -> None:
+        self._path = path
+
+    def _connect(self) -> Any:
+        import sqlite3
+
+        conn = sqlite3.connect(self._path, timeout=5.0, check_same_thread=False)
+        conn.execute("PRAGMA busy_timeout = 5000")
+        return conn
+
+    def _init(self) -> None:
+        import sqlite3
+
+        conn = self._connect()
+        try:
+            conn.execute("PRAGMA journal_mode = WAL")
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS sessions ("
+                "session_id TEXT PRIMARY KEY,"
+                "data TEXT NOT NULL,"
+                "updated_at TEXT NOT NULL)"
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    async def _exec(self, fn: Any) -> Any:
+        return await asyncio.to_thread(fn)
+
+    # --- row (JSON doc) helpers ------------------------------------------------
+
+    def _insert(self, row: _SessionRow) -> None:
+        from datetime import datetime, timezone
+
+        self._init()
+        conn = self._connect()
+        try:
+            conn.execute(
+                "INSERT OR REPLACE INTO sessions (session_id, data, updated_at) VALUES (?, ?, ?)",
+                (row.id, json.dumps(row.__dict__), datetime.now(timezone.utc).isoformat()),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _read_row(self, session_id: str) -> _SessionRow | None:
+        self._init()
+        conn = self._connect()
+        try:
+            cur = conn.execute(
+                "SELECT data FROM sessions WHERE session_id = ?", (session_id,)
+            )
+            fetched = cur.fetchone()
+        finally:
+            conn.close()
+        if fetched is None:
+            return None
+        return _SessionRow(**json.loads(fetched[0]))
+
+    def _update(self, session_id: str, mutate: Any) -> None:
+        """Read-modify-write the JSON doc under an immediate transaction."""
+        self._init()
+        from datetime import datetime, timezone
+
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            cur = conn.execute(
+                "SELECT data FROM sessions WHERE session_id = ?", (session_id,)
+            )
+            fetched = cur.fetchone()
+            if fetched is not None:
+                row = _SessionRow(**json.loads(fetched[0]))
+                mutate(row)
+                conn.execute(
+                    "UPDATE sessions SET data = ?, updated_at = ? WHERE session_id = ?",
+                    (json.dumps(row.__dict__), datetime.now(timezone.utc).isoformat(), session_id),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _require_update(self, session_id: str, mutate: Any) -> None:
+        """Like ``_update`` but raise KeyError on unknown ids (Memory semantics)."""
+
+        def _m(row: _SessionRow) -> None:
+            mutate(row)
+
+        row = self._read_row(session_id)
+        if row is None:
+            raise KeyError(f"Unknown session_id: {session_id}")
+        self._update(session_id, _m)
+
+    # --- protocol methods --------------------------------------------------------
+
+    async def create_session(self, req: PrepRequest) -> str:
+        session_id = _new_session_id()
+        await self._exec(
+            lambda: self._insert(
+                _SessionRow(
+                    id=session_id,
+                    status="prep",
+                    user_id=req.user_id,
+                    company=req.company,
+                    cv_url=req.cv_url,
+                    jd_text=req.jd_text,
+                    language_mode=req.language_mode.model_dump(),
+                )
+            )
+        )
+        return session_id
+
+    async def save_context(self, session_id: str, ctx: InterviewContext) -> None:
+        data = ctx.model_dump()
+        await self._exec(
+            lambda: self._require_update(session_id, lambda r: setattr(r, "context", data))
+        )
+
+    async def load_context(self, session_id: str) -> InterviewContext | None:
+        row = await self._exec(lambda: self._read_row(session_id))
+        if row is None or row.context is None:
+            return None
+        return InterviewContext.model_validate(row.context)
+
+    async def update_status(self, session_id: str, status: str) -> None:
+        await self._exec(
+            lambda: self._require_update(session_id, lambda r: setattr(r, "status", status))
+        )
+
+    async def append_answer(self, session_id: str, a: AnswerRecord) -> None:
+        answer = a.model_dump()
+
+        def _m(row: _SessionRow) -> None:
+            row.answers.append(answer)
+            if row.context is not None:
+                ctx = InterviewContext.model_validate(row.context)
+                ctx.answers.append(a)
+                row.context = ctx.model_dump()
+
+        await self._exec(lambda: self._require_update(session_id, _m))
+
+    async def save_scorecard(self, session_id: str, sc: ScoreCard) -> None:
+        data = sc.model_dump()
+        await self._exec(
+            lambda: self._require_update(session_id, lambda r: setattr(r, "scorecard", data))
+        )
+
+    async def save_transcript(self, session_id: str, turns: list[dict]) -> None:
+        data = list(turns)
+        await self._exec(
+            lambda: self._require_update(session_id, lambda r: setattr(r, "transcript", data))
+        )
+
+    async def save_coach_transcript(self, session_id: str, turns: list[dict]) -> None:
+        data = list(turns)
+        await self._exec(
+            lambda: self._require_update(session_id, lambda r: setattr(r, "coach_transcript", data))
+        )
+
+    async def mark_progress(self, session_id: str, step: str) -> None:
+        def _m(row: _SessionRow) -> None:
+            if step not in row.progress:
+                row.progress.append(step)
+
+        await self._exec(lambda: self._require_update(session_id, _m))
+
+    async def add_warnings(self, session_id: str, warnings: list[str]) -> None:
+
+        def _m(row: _SessionRow) -> None:
+            for w in warnings:
+                if w not in row.warnings:
+                    row.warnings.append(w)
+
+        await self._exec(lambda: self._require_update(session_id, _m))
+
+    async def get_session_view(self, session_id: str) -> SessionView | None:
+        row = await self._exec(lambda: self._read_row(session_id))
+        if row is None:
+            return None
+        context = InterviewContext.model_validate(row.context) if row.context else None
+        scorecard = ScoreCard.model_validate(row.scorecard) if row.scorecard else None
+        return SessionView(
+            session_id=row.id,
+            status=row.status,
+            progress=list(row.progress),
+            prep_warnings=list(row.warnings),
+            context=context,
+            scorecard=scorecard,
+        )
+
+    # --- test / inspection helpers (not part of the protocol) ----------------
+    def get_status(self, session_id: str) -> str | None:
+        row = self._read_row(session_id)
+        return row.status if row else None
+
+
 # Module-wide singleton so MemoryRepository state survives across build_deps() calls.
 _MEMORY_REPO = MemoryRepository()
 
 
 def get_repository(settings: Settings) -> SessionRepository:
-    """Return a repository: Supabase if fully configured, else the memory singleton."""
+    """Return a repository: local SQLite when configured, Supabase if fully
+    configured, else the memory singleton."""
+    sqlite_path = getattr(settings, "sqlite_sessions_path", "")
+    if sqlite_path:
+        return SqliteRepository(sqlite_path)
     if settings.supabase_url and settings.supabase_service_role_key:
         return SupabaseRepository(settings.supabase_url, settings.supabase_service_role_key)
     if settings.supabase_url or settings.supabase_service_role_key:
