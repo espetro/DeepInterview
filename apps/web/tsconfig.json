@@ -7,7 +7,6 @@
     "moduleResolution": "Bundler",
     "allowJs": true,
     "noEmit": true,
-    "incremental": true,
     "plugins": [{ "name": "next" }],
     "paths": { "@/*": ["./*"] }
   },
