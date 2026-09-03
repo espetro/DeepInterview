@@ -2,8 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@nanostores/react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { getSession, getTurns, postTextTurn } from "../lib/api";
+import { getSession, getTurns, postTextTurn, pushToolState } from "../lib/api";
 import { $editorBuffer, $muted, $question, $transcriptOpen } from "../stores/session";
+import { $whiteboard } from "../stores/session";
 
 const WhiteboardPanel = lazy(() =>
   import("../components/whiteboard-panel").then((m) => ({ default: m.WhiteboardPanel })),
@@ -37,6 +38,17 @@ function Interview() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const [text, setText] = useState("");
+  const editor = useStore($editorBuffer);
+  const whiteboard = useStore($whiteboard);
+
+  // Mirror browser-held editor/whiteboard state to di so the voice agent can read it.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      pushToolState(id, { editor, whiteboard }).catch(() => {});
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [id, editor, whiteboard]);
+
 
   const secsLeft = useCountdown(session?.duration_min ?? 30);
   const mm = String(Math.floor(secsLeft / 60)).padStart(2, "0");

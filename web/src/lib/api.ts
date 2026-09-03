@@ -61,6 +61,20 @@ export async function getReport(id: string): Promise<unknown> {
   return res.json();
 }
 
+export interface ToolStateDto {
+  editor: string;
+  whiteboard: string;
+}
+
+export async function pushToolState(id: string, state: ToolStateDto): Promise<void> {
+  const res = await fetch(`${BASE}/v1/sessions/${id}/tools`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(state),
+  });
+  if (!res.ok) throw new Error(`push tool state failed: ${res.status}`);
+}
+
 export async function postTextTurn(id: string, text: string): Promise<TurnDto> {
   const turn = {
     id: crypto.randomUUID(),
