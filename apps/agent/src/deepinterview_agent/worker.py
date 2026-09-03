@@ -30,6 +30,8 @@ from livekit.agents import (
 from .core.config import get_settings
 from .core.deps import build_deps
 from .core.logging import get_logger
+from .core.observability import init_observability
+from .core.tracing import add_event, start_trace
 from .live import state
 from .live.director import Director
 from .live.flusher import TranscriptFlusher
@@ -112,6 +114,11 @@ def wire_transcript_capture(
         role = getattr(item, "role", None)
         text = getattr(item, "text_content", None)
         if role in ("user", "assistant") and text:
+            # Land every committed turn in the live trace too (role + size only,
+            # never the verbatim text), so `deepinterview traces show` replays
+            # the interview's shape. No-op when tracing is disabled or when no
+            # live trace is open (e.g. the study-coach session).
+            add_event("turn", {"role": role, "chars": len(text)})
             if tag_questions:
                 state.add_turn(userdata, role, text)
             else:
@@ -650,6 +657,7 @@ async def _load_context_via_api(session_id: str, settings) -> InterviewContext |
 
 async def entrypoint(ctx: JobContext) -> None:
     settings = get_settings()
+    init_observability(settings)
     deps = build_deps(settings)
 
     # Fail fast on a misconfigured live provider before the candidate connects,
@@ -669,6 +677,21 @@ async def entrypoint(ctx: JobContext) -> None:
     # Route STT/TTS by the interview's primary language so a non-English session
     # (e.g. Vietnamese) is both understood and spoken — not just prompted for.
     lang_mode = interview_ctx.plan.language_mode
+
+    # Trace the live session: turn events (wire_transcript_capture, below) land
+    # here so `deepinterview traces show` / GET /api/traces/{id} replay the
+    # interview's shape. The trace spans the whole job — opened here, closed in
+    # the shutdown callback the SDK always runs at job end. No-op when disabled.
+    _live_trace = start_trace(
+        "live",
+        session_id=session_id,
+        metadata={
+            "language": lang_mode.primary,
+            "questions": len(interview_ctx.plan.questions),
+        },
+    )
+    _live_trace.__enter__()
+    add_event("live.start", {"questions": len(interview_ctx.plan.questions)})
     # Built once and shared: the local Whisper STT needs a VAD to segment the
     # mic stream, and loading Silero twice would waste the prewarm.
     vad = build_vad(ctx.proc)
@@ -802,6 +825,21 @@ async def entrypoint(ctx: JobContext) -> None:
         return True
 
     async def _on_shutdown() -> None:
+        # Close the live trace first so the full session (turns + answers) is
+        # queryable the moment the job drains.
+        try:
+            add_event(
+                "live.end",
+                {
+                    "turns": len(userdata.transcript),
+                    "answers": len(
+                        [a for a in userdata.ctx.answers if (a.transcript or "").strip()]
+                    ),
+                },
+            )
+        finally:
+            _live_trace.__exit__(None, None, None)
+
         # Stop the checkpointer first so it can't race the final, authoritative
         # persist below.
         await flusher.aclose()
@@ -879,6 +917,7 @@ def main() -> None:
     # livekit-agents reads LIVEKIT_URL/API_KEY/API_SECRET from os.environ; we keep
     # them in Settings (.env), so pass them through explicitly to WorkerOptions.
     settings = get_settings()
+    init_observability(settings)
     cli.run_app(
         WorkerOptions(
             entrypoint_fnc=entrypoint,

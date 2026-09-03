@@ -15,6 +15,7 @@ from .adapters.llm import get_llm
 from .adapters.search import get_search
 from .config import Settings, get_settings
 from .persistence.repository import SessionRepository, get_repository
+from .tracing import TracedLLM
 
 
 @dataclass
@@ -28,9 +29,14 @@ class Deps:
 
 
 def _assemble(settings: Settings) -> Deps:
+    raw_llm = get_llm(settings)
+    provider = (settings.llm_provider or "mock").lower()
     return Deps(
         settings=settings,
-        llm=get_llm(settings),
+        # Every LLM call (prep/post/scoring, mock included) is timed + counted
+        # into the active trace. The wrapper delegates the Protocol, so this
+        # is transparent to pipelines; tracing no-ops when disabled.
+        llm=TracedLLM(raw_llm, provider=provider),
         search=get_search(settings),
         embeddings=get_embeddings(settings),
         knowledge=get_knowledge(settings),

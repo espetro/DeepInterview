@@ -5,26 +5,23 @@
 """WP-12 — gated, provider-agnostic observability for the agent.
 
 Design (see docs/DEPLOY.md):
-  - ZERO config = clean no-op. With no ``SENTRY_DSN`` / ``LANGFUSE_*`` set,
-    nothing initializes and nothing heavy is imported.
+  - ZERO config = local JSONL tracing only (``TRACE_DIR``). With no
+    ``SENTRY_DSN`` / ``LANGFUSE_*`` set, nothing hosted initializes.
   - ``sentry-sdk`` and ``langfuse`` are the optional ``observability`` extra
     (NOT installed by default). Imports are lazy + wrapped in ``try/except
     ImportError`` so a missing package is a silent no-op.
   - Never raises: tracing must never break a prep run or a live turn.
 
-This module is intentionally NOT wired into ``app.py`` / ``worker.py`` so the
-default offline path stays dependency-free. To enable tracing, install the
-extra and call :func:`init_observability` at process start, e.g.::
+Wire-up: :func:`init_observability` is called once at process start from
+``app.create_app()`` and ``worker.main()``/``entrypoint``. It syncs Settings
+into the local tracer (see :mod:`core.tracing`) and initializes Sentry /
+Langfuse when configured. ``TRACE_ENABLED=0`` disables even local tracing
+(the test suite sets this; see ``tests/conftest.py``).
 
-    # apps/agent/src/deepinterview_agent/app.py
-    from .core.observability import init_observability
-    init_observability(get_settings())
-
-    # apps/agent/src/deepinterview_agent/worker.py (entrypoint)
-    init_observability(get_settings())
-
-Install the extra with::  uv sync --extra observability
-and set ``SENTRY_DSN`` and/or ``LANGFUSE_PUBLIC_KEY`` + ``LANGFUSE_SECRET_KEY``.
+Per-call tracing lives in :mod:`core.tracing` — :func:`start_trace`,
+:func:`start_span`, :func:`add_event`, the :func:`traced` decorator, and the
+:class:`TracedLLM` adapter wrapper. This module re-exports the pieces call
+sites need so existing imports keep working.
 """
 
 from __future__ import annotations
@@ -33,6 +30,8 @@ import os
 from typing import Any, Protocol
 
 from .logging import get_logger
+from .tracing import init_tracing
+from .tracing import start_span as _real_start_span
 
 _log = get_logger("deepinterview.observability")
 
@@ -42,9 +41,9 @@ _initialized = False
 class _Settings(Protocol):
     """Structural type — anything exposing these optional attrs works.
 
-    The agent ``Settings`` (core/config.py) does not yet declare Sentry/Langfuse
-    fields; we read them from the environment as a fallback so this module works
-    with or without those fields being added later.
+    The agent ``Settings`` (core/config.py) declares the tracing fields
+    (``trace_enabled``/``trace_dir``/``trace_include_prompts``/``langfuse_*``/
+    ``sentry_dsn``); older/stub settings fall back to env via ``getattr``.
     """
 
 
@@ -67,15 +66,30 @@ def _langfuse_keys(settings: Any | None) -> tuple[str | None, str | None]:
 
 
 def init_observability(settings: Any | None = None) -> None:
-    """Initialize Sentry and/or Langfuse if configured. No-op otherwise.
+    """Initialize local tracing + Sentry and/or Langfuse if configured.
 
     Safe to call multiple times and safe to call with the optional packages not
-    installed (logs a debug line and returns).
+    installed (logs a debug line and returns). Local JSONL tracing follows
+    ``trace_enabled``/``TRACE_ENABLED``; hosted providers need their keys.
     """
     global _initialized
     if _initialized:
         return
     _initialized = True  # mark first so a failure doesn't loop on retry.
+
+    # Local tracing first (no deps): sync Settings (.env + env) into the tracer
+    # so file-based tracking works out of the box, including via `docker compose`.
+    try:
+        init_tracing(
+            enabled=getattr(settings, "trace_enabled", None),
+            trace_dir=getattr(settings, "trace_dir", None),
+            include_prompts=getattr(settings, "trace_include_prompts", None),
+            langfuse_public_key=getattr(settings, "langfuse_public_key", None),
+            langfuse_secret_key=getattr(settings, "langfuse_secret_key", None),
+            langfuse_host=getattr(settings, "langfuse_host", None),
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        _log.warning("tracing init failed: %s", exc)
 
     dsn = _sentry_dsn(settings)
     if dsn:
@@ -98,7 +112,7 @@ def init_observability(settings: Any | None = None) -> None:
         try:
             import langfuse  # noqa: F401
 
-            _log.info("Langfuse credentials present; LLM tracing available")
+            _log.info("Langfuse credentials present; hosted tracing enabled")
         except ImportError:
             _log.debug("langfuse not installed; skipping (extra: observability)")
         except Exception as exc:  # pragma: no cover - defensive
@@ -123,13 +137,23 @@ class _NoOpSpan:
         return None
 
 
-def get_tracer() -> _NoOpTracer:
-    """Return a tracer. Currently always the no-op fallback.
+def get_tracer() -> Any:
+    """Return a tracer with ``start_span(name, **attrs)``.
 
-    Provided so call sites can `with get_tracer().start_span(...)` unconditionally;
-    swap the implementation here once a real tracing provider is wired in.
+    Now backed by the real local tracer (:mod:`core.tracing`): with tracing
+    enabled it records JSONL spans (+ OTel/Langfuse when configured),
+    otherwise it yields disabled span ids — so call sites can
+    ``with get_tracer().start_span(...)`` unconditionally.
     """
-    return _NoOpTracer()
+    from . import tracing as _tracing
+
+    class _Tracer:
+        def start_span(self, name: str, **kw: Any) -> Any:
+            return _real_start_span(name, **kw)
+
+    # Keep the old no-op importable for tests that patch it, but default to real.
+    _ = _tracing
+    return _Tracer()
 
 
 def capture_error(error: BaseException) -> None:

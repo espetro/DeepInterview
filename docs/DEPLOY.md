@@ -138,14 +138,24 @@ the naive backend, and observability is off. The build and tests stay green.
 
 ## 6. One dashboard: latency · cost · errors
 
-Provider-agnostic and **gated** — no DSN ⇒ no-op, and the SDKs are optional
-extras that are **not installed by default** (so the green build never depends
-on them):
+**Local traces work out of the box; hosted providers are gated.** The agent
+writes one JSONL file per run to `TRACE_DIR` (default `.deepinterview/`,
+gitignored) — no keys, no extra install:
 
-- **LLM tracing & cost → Langfuse.** Set `LANGFUSE_PUBLIC_KEY` +
-  `LANGFUSE_SECRET_KEY`. Traces every prep/post/live LLM call with token counts
-  → per-interview cost, latency per node, and prompt/response inspection. This
-  is the single pane for the per-interview unit cost and where you watch it
+- **Agent work → local traces + CLI.** Every prep/score/live/coach run opens a
+  trace (`prep` / `score` / `live` / `coach` + `session_id`); prep nodes,
+  scoring stages, and every LLM call (mock included) become timed spans.
+  Inspect with `deepinterview traces list`, replay with
+  `deepinterview traces show <trace-id> [--json]`, or serve over HTTP via
+  `GET /api/traces[?session_id=&limit=]` and `GET /api/traces/{id}`.
+  `TRACE_ENABLED=0` disables even local tracing (the test suite sets this);
+  `TRACE_INCLUDE_PROMPTS=1` additionally stores short prompt previews
+  (default off — traces hold lengths/metadata only, no CV/JD text).
+- **LLM tracing & cost → Langfuse (opt-in).** Set `LANGFUSE_PUBLIC_KEY` +
+  `LANGFUSE_SECRET_KEY` (+ optional `LANGFUSE_HOST`) and
+  `uv sync --extra observability`: spans are additionally forwarded as OTel
+  spans under the same trace ids (`traces open <id>` prints the lookup).
+  This is the single pane for per-interview unit cost and where you watch it
   trend down as you optimize.
 - **Voice / turn latency → LiveKit Cloud metrics.** STT → LLM → TTS turn timing
   and session health, co-located in SGP.
@@ -161,13 +171,13 @@ on them):
   neither `tsc` nor `next build` resolves it, and a missing package is caught at
   runtime. To enable: `pnpm add @sentry/nextjs` (in `apps/web`) and set a DSN.
 - **Agent** — `apps/agent/src/deepinterview_agent/core/observability.py` exposes
-  `init_observability(settings)`, `get_tracer()`, `capture_error()`.
+  `init_observability(settings)` (called once from `app.create_app()` and both
+  workers' `main()`/`entrypoint`); per-call tracing lives in
+  `core/tracing.py` (`start_trace` / `start_span` / `add_event` / `traced` /
+  `TracedLLM` + `list_traces` / `read_trace` for the viewers).
   `sentry-sdk` / `langfuse` are the **`observability`** optional extra (not
-  installed by default); imports are lazy + `try/except ImportError`. To enable:
-  `uv sync --extra observability` and set the keys, then call
-  `init_observability(get_settings())` at process start in `app.py` /
-  `worker.py` (intentionally not wired by default to keep the offline path
-  dependency-free).
+  installed by default); imports are lazy + `try/except ImportError`, and every
+  tracing path is best-effort (never raises into a prep run or live turn).
 
 ---
 

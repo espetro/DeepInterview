@@ -26,6 +26,7 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from ..core.logging import get_logger
+from ..core.tracing import add_event, start_span, start_trace
 from ..shared_models import LanguageReport, ScoreCard
 from .evaluator import evaluate
 from .language_coach import coach
@@ -239,44 +240,55 @@ async def _run_score_locked(req: ScoreRequest, deps: Deps) -> ScoreCard:
 
     timeout = deps.settings.score_stage_timeout_sec
 
-    comp_scores = await _guarded(evaluate(ctx, deps), label="evaluate", timeout=timeout)
-    if comp_scores is None:
-        # The WHOLE evaluate stage failed for an interview that HAS answers
-        # (per-question failures are isolated inside evaluate; None means the
-        # stage itself died). Persisting a zero-score card as "complete" would
-        # misreport an answered interview as scoring 0 — mark the session
-        # errored (retriable: a later /api/score re-runs from the same context)
-        # and return a well-formed card without persisting it.
-        log.error("post: evaluate stage failed for %s; marking error (no card persisted)", req.session_id)
-        await deps.repo.update_status(req.session_id, "error")
-        return _degraded_scorecard(ctx, [], _fallback_language_report())
+    # Trace the scoring work so `deepinterview traces` and GET /api/traces show
+    # per-stage spans + LLM calls for this session. No-op when disabled.
+    with start_trace("score", session_id=req.session_id):
+        with start_span("post.evaluate"):
+            comp_scores = await _guarded(evaluate(ctx, deps), label="evaluate", timeout=timeout)
+        if comp_scores is None:
+            # The WHOLE evaluate stage failed for an interview that HAS answers
+            # (per-question failures are isolated inside evaluate; None means the
+            # stage itself died). Persisting a zero-score card as "complete" would
+            # misreport an answered interview as scoring 0 — mark the session
+            # errored (retriable: a later /api/score re-runs from the same context)
+            # and return a well-formed card without persisting it.
+            log.error("post: evaluate stage failed for %s; marking error (no card persisted)", req.session_id)
+            await deps.repo.update_status(req.session_id, "error")
+            return _degraded_scorecard(ctx, [], _fallback_language_report())
 
-    # Optional adversarial calibration pass (gated, OFF by default). Guarded so a
-    # verifier failure leaves the evaluated scores untouched rather than degrading.
-    if deps.settings.enable_score_verifier:
-        verified = await _guarded(
-            verify_scores(ctx, comp_scores, deps), label="verify", timeout=timeout
+        # Optional adversarial calibration pass (gated, OFF by default). Guarded so a
+        # verifier failure leaves the evaluated scores untouched rather than degrading.
+        if deps.settings.enable_score_verifier:
+            with start_span("post.verify"):
+                verified = await _guarded(
+                    verify_scores(ctx, comp_scores, deps), label="verify", timeout=timeout
+                )
+            if verified is not None:
+                comp_scores = verified
+
+        with start_span("post.coach"):
+            lang_report = await _guarded(coach(ctx, deps), label="coach", timeout=timeout)
+        if lang_report is None:
+            lang_report = _fallback_language_report()
+
+        with start_span("post.report"):
+            scorecard = await _guarded(
+                generate_report(ctx, comp_scores, lang_report, deps),
+                label="generate_report",
+                timeout=timeout,
+            )
+        if scorecard is None:
+            scorecard = _degraded_scorecard(ctx, comp_scores, lang_report)
+
+        await deps.repo.save_scorecard(req.session_id, scorecard)
+        await deps.repo.update_status(req.session_id, "complete")
+        add_event(
+            "score.complete",
+            {"overall": scorecard.overall_score, "competencies": len(scorecard.competency_scores)},
         )
-        if verified is not None:
-            comp_scores = verified
 
-    lang_report = await _guarded(coach(ctx, deps), label="coach", timeout=timeout)
-    if lang_report is None:
-        lang_report = _fallback_language_report()
+        # Closed-loop (WP-10): propose a reusable playbook delta. Off by default,
+        # best-effort, and fully guarded so it can never affect the returned card.
+        await _maybe_distill_skill(req.session_id, deps)
 
-    scorecard = await _guarded(
-        generate_report(ctx, comp_scores, lang_report, deps),
-        label="generate_report",
-        timeout=timeout,
-    )
-    if scorecard is None:
-        scorecard = _degraded_scorecard(ctx, comp_scores, lang_report)
-
-    await deps.repo.save_scorecard(req.session_id, scorecard)
-    await deps.repo.update_status(req.session_id, "complete")
-
-    # Closed-loop (WP-10): propose a reusable playbook delta. Off by default,
-    # best-effort, and fully guarded so it can never affect the returned card.
-    await _maybe_distill_skill(req.session_id, deps)
-
-    return scorecard
+        return scorecard

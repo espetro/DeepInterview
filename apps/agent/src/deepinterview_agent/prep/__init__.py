@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ..core.logging import get_logger
+from ..core.tracing import add_event, start_trace
 from ..core.validation import validate_prep_inputs
 from ..shared_models import InterviewContext
 from .graph import build_prep_graph
@@ -102,59 +103,70 @@ async def run_prep_for_session(
     LLM). A pipeline that cannot produce a plan → ``error``. Never raises: this is
     designed to run as a fire-and-forget background task.
     """
-    try:
-        # Parse the CV document first so validation judges the EXTRACTED text
-        # (real prose from a PDF/DOCX), not the data:/URL pointer or raw bytes.
-        # Pass session_id so any "couldn't read the CV" warning is persisted.
-        fetched = await fetch_cv({"req": req, "session_id": session_id}, deps)
-        cv_text = fetched.get("cv_text", req.cv_url)
-
-        ok, warnings = validate_prep_inputs(req, cv_text=cv_text)
-        if warnings:
-            await deps.repo.add_warnings(session_id, warnings)
-
-        if not ok:
-            # Wholly meaningless CV + JD: reject without spending a model call.
-            await deps.repo.update_status(session_id, "rejected")
-            return
-
-        # A junk company is a warning (not a rejection); signal the graph to skip
-        # company research so we don't fabricate intel or waste calls.
-        company_ok = not any("company name" in w for w in warnings)
-
-        graph = build_prep_graph(deps)
-        result = await graph.ainvoke(
-            {
-                "req": req,
-                "session_id": session_id,
-                "cv_text": cv_text,
-                "company_ok": company_ok,
-            }
-        )
-
-        ctx = InterviewContext(
-            session_id=session_id,
-            candidate=result["candidate"],
-            job=result["job"],
-            company=result["company"],
-            gap=result["gap"],
-            plan=result["plan"],
-            cursor=0,
-            answers=[],
-            scorecard=None,
-        )
-
-        await deps.repo.save_context(session_id, ctx)
-        await deps.repo.update_status(session_id, "ready")
-
-        # Close the WP-8 loop: ingest the prep materials into THIS session's
-        # knowledge store so the Study Coach (which retrieves by session_id) can
-        # ground answers in the candidate's CV/JD/company intel. Keyed by
-        # session_id — the same key search() uses. Best-effort: never fail prep.
-        await _ingest_prep_materials(session_id, req, cv_text, ctx, deps)
-    except Exception:
-        log.exception("run_prep_for_session(%s) failed", session_id)
+    # One trace per prep run (fetch + validate + graph + persist) so
+    # `deepinterview traces` and GET /api/traces show per-node spans + LLM
+    # calls for this session. No-op when tracing is disabled (TRACE_ENABLED=0).
+    # Rejected input still leaves a (small) trace — useful signal, not noise.
+    with start_trace(
+        "prep",
+        session_id=session_id,
+        metadata={"company": req.company, "primary": req.language_mode.primary},
+    ):
         try:
-            await deps.repo.update_status(session_id, "error")
-        except Exception:  # noqa: BLE001 - best-effort status write
-            log.warning("could not mark session %s as error", session_id)
+            # Parse the CV document first so validation judges the EXTRACTED text
+            # (real prose from a PDF/DOCX), not the data:/URL pointer or raw bytes.
+            # Pass session_id so any "couldn't read the CV" warning is persisted.
+            fetched = await fetch_cv({"req": req, "session_id": session_id}, deps)
+            cv_text = fetched.get("cv_text", req.cv_url)
+
+            ok, warnings = validate_prep_inputs(req, cv_text=cv_text)
+            if warnings:
+                await deps.repo.add_warnings(session_id, warnings)
+
+            if not ok:
+                # Wholly meaningless CV + JD: reject without spending a model call.
+                await deps.repo.update_status(session_id, "rejected")
+                add_event("prep.rejected", {"warnings": len(warnings)})
+                return
+
+            # A junk company is a warning (not a rejection); signal the graph to skip
+            # company research so we don't fabricate intel or waste calls.
+            company_ok = not any("company name" in w for w in warnings)
+
+            graph = build_prep_graph(deps)
+            result = await graph.ainvoke(
+                {
+                    "req": req,
+                    "session_id": session_id,
+                    "cv_text": cv_text,
+                    "company_ok": company_ok,
+                }
+            )
+
+            ctx = InterviewContext(
+                session_id=session_id,
+                candidate=result["candidate"],
+                job=result["job"],
+                company=result["company"],
+                gap=result["gap"],
+                plan=result["plan"],
+                cursor=0,
+                answers=[],
+                scorecard=None,
+            )
+
+            await deps.repo.save_context(session_id, ctx)
+            await deps.repo.update_status(session_id, "ready")
+            add_event("prep.ready", {"questions": len(ctx.plan.questions)})
+
+            # Close the WP-8 loop: ingest the prep materials into THIS session's
+            # knowledge store so the Study Coach (which retrieves by session_id) can
+            # ground answers in the candidate's CV/JD/company intel. Keyed by
+            # session_id — the same key search() uses. Best-effort: never fail prep.
+            await _ingest_prep_materials(session_id, req, cv_text, ctx, deps)
+        except Exception:
+            log.exception("run_prep_for_session(%s) failed", session_id)
+            try:
+                await deps.repo.update_status(session_id, "error")
+            except Exception:  # noqa: BLE001 - best-effort status write
+                log.warning("could not mark session %s as error", session_id)

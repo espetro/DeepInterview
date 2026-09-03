@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 
 from ..core.adapters.mock import build_mock
 from ..core.logging import get_logger
+from ..core.tracing import traced
 from ..shared_models import (
     CandidateProfile,
     Citation,
@@ -70,6 +71,7 @@ async def _warn(state: PrepState, deps: Deps, warnings: list[str]) -> None:
         log.warning("add_warnings failed (%s)", exc)
 
 
+@traced("prep.fetch_cv")
 async def fetch_cv(state: PrepState, deps: Deps) -> PrepState:
     """Best-effort parse of the CV document into text; fall back to the URL string.
 
@@ -96,6 +98,7 @@ async def fetch_cv(state: PrepState, deps: Deps) -> PrepState:
     return {"cv_text": cv_text}
 
 
+@traced("prep.cv_analysis")
 async def cv_analysis(state: PrepState, deps: Deps) -> PrepState:
     """Extract a ``CandidateProfile`` from the fetched CV text."""
     system, user = cv_analysis_prompts(state["cv_text"])
@@ -111,6 +114,7 @@ async def cv_analysis(state: PrepState, deps: Deps) -> PrepState:
     return {"candidate": candidate}
 
 
+@traced("prep.jd_analysis")
 async def jd_analysis(state: PrepState, deps: Deps) -> PrepState:
     """Extract a ``JobSpec`` from the job description text."""
     req = state["req"]
@@ -141,6 +145,7 @@ def _empty_company_intel(name: str) -> CompanyIntel:
     )
 
 
+@traced("prep.company_research")
 async def company_research(state: PrepState, deps: Deps) -> PrepState:
     """Search the web for company interview intel and synthesize ``CompanyIntel``.
 
@@ -191,6 +196,7 @@ async def company_research(state: PrepState, deps: Deps) -> PrepState:
     return {"company": intel}
 
 
+@traced("prep.gap_matching")
 async def gap_matching(state: PrepState, deps: Deps) -> PrepState:
     """Compare candidate vs job into a ``GapAnalysis`` (join of cv + jd)."""
     system, user = gap_matching_prompts(state["candidate"], state["job"])
@@ -263,6 +269,7 @@ def _skill_library_hint(
         return ""
 
 
+@traced("prep.question_planner")
 async def question_planner(state: PrepState, deps: Deps) -> PrepState:
     """Keystone: synthesize the full ``QuestionPlan`` from all upstream state."""
     req = state["req"]

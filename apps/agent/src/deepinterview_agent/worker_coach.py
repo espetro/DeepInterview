@@ -40,6 +40,8 @@ from livekit.agents import (
 from .core.config import get_settings
 from .core.deps import build_deps
 from .core.logging import get_logger
+from .core.observability import init_observability
+from .core.tracing import add_event, start_trace
 from .live.coach_agent import CoachAgent
 from .live.guard import SessionGuard
 from .live.state import InterviewUserdata, weak_areas_summary
@@ -64,6 +66,7 @@ log = get_logger(__name__)
 
 async def entrypoint(ctx: JobContext) -> None:
     settings = get_settings()
+    init_observability(settings)
     deps = build_deps(settings)
 
     await ctx.connect()
@@ -83,6 +86,11 @@ async def entrypoint(ctx: JobContext) -> None:
     # here would overwrite the interview record with the coach chat (or, before
     # turns were captured at all, with an empty list).
     userdata = InterviewUserdata(ctx=interview_ctx, session_id=session_id)
+
+    # Trace the coach session (turn events land here). Closed in shutdown.
+    _coach_trace = start_trace("coach", session_id=session_id, metadata={"language": primary})
+    _coach_trace.__enter__()
+    add_event("coach.start", {})
 
     # Shared with build_stt: the local Whisper path segments the mic with it.
     vad = build_vad()
@@ -117,6 +125,10 @@ async def entrypoint(ctx: JobContext) -> None:
     )
 
     async def _on_shutdown() -> None:
+        try:
+            add_event("coach.end", {"turns": len(userdata.transcript)})
+        finally:
+            _coach_trace.__exit__(None, None, None)
         await guard.aclose()
         if not userdata.transcript:
             return
@@ -145,6 +157,7 @@ def main() -> None:
     # livekit-agents reads LIVEKIT_URL/API_KEY/API_SECRET from os.environ; we keep
     # them in Settings (.env), so pass them through explicitly to WorkerOptions.
     settings = get_settings()
+    init_observability(settings)
     cli.run_app(
         WorkerOptions(
             entrypoint_fnc=entrypoint,

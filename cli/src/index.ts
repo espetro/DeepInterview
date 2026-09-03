@@ -1,6 +1,7 @@
 import { runAvatars } from "./commands/avatars";
 import { runInit } from "./commands/init";
 import { runSkills } from "./commands/skills";
+import { runTraces } from "./commands/traces";
 
 const [, , command, ...args] = process.argv;
 
@@ -20,6 +21,9 @@ Usage:
                                  against avatars.manifest.json)
   deepinterview avatars verify   Pre-flight local avatar files before submitting
                                  a pack (technical contract + hashes)
+  deepinterview traces [list]    Show recent agent runs (prep/score/live) from
+                                 the local trace store (.deepinterview/traces)
+  deepinterview traces show <id> Replay one run: nested spans, LLM calls, errors
 
 \`init\` writes three files:
   .env                 → read by docker compose (the full stack)
@@ -42,6 +46,9 @@ async function main(): Promise<void> {
       break;
     case "avatars":
       await runAvatars(args);
+      break;
+    case "traces":
+      await runTraces(args);
       break;
     case undefined:
     case "help":

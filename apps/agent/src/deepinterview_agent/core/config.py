@@ -224,6 +224,24 @@ class Settings(BaseSettings):
     # and local runs don't write drafts; enable in production via env.
     enable_skill_distiller: bool = False
 
+    # --- tracing (WP-12: local JSONL + optional Langfuse) ---------------------
+    # Local trace files are the default "easy tracking" tool: every prep/score/
+    # live run appends spans to TRACE_DIR/<trace_id>.jsonl, readable offline via
+    # `deepinterview traces` (CLI) and GET /api/traces. No extra deps, never
+    # raises. Set TRACE_ENABLED=0 to disable (the test suite does this).
+    trace_enabled: bool = True
+    trace_dir: str = ".deepinterview/traces"
+    # When True, LLM spans also store short prompt previews (first 500 chars).
+    # Default OFF so trace files never hold full CVs/JDs (lengths always logged).
+    trace_include_prompts: bool = False
+    # Langfuse forwarder (opt-in hosted trace UI): when both keys are set AND
+    # the `observability` extra is installed, spans are additionally emitted as
+    # OTel spans which Langfuse v4 captures. Env: LANGFUSE_PUBLIC_KEY etc.
+    langfuse_public_key: str | None = None
+    langfuse_secret_key: str | None = None
+    langfuse_host: str | None = None
+    sentry_dsn: str | None = None
+
 
 @lru_cache
 def get_settings() -> Settings:
