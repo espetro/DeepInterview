@@ -149,7 +149,7 @@ export function apiRoutes(db: Db, opts: { testMode: boolean }): Hono {
       .where("session_id", "=", c.req.param("id"))
       .executeTakeFirst();
     if (!row) return c.json({ error: "not found" }, 404);
-    return c.json(ReportSchema, JSON.parse(row.data));
+    return c.json(JSON.parse(row.data));
   });
 
   // LiveKit token minting lives here in M2; stub for now.
