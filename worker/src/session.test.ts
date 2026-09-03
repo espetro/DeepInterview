@@ -67,6 +67,34 @@ describe("DiApiClient", () => {
     }
   });
 
+  it("fetches tool state (empty and populated)", async () => {
+    const server = Bun.serve({
+      port: 0,
+      fetch: (req) =>
+        new URL(req.url).pathname.endsWith("/tools")
+          ? Response.json({ editor: "code", whiteboard: "{}" })
+          : new Response("nope", { status: 404 }),
+    });
+    try {
+      const api = new DiApiClient({ baseUrl: `http://localhost:${server.port}` });
+      const id = crypto.randomUUID();
+      expect(await api.getToolState(id)).toEqual({ editor: "code", whiteboard: "{}" });
+    } finally {
+      server.stop(true);
+    }
+
+    const missing = Bun.serve({
+      port: 0,
+      fetch: () => new Response("nope", { status: 404 }),
+    });
+    try {
+      const api = new DiApiClient({ baseUrl: `http://localhost:${missing.port}` });
+      await expect(api.getToolState(crypto.randomUUID())).rejects.toThrow(/404/);
+    } finally {
+      missing.stop(true);
+    }
+  });
+
   it("throws on non-2xx responses", async () => {
     const server = Bun.serve({
       port: 0,

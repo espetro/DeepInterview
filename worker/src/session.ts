@@ -1,6 +1,6 @@
-import type { Turn, SessionEvent } from "@di/shared";
+import type { ToolState, Turn, SessionEvent } from "@di/shared";
 import { parse } from "valibot";
-import { TurnSchema, SessionEventSchema } from "@di/shared";
+import { TurnSchema, SessionEventSchema, ToolStateSchema } from "@di/shared";
 
 export interface DiApiClientOptions {
   baseUrl: string;
@@ -27,6 +27,15 @@ export class DiApiClient {
     if (!res.ok) {
       throw new Error(`postTurn failed: ${res.status} ${await res.text().catch(() => "")}`);
     }
+  }
+
+  /** Editor + whiteboard state the browser pushed to di. Empty strings when never pushed. */
+  async getToolState(sessionId: string): Promise<ToolState> {
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/sessions/${sessionId}/tools`);
+    if (!res.ok) {
+      throw new Error(`getToolState failed: ${res.status} ${await res.text().catch(() => "")}`);
+    }
+    return parse(ToolStateSchema, await res.json());
   }
 
   async postEvent(
