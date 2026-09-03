@@ -50,7 +50,9 @@
 - `notFound` - session id invalid/missing.
 
 Server component verifies the session exists before rendering, then mints a
-LiveKit token with metadata `{session_id, duration_min}`.
+LiveKit token with metadata `{session_id, duration_min, difficulty, voice}`.
+`duration_min` is preferred from the persisted session context; the legacy
+`?duration=` query param still works as an override, clamped to 5-60.
 
 ## Nav links
 

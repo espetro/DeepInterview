@@ -22,7 +22,7 @@
 |        +-----------------------------------+                     |
 |        |  Start interview ->               |  (enabled on ready) |
 |        +-----------------------------------+                     |
-|        => /interview/{id}?persona={persona}                      |
+|        => /interview/{id}                                        |
 +------------------------------------------------------------------+
 ```
 
@@ -34,7 +34,8 @@
 
 ## Primary CTAs
 
-- **Start interview** -> `/interview/{id}?persona={persona}`.
+- **Start interview** -> `/interview/{id}` (no persona param; difficulty and
+  voice ride on the LiveKit token metadata).
 
 ## States
 

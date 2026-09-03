@@ -5,7 +5,7 @@
 ```mermaid
 flowchart LR
     L[/: landing] -->|Start| S[/setup]
-    S -->|POST /api/prep| P[/session/{id} poll]
+    S -->|POST /api/prep?fast=true| P[/session/{id} poll]
     P -->|ready| I[/interview/{id} live room]
     I -->|ended| R[/report/{id}]
     R -->|Coach me| C[/prep?session={id}]
@@ -17,12 +17,17 @@ Steps:
 1. Landing `/`: user clicks Start -> `/setup`.
 2. Setup `/setup`: user uploads CV/paste, picks difficulty, voice, language,
    duration, passes device check, hits Start. Client calls `startSession`
-   server action which POSTs to `/api/prep`, then navigates to
-   `/session/{id}` (persona passed as query param in the current build).
+   server action which POSTs to `/api/prep?fast=true` (facts + difficulty +
+   voice + duration_min), then navigates to `/session/{id}` (no persona
+   param; the live room renders the default persona).
 3. Session poll `/session/{id}`: `PrepSummary` polls
    `GET /api/session/{id}` every `POLL_MS` until status is a ready state.
 4. Live room `/interview/{id}`: server verifies session, mints LiveKit token
-   with metadata `{session_id, duration_min}`; voice interview runs.
+   with metadata `{session_id, duration_min, difficulty, voice}` (difficulty
+   and voice preferred from the persisted session context; `?duration=`
+   override clamped to 5-60); voice interview runs. The interviewer prompt
+   injects the language and difficulty framing, and the live difficulty
+   clamp comes from `apps/agent/config/ui.toml` (easy 2, medium 3, hard 4).
 5. Report `/report/{id}`: ScoringPoll waits for scores, then renders the
    full report.
 6. Prep coach `/prep?session={id}`: grounded coaching on the weak spots.
@@ -38,14 +43,14 @@ flowchart LR
 Steps:
 
 1. Setup posts the facts file plus difficulty, voice, and duration to
-   `POST /api/prep?fast=true`.
-2. The session is created and becomes `ready` immediately; no long-running
-   prep wait.
-3. `/session/{id}` renders the poll screen but passes through instantly
+   `POST /api/prep?fast=true`. `run_fast_prep` (in
+   `src/deepinterview_agent/prep/__init__.py`) ingests the facts into the KB
+   + context and marks the session ready immediately; no graph run, no
+   long-running prep wait.
+2. `/session/{id}` renders the poll screen but passes through instantly
    (ready on first poll); the user proceeds straight to Start interview.
 4. Heavy prep/grounding continues asynchronously; the interview and report
    read whatever context is available.
-
 ## Error / recovery paths
 
 ```mermaid

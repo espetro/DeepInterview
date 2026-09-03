@@ -22,9 +22,15 @@ Copy from teammates / templates if missing; never commit real values.
 ## Config
 
 - `apps/agent/config/ui.toml` - UI-facing config for **languages, voices,
-  and difficulties**. The setup screen reads its voice dropdown, language
-  chips (en/vi/es/zh/fr/de/ja), and difficulty options from here. When you
-  add a language or voice, update this file, and update
+  and difficulties** (`[languages] offered / stt_supported`, per-language
+  `[voices.<lang>]` with default + options, `[difficulties]` levels + clamps).
+  The setup screen reads its voice dropdown, language chips, and difficulty
+  options from here via the agent's `GET /api/config/ui` (proxied by the web
+  route `apps/web/app/api/config/ui/route.ts`). The loader is
+  `src/deepinterview_agent/core/ui_config.py`; set `UI_CONFIG_PATH` to
+  override the file location (useful for tests and local experiments). The
+  live interviewer's difficulty clamp (easy 2, medium 3, hard 4) also reads
+  this file. When you add a language or voice, update this file, and update
   `.agents/docs/screens/setup.md` in the same commit.
 
 ## Start order

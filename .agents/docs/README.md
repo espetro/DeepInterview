@@ -27,7 +27,8 @@ Agent-facing operational documentation for the deep-interview monorepo.
 Rules:
 
 1. Any commit that changes layout, sections, CTAs, states, or navigation of a screen MUST also update the corresponding file in `screens/` (mockup, section inventory, states, key files as applicable).
-2. `setup.md` documents the **post-iteration-2 target state**; other screens document **current state**. When the setup redesign lands, its mockup must still be updated with the change and the "target state" note removed.
+2. `setup.md` documents the **iteration-2 state**; other screens document
+   current state.
 3. New screens get a new file in `screens/` plus entries in this index and in `user-flows.md`.
 4. When a flow changes (new route, new status, new endpoint), update `user-flows.md` in the same commit.
 5. Port numbers, commands, and config paths changed by infrastructure work must be reflected in `stack.md` in the same commit.
