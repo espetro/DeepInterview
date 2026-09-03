@@ -1,0 +1,13 @@
+{
+  "name": "@di/e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "gauge": "gauge run specs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1",
+ "@types/node": "^24"
+  }
+}
