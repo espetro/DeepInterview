@@ -12,5 +12,8 @@
   },
   "dependencies": {
     "valibot": "^1"
+  },
+  "scripts": {
+    "test": "bun run --bun vitest run"
   }
 }
