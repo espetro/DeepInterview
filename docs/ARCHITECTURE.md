@@ -116,11 +116,11 @@ safe offline path when their env vars are unset.
 ```
 deepinterview/
 ├── apps/
-│   ├── web/                 # Next.js 15 (App Router) + React 19 + Tailwind v4 + shadcn/ui
-│   │   ├── app/api/         # token · upload · kb/query (proxy) · billing/webhook · health
+│   ├── web/                 # Next.js 16 (App Router) + React 19 + Tailwind v4 + shadcn/ui
+│   │   ├── app/api/         # coach/chat · health · kb/query (proxy) · session/[id] · upload
 │   │   ├── app/{setup,interview,report,prep,...}/   # screens
 │   │   ├── components/      # interview · report · prep · avatar · ui
-│   │   └── lib/             # i18n · plan/billing · supabase · livekit · r2 · kb
+│   │   └── lib/             # i18n · session · supabase · livekit · r2 · kb
 │   └── agent/               # Python 3.11+ LiveKit worker + LangGraph pipelines
 │       └── src/deepinterview_agent/
 │           ├── api/         # FastAPI routers: /api/prep, /api/score
@@ -149,16 +149,21 @@ code, not shorthand.
 | `/api/prep`         | POST   | **agent** FastAPI (`apps/agent`)   | Run the prep pipeline → `InterviewContext` + `QuestionPlan`. |
 | `/api/score`        | POST   | **agent** FastAPI (`apps/agent`)   | Run the scoring/post pipeline → `ScoreCard`. |
 | `/health`           | GET    | **agent** FastAPI (`apps/agent`)   | Liveness check (`{"ok": true}`). |
-| `/api/token`        | POST   | **web** (`apps/web`)               | Mint a scoped LiveKit access token so the browser can join the interview room. |
+| `/api/session/[id]` | GET    | **web** (`apps/web`)               | Read a session view (context/scorecard/transcript) via the agent API. |
+| `/api/upload`       | POST   | **web** (`apps/web`)               | CV upload (server-side parse) → forwards to prep. |
+| `/api/coach/chat`   | POST   | **web** (`apps/web`)               | Prep-coach chat proxy. |
 | `/api/kb/query`     | POST   | **web** (`apps/web`)               | Proxy: forwards to the lightrag sidecar's `/kb/query` (via `LIGHTRAG_URL`). |
 | `/kb/ingest`        | POST   | **lightrag** sidecar (`:9621`)     | Ingest documents into a per-user knowledge store. |
 | `/kb/query`         | POST   | **lightrag** sidecar (`:9621`)     | Retrieve a grounded answer + citations for a query. |
 
-(The web app also exposes `upload`, `billing/webhook`, and `health` routes; the
+(The web app also exposes `upload`, `coach/chat`, and `health` routes; the
+LiveKit access token is minted by a server action (`createInterviewToken` in
+`apps/web/lib/livekit.ts`), not an `/api/token` route; billing/webhook routes
+were removed with the uncapped OSS build. The
 lightrag port is configurable via `LIGHTRAG_PORT`, default `9621`.)
 
-**Room contract (live voice).** The browser asks web for a token
-(`POST /api/token`), joins the LiveKit room, and talks to the agent worker. The
+**Room contract (live voice).** The browser gets a scoped token from the
+`createInterviewToken` server action, joins the LiveKit room, and talks to the agent worker. The
 turn loop is **cascaded STT → LLM → TTS** (not speech-to-speech) so we get
 transcripts and per-component control. The interviewer drives the conversation
 through two function tools — `save_answer` (record the candidate's answer to the

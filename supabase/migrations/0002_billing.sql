@@ -1,4 +1,8 @@
 -- 0002_billing.sql — WP-11 payments + plan gating.
+-- SUPERSEDED by 0006_drop_billing.sql: the OSS build is uncapped
+-- bring-your-own-keys, so this schema is applied then dropped on fresh DBs.
+-- Kept (not squashed) so databases that already applied it migrate forward.
+-- New code must NOT depend on these tables/columns.
 -- Extends profiles with credit/period columns, adds a credit ledger and a
 -- subscriptions table. Mirrors 0001's RLS posture but writes from the billing
 -- webhook go through the service-role key (which bypasses RLS), so end-user

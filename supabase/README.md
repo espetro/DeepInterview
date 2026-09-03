@@ -13,10 +13,16 @@ One row per authenticated user (auto-created on sign-up by the
 | ----------------- | ------------- | -------------------------------------- |
 | `id`              | uuid (PK)     | FK → `auth.users(id)`, cascade delete  |
 | `email`           | text          | copied from the auth user              |
-| `plan`            | text          | billing tier, default `free`           |
-| `interviews_used` | integer       | per-tier interview cap counter         |
 | `locale`          | text          | preferred UI language, default `en`    |
 | `created_at`      | timestamptz   | default `now()`                        |
+| `updated_at`      | timestamptz   | bumped on update by `touch_updated_at` |
+
+> History note: `0001` originally carried billing/plan columns (`plan`,
+> `interviews_used`) and `0002` added a billing schema (`credit_ledger`,
+> `subscriptions`). The OSS build is uncapped bring-your-own-keys, so `0006`
+> drops all of it. `0002` is kept (not squashed) so existing databases that
+> already applied it migrate forward cleanly; on a fresh DB `0002` then `0006`
+> is a no-op pair leaving the lean table above.
 
 ### `public.sessions`
 One row per interview session. The agent's `SupabaseRepository` maps to these
@@ -49,7 +55,9 @@ supabase db push          # applies supabase/migrations/*.sql
 ```
 
 **Or paste into the SQL editor:** open the Supabase dashboard → SQL Editor → new
-query → paste the contents of `migrations/0001_init.sql` → Run.
+query → paste the contents of each file in `migrations/` **in numeric order**
+(`0001` → `0006`) → Run. (`0001` alone is not enough: later migrations add
+prep/coach/RLS hardening and remove the legacy billing schema.)
 
 ## Row Level Security
 
