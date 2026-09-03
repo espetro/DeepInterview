@@ -223,4 +223,7 @@ export const SAMPLE_INTERVIEW_CONTEXT: InterviewContext = {
     summary:
       "Strong technical candidate; main growth area is demonstrating staff-level organizational leadership.",
   },
+  difficulty: "medium",
+  voice: null,
+  duration_min: 30,
 };
