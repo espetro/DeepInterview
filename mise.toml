@@ -1,0 +1,6 @@
+[tools]
+bun = "latest"
+node = "24"
+
+[env]
+_.file = ".env"

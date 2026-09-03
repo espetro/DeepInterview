@@ -1,0 +1,16 @@
+{
+  "name": "@di/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts",
+    "./session": "./src/session.ts",
+    "./plan": "./src/plan.ts",
+    "./report": "./src/report.ts"
+  },
+  "dependencies": {
+    "valibot": "^1"
+  }
+}

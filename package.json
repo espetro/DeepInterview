@@ -1,26 +1,16 @@
 {
-  "name": "deepinterview",
-  "version": "0.3.0",
+  "name": "deep-interview",
   "private": true,
-  "description": "Open-source (Apache-2.0), voice-first AI mock-interview platform. English-first, multilingual.",
-  "license": "Apache-2.0",
-  "packageManager": "pnpm@11.5.2",
-  "engines": {
-    "node": ">=20"
-  },
-  "scripts": {
-    "build": "turbo run build",
-    "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
-    "gen:schema": "turbo run gen:schema",
-    "dev": "turbo run dev",
-    "lint": "prettier --check \"apps/**/*.{ts,tsx}\" \"cli/src/**/*.ts\" \"packages/shared/src/**/*.ts\" \"packages/shared/scripts/**/*.mts\" \"packages/shared/test/**/*.ts\" && pnpm --filter @deepinterview/agent run lint",
-    "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"cli/src/**/*.ts\" \"packages/shared/src/**/*.ts\" \"packages/shared/scripts/**/*.mts\" \"packages/shared/test/**/*.ts\"",
-    "deepinterview": "node cli/dist/index.js"
-  },
+  "packageManager": "bun@1.2.23",
+  "workspaces": ["shared", "server", "worker", "web", "evals"],
+  "type": "module",
   "devDependencies": {
-    "prettier": "^3.9.6",
-    "turbo": "^2.10.6",
-    "typescript": "~5.9.3"
+    "@types/bun": "^1.4.0",
+    "@types/node": "^24",
+    "kysely": "^0.29.5",
+    "oxfmt": "^0.14",
+    "oxlint": "^1",
+    "typescript": "^7",
+    "vitest": "^3"
   }
 }
