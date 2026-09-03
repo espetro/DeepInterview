@@ -82,3 +82,22 @@ class TestWavToPcm:
         struct.pack_into("<H", patched, idx, 6)
         with pytest.raises(ValueError, match="format tag"):
             shim.wav_to_pcm(bytes(patched))
+
+
+class TestLanguageDefaultVoice:
+    def test_language_picks_default(self, shim):
+        assert shim.map_voice(None, "fr") == ("estelle", None)
+        assert shim.map_voice("", "de") == ("juergen", None)
+        assert shim.map_voice(None, "pt") == ("rafael", None)
+        assert shim.map_voice(None, "es") == ("lola", None)
+        assert shim.map_voice(None, "it") == ("giovanni", None)
+
+    def test_explicit_voice_wins(self, shim):
+        assert shim.map_voice("mariam", "fr") == ("mariam", None)
+
+    def test_unknown_language_falls_back(self, shim):
+        assert shim.map_voice(None, "zz") == ("alba", None)
+
+    def test_no_language_backward_compatible(self, shim):
+        assert shim.map_voice(None, None) == ("alba", None)
+        assert shim.map_voice(None) == ("alba", None)

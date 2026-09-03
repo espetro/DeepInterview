@@ -45,6 +45,10 @@ UPSTREAM = os.environ.get("UPSTREAM", "http://127.0.0.1:8880/tts")
 
 # Kokoro voice-id prefix -> pocket-tts built-in voice. pocket-tts ships a
 # handful of built-ins, all English; non-English kokoro ids fall back to alba.
+# NOTE: the per-language default voice table in
+# apps/agent/config/ui.toml ([voices.<lang>]) is the source of truth for the
+# agent; this standalone script duplicates its entries so it keeps working with
+# zero repo dependencies. Keep the two in sync when adding voices/languages.
 VOICE_MAP = {
     "af_": "alba",
     "am_": "alba",
@@ -66,6 +70,18 @@ VOICE_MAP = {
 }
 DEFAULT_VOICE = "alba"
 
+# Per-language default voices, mirroring [voices.<lang>].default in
+# apps/agent/config/ui.toml (duplicated intentionally: this script is
+# standalone). Used only when the request carries a `language` but no `voice`.
+LANGUAGE_DEFAULT_VOICE = {
+    "en": "alba",
+    "fr": "estelle",
+    "de": "juergen",
+    "pt": "rafael",
+    "es": "lola",
+    "it": "giovanni",
+}
+
 MODELS_PAYLOAD = {
     "object": "list",
     "data": [
@@ -81,15 +97,20 @@ MODELS_PAYLOAD = {
 app = FastAPI(title="pocket-tts OpenAI shim")
 
 
-def map_voice(voice: str | None) -> tuple[str, str | None]:
+def map_voice(
+    voice: str | None, language: str | None = None
+) -> tuple[str, str | None]:
     """Return (voice_url, voice_wav_path) for an OpenAI voice field.
 
-    - None/empty -> default built-in.
+    - None/empty -> per-language default when a recognized `language` is given,
+      otherwise the global default built-in.
     - Path to an existing .wav -> ("", path) for voice cloning.
     - kokoro-style id (xx_name) -> prefix lookup in VOICE_MAP.
     - Anything else -> passed through as a pocket-tts built-in name.
     """
     if not voice:
+        if language:
+            return LANGUAGE_DEFAULT_VOICE.get(language.lower(), DEFAULT_VOICE), None
         return DEFAULT_VOICE, None
     if voice.lower().endswith(".wav") and Path(voice).is_file():
         return "", voice
@@ -142,7 +163,7 @@ async def speech(payload: dict) -> Response:
     response_format = payload.get("response_format") or "pcm"
     if response_format not in ("pcm", "wav"):
         raise HTTPException(400, f"unsupported response_format {response_format!r}; use pcm or wav")
-    voice_url, voice_wav = map_voice(payload.get("voice"))
+    voice_url, voice_wav = map_voice(payload.get("voice"), payload.get("language"))
 
     fields = {"text": text, "voice_url": voice_url}
     files = None

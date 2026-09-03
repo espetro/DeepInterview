@@ -11,6 +11,7 @@ from __future__ import annotations
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from ..core.deps import build_deps
+from ..core.ui_config import get_ui_config
 from ..prep import run_prep_for_session
 from ..shared_models import PrepRequest, PrepResponse
 
@@ -33,6 +34,18 @@ async def prep(req: PrepRequest, background_tasks: BackgroundTasks) -> PrepRespo
         or len(req.company) > _MAX_COMPANY_LEN
     ):
         raise HTTPException(status_code=413, detail="CV/JD/company input too large")
+    # STT language gate: the configured STT model transcribes only the languages
+    # listed in config/ui.toml ([languages].stt_supported). Fail fast with 400
+    # rather than minting a session whose live interview can't be transcribed.
+    stt_supported = get_ui_config().stt_supported
+    if req.language_mode.primary not in stt_supported:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"language {req.language_mode.primary!r} is not supported by the "
+                f"current STT model (supports: {', '.join(stt_supported)})"
+            ),
+        )
     deps = build_deps()
     session_id = await deps.repo.create_session(req)
     background_tasks.add_task(run_prep_for_session, session_id, req, deps)
