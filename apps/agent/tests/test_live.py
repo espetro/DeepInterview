@@ -414,3 +414,74 @@ def test_reconstruct_answers_never_recovers_wrap_phase_speech() -> None:
 
     assert state.reconstruct_answers(ud) == 0
     assert ud.ctx.answers == []
+
+
+# --- difficulty framing + clamping (config/ui.toml-driven) -------------------
+
+
+class TestDifficultyFraming:
+    def test_userdata_defaults_are_none(self) -> None:
+        ud = _userdata()
+        assert ud.difficulty is None
+        assert ud.voice is None
+
+    def test_userdata_accepts_difficulty_and_voice(self) -> None:
+        ud = _userdata()
+        ud.difficulty = "hard"
+        ud.voice = "alba"
+        assert ud.difficulty == "hard"
+        assert ud.voice == "alba"
+
+    def test_clamp_easy_caps_harder_recommendation(self) -> None:
+        """A rich answer normally suggests 'harder'; with difficulty=easy the
+        clamp (easy->2) blocks it once the current question is at rung 2+."""
+        import deepinterview_agent.live.state as st
+
+        ud = _userdata()
+        ud.difficulty = "easy"
+        # Force the current question to the top of the easy band (rung 2).
+        q = st.current_question(ud)
+        assert q is not None
+        ud.ctx.plan.questions[0] = q.model_copy(update={"difficulty": 2})
+        state.add_turn(ud, "user", "word " * (st._RICH_WORDS + 1))
+        state.save_answer(ud, transcript="word " * (st._RICH_WORDS + 1), started_at="", ended_at="")
+        sig = state.evaluate_difficulty(ud)
+        assert sig.recommendation != "harder"
+
+    def test_clamp_unset_difficulty_allows_harder(self) -> None:
+        import deepinterview_agent.live.state as st
+
+        ud = _userdata()
+        q = st.current_question(ud)
+        assert q is not None
+        ud.ctx.plan.questions[0] = q.model_copy(update={"difficulty": 4})
+        state.add_turn(ud, "user", "word " * (st._RICH_WORDS + 1))
+        state.save_answer(ud, transcript="word " * (st._RICH_WORDS + 1), started_at="", ended_at="")
+        sig = state.evaluate_difficulty(ud)
+        assert sig.recommendation == "harder"
+
+    def test_clamp_reads_config_not_hardcoded(self) -> None:
+        from deepinterview_agent.core.ui_config import get_ui_config
+
+        ud = _userdata()
+        ud.difficulty = "medium"
+        assert state._max_difficulty(ud) == get_ui_config().clamps["medium"] == 3
+        ud.difficulty = "hard"
+        assert state._max_difficulty(ud) == get_ui_config().clamps["hard"] == 4
+
+
+def test_build_instructions_frames_language_and_difficulty() -> None:
+    """The interviewer prompt must carry the language + difficulty framing."""
+    from deepinterview_agent.live.interviewer import build_instructions
+
+    ud = _userdata()
+    ud.difficulty = "easy"
+    text = build_instructions(ud)
+    assert "Conduct the interview in English" in text
+    assert "Difficulty level: easy" in text
+    assert "calibrate question depth" in text
+    assert "Primary language: en." in text
+
+    # No difficulty set -> frames "medium".
+    ud2 = _userdata()
+    assert "Difficulty level: medium" in build_instructions(ud2)

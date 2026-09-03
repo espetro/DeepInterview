@@ -35,8 +35,17 @@ Recommendation = Literal["harder", "easier", "advance", "wrap"]
 _THIN_WORDS = 12
 _RICH_WORDS = 80
 # Planned difficulty is on the documented 1-5 band; only suggest "harder" when
-# there is a higher rung left to climb to.
+# there is a higher rung left to climb to. The effective ceiling is clamped per
+# the requested difficulty level via config/ui.toml (easy->2, medium->3,
+# hard->4); when no level is set the band stays unclamped.
 _MAX_DIFFICULTY = 5
+
+
+def _max_difficulty(ud: InterviewUserdata) -> int:
+    """Effective upper rung for this session, from config/ui.toml clamps."""
+    from ..core.ui_config import get_ui_config
+
+    return get_ui_config().clamp_for(getattr(ud, "difficulty", None))
 
 # Minimum substance (word count) for a transcript-recovered answer — reuses the
 # _THIN_WORDS difficulty threshold. Below it, a question's user speech is small
@@ -73,6 +82,12 @@ class InterviewUserdata:
     # on demand by the Interviewer's read_whiteboard tool. Never None — starts
     # as None and is replaced wholesale on each publish.
     whiteboard_snapshot: dict | None = None
+    # Interview difficulty level ("easy"/"medium"/"hard") and preferred TTS
+    # voice, resolved from RoomMetadata or the session context by the worker.
+    # None -> prompt frames "medium" and the difficulty clamp defaults to the
+    # unclamped 1-5 band.
+    difficulty: str | None = None
+    voice: str | None = None
 
 
 def current_question(ud: InterviewUserdata) -> PlannedQuestion | None:
@@ -337,7 +352,9 @@ def evaluate_difficulty(ud: InterviewUserdata) -> DifficultySignal:
             f"Answers in the {section} section are thin "
             f"(~{avg_words:.0f} words) — ease off and ask something more concrete."
         )
-    elif avg_words > _RICH_WORDS and current_difficulty < _MAX_DIFFICULTY:
+    elif (
+        avg_words > _RICH_WORDS and current_difficulty < _max_difficulty(ud)
+    ):
         rec = "harder"
         rationale = (
             f"Answers in the {section} section are strong "

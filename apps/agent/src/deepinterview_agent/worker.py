@@ -721,6 +721,13 @@ async def entrypoint(ctx: JobContext) -> None:
     userdata.max_duration_sec = _effective_duration_sec(
         _room_metadata(ctx), settings
     )
+    # Difficulty + voice: RoomMetadata wins (it reflects the latest UI state);
+    # fall back to the values persisted at prep time on the InterviewContext.
+    metadata = _room_metadata(ctx)
+    userdata.difficulty = (
+        (metadata.difficulty if metadata else None) or interview_ctx.difficulty
+    )
+    userdata.voice = (metadata.voice if metadata else None) or interview_ctx.voice
     # ctx.room is bound before any turn runs (after ctx.connect()), so the
     # closure below is safe by the time tools or the guard can call it.
     userdata.publish_timer = _publish_timer

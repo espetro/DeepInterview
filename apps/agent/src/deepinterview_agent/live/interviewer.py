@@ -34,6 +34,21 @@ def _localized(text: dict[str, str], primary: str) -> str:
     return text.get(primary) or text.get("en") or next(iter(text.values()), "")
 
 
+# Language code -> spoken name used in the interviewer prompt.
+_LANGUAGE_NAMES = {
+    "en": "English",
+    "vi": "Vietnamese",
+    "es": "Spanish",
+    "zh": "Chinese",
+    "hi": "Hindi",
+    "id": "Indonesian",
+    "pt": "Portuguese",
+    "fr": "French",
+    "de": "German",
+    "ja": "Japanese",
+}
+
+
 def _wrap_signal() -> str:
     return (
         "INTERVIEW_COMPLETE: thank the candidate warmly in one or two sentences, "
@@ -50,10 +65,14 @@ def build_instructions(ud: InterviewUserdata) -> str:
     question_line = (
         _localized(q.text, primary) if q is not None else "(no further questions)"
     )
+    language_name = _LANGUAGE_NAMES.get(primary, primary)
+    difficulty = ud.difficulty or "medium"
     return (
         "You are a senior, friendly technical interviewer running a real-time "
         "voice mock interview. Speak naturally and concisely.\n\n"
         f"{summary}\n\n"
+        f"Conduct the interview in {language_name}. Difficulty level: {difficulty} "
+        "— calibrate question depth, follow-ups, and expectations accordingly.\n"
         f"Primary language: {primary}.\n"
         f"Current question to ask: {question_line}\n\n"
         "Ask this one question, listen to the full answer, then ask at most one "
