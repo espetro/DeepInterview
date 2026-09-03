@@ -52,6 +52,13 @@ export const CreateSessionRequestSchema = v.object({
 });
 export type CreateSessionRequest = v.InferOutput<typeof CreateSessionRequestSchema>;
 
+/** Browser-pushed editor/whiteboard state the worker reads via GET /v1/sessions/:id/tools. */
+export const ToolStateSchema = v.object({
+  editor: v.string(),
+  whiteboard: v.string(),
+});
+export type ToolState = v.InferOutput<typeof ToolStateSchema>;
+
 /** Worker -> server session event, appended to the event log surfaced at /v1/test/events. */
 export const SessionEventSchema = v.object({
   session_id: SessionIdSchema,

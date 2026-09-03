@@ -5,6 +5,7 @@ import {
   ReportSchema,
   SessionEventSchema,
   SessionSchema,
+  ToolStateSchema,
   TurnSchema,
 } from "@di/shared";
 import { vValidator } from "@hono/valibot-validator";
@@ -88,6 +89,34 @@ export function apiRoutes(db: Db, opts: { testMode: boolean }): Hono {
       })
       .execute();
     return c.json({ ok: true }, 201);
+  });
+
+  api.put("/sessions/:id/tools", vValidator("json", ToolStateSchema), async (c) => {
+    const id = c.req.param("id");
+    const body = c.req.valid("json");
+    const session = await db
+      .selectFrom("sessions")
+      .select("id")
+      .where("id", "=", id)
+      .executeTakeFirst();
+    if (!session) return c.json({ error: "not found" }, 404);
+    const row = { id, editor: body.editor, whiteboard: body.whiteboard, updated_at: new Date().toISOString() };
+    await db
+      .insertInto("tool_state")
+      .values(row)
+      .onConflict((oc) => oc.column("id").doUpdateSet({ editor: row.editor, whiteboard: row.whiteboard, updated_at: row.updated_at }))
+      .execute();
+    return c.json({ ok: true });
+  });
+
+  api.get("/sessions/:id/tools", async (c) => {
+    const row = await db
+      .selectFrom("tool_state")
+      .selectAll()
+      .where("id", "=", c.req.param("id"))
+      .executeTakeFirst();
+    if (!row) return c.json({ editor: "", whiteboard: "" });
+    return c.json(v.parse(ToolStateSchema, row));
   });
 
   api.put("/sessions/:id/report", vValidator("json", ReportSchema), async (c) => {

@@ -36,6 +36,12 @@ export interface DbSchema {
     data: string;
     generated_at: string;
   };
+  tool_state: {
+    id: string;
+    editor: string;
+    whiteboard: string;
+    updated_at: string;
+  };
 }
 
 export type Db = Kysely<DbSchema>;
@@ -66,12 +72,11 @@ const MIGRATIONS = [
     payload TEXT,
     at TEXT NOT NULL
   )`,
-  `CREATE TABLE IF NOT EXISTS reports (
-    session_id TEXT PRIMARY KEY REFERENCES sessions(id),
-    overall_score REAL NOT NULL,
-    coverage_pct REAL NOT NULL,
-    data TEXT NOT NULL,
-    generated_at TEXT NOT NULL
+  `CREATE TABLE IF NOT EXISTS tool_state (
+    id TEXT PRIMARY KEY REFERENCES sessions(id),
+    editor TEXT NOT NULL DEFAULT '',
+    whiteboard TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL
   )`,
 ];
 
