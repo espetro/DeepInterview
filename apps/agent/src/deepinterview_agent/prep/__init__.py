@@ -21,13 +21,14 @@ from ..core.tracing import add_event, start_trace
 from ..core.validation import validate_prep_inputs
 from ..shared_models import InterviewContext
 from .graph import build_prep_graph
+from .cv_extract import extract_cv_text
 from .nodes import fetch_cv
 
 if TYPE_CHECKING:
     from ..core.deps import Deps
     from ..shared_models import PrepRequest
 
-__all__ = ["build_prep_graph", "run_prep", "run_prep_for_session"]
+__all__ = ["build_prep_graph", "run_fast_prep", "run_prep", "run_prep_for_session"]
 
 log = get_logger(__name__)
 
@@ -170,3 +171,54 @@ async def run_prep_for_session(
                 await deps.repo.update_status(session_id, "error")
             except Exception:  # noqa: BLE001 - best-effort status write
                 log.warning("could not mark session %s as error", session_id)
+
+
+async def run_fast_prep(req: PrepRequest, deps: Deps) -> str:
+    """Fast prep path: persist facts + mark ``ready`` WITHOUT any LLM calls.
+
+    Used by ``POST /api/prep?fast=true``: creates the session row, extracts the
+    CV text (data: URL, http(s) URL, or raw pasted text — same resolution as the
+    slow path), ingests the available facts into the session's knowledge store,
+    and saves a minimal ``InterviewContext`` (mock-free skeleton candidate/job/
+    company around the real request fields) with ``status = "ready"``
+    immediately. The LangGraph prep pipeline never runs.
+
+    Returns the new ``session_id``.
+    """
+    session_id = await deps.repo.create_session(req)
+
+    # Best-effort CV text extraction, exactly like the slow path's fetch node.
+    try:
+        cv_text, _warnings = await extract_cv_text(req.cv_url, deps)
+    except Exception as exc:  # noqa: BLE001 - extraction is best-effort here too
+        log.warning("run_fast_prep: cv extraction failed for %s (%s)", session_id, exc)
+        cv_text = req.cv_url
+
+    # Minimal skeleton context: the shared models require full sub-models, so
+    # build_empty ones via the mock factory and overwrite with request facts.
+    from ..core.adapters.mock import build_mock  # local import keeps graph deps lazy
+
+    ctx: InterviewContext = build_mock(InterviewContext)  # type: ignore[assignment]
+    ctx = ctx.model_copy(
+        update={
+            "session_id": session_id,
+            "job": ctx.job.model_copy(
+                update={
+                    "company_name": req.company or ctx.job.company_name,
+                    "raw_text": req.jd_text,
+                }
+            ),
+            "difficulty": req.difficulty,
+            "voice": req.voice,
+            "duration_min": req.duration_min,
+            "scorecard": None,
+        }
+    )
+    ctx.plan = ctx.plan.model_copy(
+        update={"language_mode": req.language_mode, "questions": []}
+    )
+
+    await deps.repo.save_context(session_id, ctx)
+    await deps.repo.update_status(session_id, "ready")
+    await _ingest_prep_materials(session_id, req, cv_text, ctx, deps)
+    return session_id

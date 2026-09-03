@@ -263,6 +263,12 @@ class InterviewContext(BaseModel):
     cursor: int = 0
     answers: list[AnswerRecord] = Field(default_factory=list)
     scorecard: ScoreCard | None = None
+    # Interview preferences captured at prep time so the live worker can honor
+    # them without re-reading the room metadata. Null for sessions created
+    # before these fields existed. Mirrors packages/shared/src/interview-context.ts.
+    difficulty: Difficulty | None = None
+    voice: str | None = None
+    duration_min: int | None = None
 
 
 # --- room --------------------------------------------------------------------

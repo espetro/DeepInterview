@@ -12,7 +12,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from ..core.deps import build_deps
 from ..core.ui_config import get_ui_config
-from ..prep import run_prep_for_session
+from ..prep import run_fast_prep, run_prep_for_session
 from ..shared_models import PrepRequest, PrepResponse
 
 router = APIRouter()
@@ -27,7 +27,11 @@ _MAX_COMPANY_LEN = 500
 
 
 @router.post("/api/prep", response_model=PrepResponse)
-async def prep(req: PrepRequest, background_tasks: BackgroundTasks) -> PrepResponse:
+async def prep(
+    req: PrepRequest,
+    background_tasks: BackgroundTasks,
+    fast: bool = False,
+) -> PrepResponse:
     if (
         len(req.cv_url) > _MAX_CV_URL_LEN
         or len(req.jd_text) > _MAX_JD_LEN
@@ -47,6 +51,13 @@ async def prep(req: PrepRequest, background_tasks: BackgroundTasks) -> PrepRespo
             ),
         )
     deps = build_deps()
+    # Fast path: skip the LLM graph entirely — persist the facts (CV text, JD,
+    # difficulty/voice/duration) into the KB + context and mark the session
+    # ready immediately. Used when the client wants to go live without waiting
+    # for the full prep pipeline.
+    if fast:
+        session_id = await run_fast_prep(req, deps)
+        return PrepResponse(session_id=session_id)
     session_id = await deps.repo.create_session(req)
     background_tasks.add_task(run_prep_for_session, session_id, req, deps)
     return PrepResponse(session_id=session_id)
