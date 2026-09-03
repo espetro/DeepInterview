@@ -16,6 +16,7 @@ the clock or uses randomness, so it is fully reproducible in tests.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal
 
@@ -51,11 +52,27 @@ class InterviewUserdata:
 
     ``ctx`` is the source of truth (cursor + answers live on it). ``transcript``
     is a flat ``[{"role", "text"}]`` log the worker flushes on shutdown.
+
+    Timer fields (set once by the worker before ``session.start``):
+    ``max_duration_sec`` is the effective (metadata-overridden, clamped) session
+    length and ``started_at`` is a ``time.monotonic()`` reading taken when the
+    guard starts. A pending ``None`` started_at reads as "no time budget yet"
+    rather than "expired".
     """
 
     ctx: InterviewContext
     session_id: str
     transcript: list[dict] = field(default_factory=list)
+    max_duration_sec: float | None = None
+    started_at: float | None = None
+    # Optional fire-and-forget publisher (worker wires this to the room's
+    # "timer" data-channel topic) so tools can push updates at checkpoints.
+    publish_timer: Callable[[dict], object] | None = None
+    # Latest whiteboard snapshot published by the browser on the "whiteboard"
+    # data-channel topic (see live/whiteboard.py). Kept raw; rendered to text
+    # on demand by the Interviewer's read_whiteboard tool. Never None — starts
+    # as None and is replaced wholesale on each publish.
+    whiteboard_snapshot: dict | None = None
 
 
 def current_question(ud: InterviewUserdata) -> PlannedQuestion | None:
@@ -81,6 +98,27 @@ def advance(ud: InterviewUserdata) -> None:
 def is_complete(ud: InterviewUserdata) -> bool:
     """True once the cursor has moved past the last planned question."""
     return ud.ctx.cursor >= len(ud.ctx.plan.questions)
+
+
+def remaining_time(ud: InterviewUserdata, *, now: float) -> dict | None:
+    """Pure remaining-time snapshot, or ``None`` when no time budget is set.
+
+    ``now`` is a ``time.monotonic()``-style reading comparable with
+    ``ud.started_at``. Returns ``{"remaining_sec", "elapsed_sec", "total_sec"}``
+    with values clamped to the session's total, so late ticks never report
+    negative time.
+    """
+    total = ud.max_duration_sec
+    start = ud.started_at
+    if total is None or start is None:
+        return None
+    elapsed = max(0.0, now - start)
+    remaining = max(0.0, total - elapsed)
+    return {
+        "remaining_sec": round(remaining),
+        "elapsed_sec": round(elapsed),
+        "total_sec": round(total),
+    }
 
 
 def save_answer(

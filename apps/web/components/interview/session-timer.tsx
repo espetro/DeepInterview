@@ -16,10 +16,13 @@ import * as React from "react";
 import { cn } from "@/lib/cn";
 import { useMessages } from "@/lib/i18n/client";
 import { t } from "@/lib/i18n";
+import { formatCountdown } from "@/lib/timer";
 
 export interface SessionTimerProps {
   /** When true the clock ticks; flip on connect. Static 00:00 when false. */
   running: boolean;
+  /** When set, show a countdown from this many seconds instead of elapsed. */
+  remainingOverride?: number | null;
   className?: string;
 }
 
@@ -29,9 +32,37 @@ function format(totalSeconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export function SessionTimer({ running, className }: SessionTimerProps) {
+export function SessionTimer({
+  running,
+  remainingOverride = null,
+  className,
+}: SessionTimerProps) {
   const messages = useMessages();
   const [seconds, setSeconds] = React.useState(0);
+  // Countdown mode: the agent publishes "timer" payloads; while one is active
+  // we interpolate between agent ticks locally so the seconds move smoothly.
+  const countdownBaseRef = React.useRef<{
+    remaining: number;
+    at: number;
+  } | null>(null);
+  const [countdown, setCountdown] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (remainingOverride == null) {
+      countdownBaseRef.current = null;
+      setCountdown(null);
+      return;
+    }
+    countdownBaseRef.current = { remaining: remainingOverride, at: Date.now() };
+    setCountdown(remainingOverride);
+    const id = window.setInterval(() => {
+      const base = countdownBaseRef.current;
+      if (base == null) return;
+      const drifted = base.remaining - (Date.now() - base.at) / 1000;
+      setCountdown(Math.max(0, drifted));
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [remainingOverride]);
   // Remember when the clock first started so a pause/resume keeps the total.
   const startedAtRef = React.useRef<number | null>(null);
   const baseRef = React.useRef(0);
@@ -55,6 +86,9 @@ export function SessionTimer({ running, className }: SessionTimerProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
 
+  const remainingLabel =
+    countdown != null ? formatCountdown(countdown) : null;
+
   return (
     <div
       className={cn(
@@ -63,7 +97,7 @@ export function SessionTimer({ running, className }: SessionTimerProps) {
         className,
       )}
       role="timer"
-      aria-label={t(messages, "interview.elapsed")}
+      aria-label={t(messages, remainingLabel ? "interview.remaining" : "interview.elapsed")}
     >
       <span
         className={cn(
@@ -73,7 +107,7 @@ export function SessionTimer({ running, className }: SessionTimerProps) {
         aria-hidden
       />
       <span className="font-mono text-[12px] tabular-nums tracking-[0.08em] text-muted">
-        {format(seconds)}
+        {remainingLabel ?? format(seconds)}
       </span>
     </div>
   );

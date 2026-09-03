@@ -39,6 +39,7 @@ from .live.guard import SessionGuard
 from .live.guard import wrap_up_line as guard_wrap_up_line
 from .live.interviewer import Interviewer
 from .live.state import InterviewUserdata
+from .live.whiteboard import WHITEBOARD_TOPIC, store_whiteboard_snapshot
 from .shared_models import InterviewContext, RoomMetadata, ScoreRequest
 
 log = get_logger(__name__)
@@ -614,14 +615,43 @@ def _internal_headers(settings) -> dict[str, str]:
     return {"X-Internal-Secret": secret} if secret else {}
 
 
+# Effective duration bounds when room metadata requests a length (minutes).
+_MIN_DURATION_SEC = 20 * 60
+_MAX_DURATION_SEC = 45 * 60
+
+
+def _room_metadata(ctx: JobContext) -> RoomMetadata | None:
+    """Parse the room metadata JSON, or ``None`` when absent/malformed."""
+    metadata = getattr(ctx.room, "metadata", None)
+    if not metadata:
+        return None
+    try:
+        return RoomMetadata.model_validate_json(metadata)
+    except Exception as exc:  # noqa: BLE001 - tolerate malformed metadata
+        log.warning("worker: bad room metadata, using defaults (%s)", exc)
+        return None
+
+
+def _effective_duration_sec(
+    metadata: RoomMetadata | None, settings
+) -> float:
+    """Session length in seconds: metadata duration clamped to [20, 45] min.
+
+    A missing/out-of-band ``duration_min`` falls back to the settings default,
+    which is also used when the clamp would be the only other option — the
+    operator's configured cap wins over a bad client value.
+    """
+    requested = metadata.duration_min if metadata is not None else None
+    if requested is None:
+        return float(settings.max_interview_duration_sec)
+    return float(max(_MIN_DURATION_SEC, min(requested * 60, _MAX_DURATION_SEC)))
+
+
 def _session_id_from_room(ctx: JobContext) -> str:
     """Derive the session id from room metadata JSON, falling back to room name."""
-    metadata = getattr(ctx.room, "metadata", None)
-    if metadata:
-        try:
-            return RoomMetadata.model_validate_json(metadata).session_id
-        except Exception as exc:  # noqa: BLE001 - tolerate malformed metadata
-            log.warning("worker: bad room metadata, using room name (%s)", exc)
+    metadata = _room_metadata(ctx)
+    if metadata is not None:
+        return metadata.session_id
     return ctx.room.name
 
 
@@ -672,7 +702,28 @@ async def entrypoint(ctx: JobContext) -> None:
         log.error("worker: no InterviewContext for session %s; aborting", session_id)
         return
 
+    def _publish_timer(snapshot: dict) -> None:
+        """Push a timer payload to the web client on the "timer" topic.
+
+        Best-effort: publishing must never break the guard loop or a turn.
+        """
+        import json as _json
+
+        try:
+            ctx.room.local_participant.publish_data(
+                _json.dumps(snapshot).encode("utf-8"),
+                topic="timer",
+            )
+        except Exception:  # noqa: BLE001 - room may not be ready yet
+            pass
+
     userdata = InterviewUserdata(ctx=interview_ctx, session_id=session_id)
+    userdata.max_duration_sec = _effective_duration_sec(
+        _room_metadata(ctx), settings
+    )
+    # ctx.room is bound before any turn runs (after ctx.connect()), so the
+    # closure below is safe by the time tools or the guard can call it.
+    userdata.publish_timer = _publish_timer
 
     # Route STT/TTS by the interview's primary language so a non-English session
     # (e.g. Vietnamese) is both understood and spoken — not just prompted for.
@@ -716,6 +767,19 @@ async def entrypoint(ctx: JobContext) -> None:
     wire_transcript_capture(session, userdata)
     wire_audio_path_logging(ctx, session)
 
+    # Whiteboard (WP-5 v1): the browser publishes pruned tldraw snapshots on
+    # the "whiteboard" data topic; keep only the latest on the userdata for the
+    # Interviewer's read_whiteboard tool.
+    @ctx.room.on("data_received")
+    def _on_whiteboard_data(packet) -> None:
+        topic = getattr(packet, "topic", None)
+        if topic != WHITEBOARD_TOPIC:
+            return
+        if store_whiteboard_snapshot(userdata, packet.data):
+            log.debug(
+                "worker: whiteboard snapshot stored for session %s", session_id
+            )
+
     director = Director(
         userdata, enable_adaptive=settings.enable_adaptive_difficulty
     )
@@ -727,8 +791,9 @@ async def entrypoint(ctx: JobContext) -> None:
     guard = SessionGuard(
         session,
         userdata,
-        max_duration_sec=settings.max_interview_duration_sec,
+        max_duration_sec=userdata.max_duration_sec,
         max_turns=settings.max_interview_turns,
+        publish_timer=_publish_timer,
         wrap_up_line=guard_wrap_up_line(lang_mode.primary),
     )
 

@@ -284,6 +284,10 @@ class TokenResponse(BaseModel):
 class RoomMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid")
     session_id: str
+    # Requested interview length in minutes. Optional: the agent falls back to
+    # its default (max_interview_duration_sec) when absent, and clamps the
+    # effective value to [20, 45] minutes. Mirrors packages/shared/src/room.ts.
+    duration_min: int | None = None
 
 
 # --- api ---------------------------------------------------------------------

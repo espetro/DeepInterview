@@ -16,5 +16,11 @@ export type TokenResponse = z.infer<typeof TokenResponseSchema>;
 
 export const RoomMetadataSchema = z.object({
   session_id: z.string(),
+  /**
+   * Requested interview length in minutes. Optional: the agent falls back to
+   * its default (max_interview_duration_sec) when absent, and clamps the
+   * effective value to [20, 45] minutes.
+   */
+  duration_min: z.number().int().nullable().default(null),
 });
 export type RoomMetadata = z.infer<typeof RoomMetadataSchema>;
