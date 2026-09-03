@@ -19,10 +19,10 @@
 |  +----------------------------------------------+  | current     |
 |                                                    | question    |
 |  +-------------------------+-------------------------+ rewrites   |
-|  | DASHBOARD               | EDITOR                 || this block  |
-|  | (recharts panel)        | (CodeMirror w/         || live)       |
-|  | [bar chart] [line]      |  syntax highlighting)  ||             |
-|  | [stat cards]            |  def solve(nums):      ||             |
+|  | EDITOR                  | WHITEBOARD             ||             |
+|  | (CodeMirror w/          | (tldraw canvas —       ||             |
+|  |  syntax highlighting)   |  diagrams; agent can   ||             |
+|  |  def solve(nums):       |  read its contents)    ||             |
 |  |                         |    ...                 || [ type      |
 |  +-------------------------+-------------------------+  here...  ] |
 |                                                    +-------------+|
@@ -33,8 +33,10 @@
 ## Behavior
 
 - Top bar: fixed session title, countdown timer (T-2min triggers agent wrap-up; 0 hard-stops to `/finish/[id]`), agent voice orb (animated while speaking) top-right.
-- **Question block**: agent-editable tool. The agent rewrites the current question + hints live (tool call). User tools (dashboard, editor) are never touched by the agent.
-- **Tabbed tools**: full-width below the question block. Tabs: `Dashboard | Editor`. Dashboard = recharts panel (charts + stat cards fed by the candidate's own tool output). Editor = CodeMirror 6 with syntax highlighting.
+- **Question block**: agent-editable tool. The agent rewrites the current question + hints live (tool call). User tools (editor, whiteboard) are never rewritten by the agent, but the agent can READ them.
+- **Tabbed tools**: full-width below the question block. Tabs: `Editor | Whiteboard`. Editor = CodeMirror 6 with syntax highlighting. Whiteboard = tldraw canvas for diagrams.
+  - **Agent read tools**: `read_editor` (returns current editor buffer text) and `read_whiteboard` (returns serialized shape/snapshot summary). Both feed the same LLM turn path as the transcript, so the agent can reason over code and diagrams the candidate produces.
+  - This is part of the test contract: unit tests for the read-tool serializers, evals asserting the agent incorporates editor/whiteboard content in its turns (mock provider scripted with tool-call fixtures), and e2e assertions via `/v1/test/events` that `read_editor` / `read_whiteboard` tool calls land in the session event log.
 - **Transcript panel**: right side, translucent (10-20% alpha, iOS-26 style so background shows through), 10-20% collapsed-to-expanded width range.
   - Collapsed state = slim peek rail showing the last turn. **Minimize never fully hides it.**
   - Bottom of panel: text input box. Text input is a first-class feature (LiveKit chat/data channel -> RoomIO -> same LLM turn path as voice).
