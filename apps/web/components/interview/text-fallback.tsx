@@ -12,6 +12,8 @@
 import * as React from "react";
 import { SendHorizontal } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { useMessages } from "@/lib/i18n/client";
+import { t } from "@/lib/i18n";
 
 export interface TextFallbackProps {
   onSend: (text: string) => void;
@@ -25,6 +27,7 @@ export function TextFallback({
   className,
 }: TextFallbackProps) {
   const [value, setValue] = React.useState("");
+  const messages = useMessages();
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,10 +41,10 @@ export function TextFallback({
     <form
       onSubmit={submit}
       className={cn("flex items-center gap-2", className)}
-      aria-label="Type an answer instead of speaking"
+      aria-label={t(messages, "interview.typeAnswerLabel")}
     >
       <label htmlFor="di-text-fallback" className="sr-only">
-        Type an answer
+        {t(messages, "interview.typeAnswer")}
       </label>
       <input
         id="di-text-fallback"
@@ -50,7 +53,9 @@ export function TextFallback({
         onChange={(e) => setValue(e.target.value)}
         disabled={disabled}
         placeholder={
-          disabled ? "Typed answers available once live" : "Type an answer…"
+          disabled
+            ? t(messages, "interview.typePlaceholderOffline")
+            : t(messages, "interview.typePlaceholder")
         }
         autoComplete="off"
         className={cn(
@@ -64,7 +69,7 @@ export function TextFallback({
       <button
         type="submit"
         disabled={disabled || value.trim().length === 0}
-        aria-label="Send typed answer"
+        aria-label={t(messages, "interview.sendAnswer")}
         className={cn(
           "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
           "bg-ink text-white transition-colors duration-150 hover:bg-ink-soft",

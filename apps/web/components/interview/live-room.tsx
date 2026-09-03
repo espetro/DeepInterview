@@ -29,6 +29,7 @@
  */
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   LiveKitRoom,
@@ -48,6 +49,8 @@ import "@livekit/components-styles";
 
 import type { Persona } from "@/lib/personas";
 import { cn } from "@/lib/cn";
+import { useMessages } from "@/lib/i18n/client";
+import { t, type Messages } from "@/lib/i18n";
 import { VoiceStage, StagePreview } from "@/components/interview/voice-stage";
 import {
   TranscriptPanel,
@@ -85,6 +88,12 @@ export interface LiveRoomProps {
   /** Null when LiveKit is unconfigured → preview (not-connected) mode. */
   token: string | null;
   url: string | null;
+  /**
+   * Why the preview path renders. `ended` = the session exists but is no
+   * longer joinable (finished/errored) — the notice must say so, not blame
+   * the LiveKit env. Defaults to `unconfigured`.
+   */
+  previewReason?: "unconfigured" | "ended";
 }
 
 /**
@@ -92,16 +101,19 @@ export interface LiveRoomProps {
  * common case — the browser blocked getUserMedia — so we say exactly where to
  * flip the switch instead of a generic "something went wrong".
  */
-function describeMicFailure(failure?: MediaDeviceFailure): string {
+function describeMicFailure(
+  messages: Messages,
+  failure?: MediaDeviceFailure,
+): string {
   switch (failure) {
     case MediaDeviceFailure.PermissionDenied:
-      return "Microphone access is blocked. Click the lock or mic icon in your browser's address bar, allow the microphone, then unmute.";
+      return t(messages, "interview.micBlocked");
     case MediaDeviceFailure.NotFound:
-      return "No microphone was found. Connect one (or pick a different input in your system settings), then unmute.";
+      return t(messages, "interview.micNotFound");
     case MediaDeviceFailure.DeviceInUse:
-      return "Your microphone is in use by another app. Close that app, then unmute.";
+      return t(messages, "interview.micInUse");
     default:
-      return "We couldn't access your microphone. Check your browser's microphone permission, then unmute.";
+      return t(messages, "interview.micUnknown");
   }
 }
 
@@ -252,6 +264,7 @@ function LiveSession({
   onMicError: (message: string | null) => void;
 }) {
   const router = useRouter();
+  const messages = useMessages();
   const connectionState = useConnectionState();
   const connected = connectionState === ConnectionState.Connected;
   const reconnecting =
@@ -326,7 +339,9 @@ function LiveSession({
       onMicError(null);
     } catch (error) {
       // getUserMedia rejection: permission denied / no device / device busy.
-      onMicError(describeMicFailure(MediaDeviceFailure.getFailure(error)));
+      onMicError(
+        describeMicFailure(messages, MediaDeviceFailure.getFailure(error)),
+      );
     }
   }
 
@@ -369,7 +384,7 @@ function LiveSession({
           {/* Visible only when the browser blocks autoplay — StartAudio toggles
               its own `display`, so a sighted user can click to enable audio. */}
           <StartAudio
-            label="Enable interview audio"
+            label={t(messages, "interview.enableAudio")}
             className="rounded-full border border-accent bg-accent-soft px-4 py-2 text-[13px] font-medium text-accent transition-colors hover:bg-accent hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
           />
           <ControlBar
@@ -384,13 +399,13 @@ function LiveSession({
       notice={
         micError ? (
           <ErrorNotice
-            title="Microphone unavailable"
-            message={`${micError} Until then, you can type your answers below.`}
+            title={t(messages, "interview.micUnavailable")}
+            message={`${micError} ${t(messages, "interview.micTypeFallback")}`}
           />
         ) : agentNeverJoined ? (
           <ErrorNotice
-            title="Your interviewer hasn’t joined"
-            message="You’re connected to the room, but the voice worker never arrived. It runs as a separate process — start it with `docker compose --profile live up` and check LIVEKIT_URL / LIVEKIT_API_KEY / LIVEKIT_API_SECRET plus your STT/TTS/LLM keys in the root .env. You can type your answers below in the meantime."
+            title={t(messages, "interview.agentMissing")}
+            message={t(messages, "interview.agentMissingBody")}
           />
         ) : reconnecting ? (
           <div
@@ -398,7 +413,7 @@ function LiveSession({
             aria-live="polite"
             className="mx-auto mt-6 max-w-xl rounded-card border border-line bg-paper/70 px-4 py-3 text-center text-[13px] text-muted backdrop-blur-sm"
           >
-            Connection unstable — reconnecting…
+            {t(messages, "interview.reconnecting")}
           </div>
         ) : null
       }
@@ -410,7 +425,16 @@ function LiveSession({
 /* PREVIEW session — zero LiveKit hooks; static sample data offline.    */
 /* ------------------------------------------------------------------ */
 
-function PreviewSession({ persona }: { persona: Persona }) {
+function PreviewSession({
+  persona,
+  sessionId,
+  reason,
+}: {
+  persona: Persona;
+  sessionId: string;
+  reason: "unconfigured" | "ended";
+}) {
+  const messages = useMessages();
   return (
     <Scaffold
       persona={persona}
@@ -427,18 +451,30 @@ function PreviewSession({ persona }: { persona: Persona }) {
       }
       textFallback={<TextFallback onSend={() => {}} disabled />}
       notice={
-        <div
-          className={cn(
-            "mx-auto mt-6 max-w-xl rounded-card border border-line",
-            "bg-paper/70 px-4 py-3 text-center text-[13px] text-muted backdrop-blur-sm",
-          )}
-          role="status"
-        >
-          Preview mode — connect LiveKit (set{" "}
-          <code className="font-mono text-[12px] text-ink-soft">LIVEKIT_*</code>{" "}
-          in <code className="font-mono text-[12px] text-ink-soft">.env</code>)
-          to go live.
-        </div>
+        reason === "ended" ? (
+          <ErrorNotice
+            title={t(messages, "interview.endedTitle")}
+            message={t(messages, "interview.endedBody")}
+            action={
+              <Link
+                href={`/report/${encodeURIComponent(sessionId)}`}
+                className="rounded-full border border-accent bg-accent-soft px-4 py-2 text-[13px] font-medium text-accent no-underline transition-colors hover:bg-accent hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
+              >
+                {t(messages, "interview.viewReport")}
+              </Link>
+            }
+          />
+        ) : (
+          <div
+            className={cn(
+              "mx-auto mt-6 max-w-xl rounded-card border border-line",
+              "bg-paper/70 px-4 py-3 text-center text-[13px] text-muted backdrop-blur-sm",
+            )}
+            role="status"
+          >
+            {t(messages, "interview.previewBody")}
+          </div>
+        )
       }
     />
   );
@@ -449,6 +485,7 @@ function PreviewSession({ persona }: { persona: Persona }) {
 /* ------------------------------------------------------------------ */
 
 function ConnectingShell({ persona }: { persona: Persona }) {
+  const messages = useMessages();
   return (
     <Scaffold
       persona={persona}
@@ -469,7 +506,7 @@ function ConnectingShell({ persona }: { persona: Persona }) {
           className="mx-auto mt-6 max-w-xl rounded-card border border-line bg-paper/70 px-4 py-3 text-center text-[13px] text-muted backdrop-blur-sm"
           role="status"
         >
-          Connecting…
+          {t(messages, "interview.connectingShort")}
         </div>
       }
     />
@@ -489,6 +526,7 @@ function ConnectionLostShell({
   message: string;
   onRejoin: () => void;
 }) {
+  const messages = useMessages();
   return (
     <Scaffold
       persona={persona}
@@ -506,7 +544,7 @@ function ConnectionLostShell({
       textFallback={<TextFallback onSend={() => {}} disabled />}
       notice={
         <ErrorNotice
-          title="Connection lost"
+          title={t(messages, "interview.connLost")}
           message={message}
           action={
             <button
@@ -514,7 +552,7 @@ function ConnectionLostShell({
               onClick={onRejoin}
               className="rounded-full border border-accent bg-accent-soft px-4 py-2 text-[13px] font-medium text-accent transition-colors hover:bg-accent hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
             >
-              Rejoin interview
+              {t(messages, "interview.rejoin")}
             </button>
           }
         />
@@ -527,8 +565,15 @@ function ConnectionLostShell({
 /* Orchestrator.                                                        */
 /* ------------------------------------------------------------------ */
 
-export function LiveRoom({ sessionId, persona, token, url }: LiveRoomProps) {
+export function LiveRoom({
+  sessionId,
+  persona,
+  token,
+  url,
+  previewReason = "unconfigured",
+}: LiveRoomProps) {
   const router = useRouter();
+  const messages = useMessages();
 
   // Guard the browser-only LiveKit client from SSR / first hydration.
   const [mounted, setMounted] = React.useState(false);
@@ -544,24 +589,25 @@ export function LiveRoom({ sessionId, persona, token, url }: LiveRoomProps) {
   );
   const [joinAttempt, setJoinAttempt] = React.useState(0);
 
-  const handleError = React.useCallback((error: Error) => {
-    // Device-capture failures surface here too (the room enables the mic via
-    // the `audio` prop); classify them as mic problems, not connection loss.
-    const failure = MediaDeviceFailure.getFailure(error);
-    if (failure) {
-      setMicError(describeMicFailure(failure));
-      return;
-    }
-    setConnectionLost(
-      "We couldn't reach the interview room. Check your network, then rejoin.",
-    );
-  }, []);
+  const handleError = React.useCallback(
+    (error: Error) => {
+      // Device-capture failures surface here too (the room enables the mic via
+      // the `audio` prop); classify them as mic problems, not connection loss.
+      const failure = MediaDeviceFailure.getFailure(error);
+      if (failure) {
+        setMicError(describeMicFailure(messages, failure));
+        return;
+      }
+      setConnectionLost(t(messages, "interview.couldntReach"));
+    },
+    [messages],
+  );
 
   const handleMediaDeviceFailure = React.useCallback(
     (failure?: MediaDeviceFailure) => {
-      setMicError(describeMicFailure(failure));
+      setMicError(describeMicFailure(messages, failure));
     },
-    [],
+    [messages],
   );
 
   const handleDisconnected = React.useCallback(
@@ -573,11 +619,9 @@ export function LiveRoom({ sessionId, persona, token, url }: LiveRoomProps) {
         router.push(`/report/${encodeURIComponent(sessionId)}`);
         return;
       }
-      setConnectionLost(
-        "The connection to the interview dropped. Rejoin to pick up where you left off.",
-      );
+      setConnectionLost(t(messages, "interview.connDropped"));
     },
-    [router, sessionId],
+    [router, sessionId, messages],
   );
 
   function rejoin() {
@@ -590,7 +634,13 @@ export function LiveRoom({ sessionId, persona, token, url }: LiveRoomProps) {
 
   // Offline / not-connected: the build + no-keys path. Renders fully.
   if (!canConnect) {
-    return <PreviewSession persona={persona} />;
+    return (
+      <PreviewSession
+        persona={persona}
+        sessionId={sessionId}
+        reason={previewReason}
+      />
+    );
   }
 
   // Before mount (genuine live path), show a neutral connecting shell so SSR

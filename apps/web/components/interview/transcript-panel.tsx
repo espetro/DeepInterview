@@ -16,6 +16,8 @@
 
 import * as React from "react";
 import { cn } from "@/lib/cn";
+import { useMessages } from "@/lib/i18n/client";
+import { t } from "@/lib/i18n";
 
 export type TurnRole = "interviewer" | "candidate";
 
@@ -33,23 +35,30 @@ export interface TranscriptPanelProps {
   className?: string;
 }
 
-const ROLE_LABEL: Record<TurnRole, string> = {
-  interviewer: "Interviewer",
-  candidate: "You",
-};
-
 export function TranscriptPanel({
   turns,
   live = false,
   className,
 }: TranscriptPanelProps) {
+  const messages = useMessages();
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
-  // Pin to the latest turn as the transcript grows.
+  // Pin to the latest turn as the transcript grows. Instant jump when the user
+  // prefers reduced motion — smooth scrolling can nauseate.
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   React.useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
+    // `prefersReducedMotion` is read once per render from matchMedia; the
+    // effect re-runs when `turns` changes, which is the pin trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [turns]);
 
   return (
@@ -62,12 +71,15 @@ export function TranscriptPanel({
     >
       <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
         <span className="font-mono text-[10px] tracking-[0.14em] text-faint">
-          TRANSCRIPT
+          {t(messages, "interview.transcript").toUpperCase()}
         </span>
         {live && (
           <span className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.12em] text-muted">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-            LIVE
+            <span
+              className="h-1.5 w-1.5 rounded-full bg-accent motion-safe:animate-pulse"
+              aria-hidden
+            />
+            {t(messages, "interview.live").toUpperCase()}
           </span>
         )}
       </div>
@@ -75,13 +87,12 @@ export function TranscriptPanel({
       <div
         ref={scrollRef}
         className="flex-1 space-y-3.5 overflow-y-auto px-4 py-4"
-        aria-live="polite"
-        aria-label="Interview transcript"
+        aria-label={t(messages, "interview.transcript")}
         role="log"
       >
         {turns.length === 0 ? (
           <p className="text-[13px] leading-relaxed text-faint">
-            The conversation will appear here as you speak.
+            {t(messages, "interview.transcriptEmpty")}
           </p>
         ) : (
           turns.map((turn) => (
@@ -92,7 +103,10 @@ export function TranscriptPanel({
                   turn.role === "candidate" ? "text-accent" : "text-faint",
                 )}
               >
-                {ROLE_LABEL[turn.role].toUpperCase()}
+                {(turn.role === "candidate"
+                  ? t(messages, "interview.roleYou")
+                  : t(messages, "interview.roleInterviewer")
+                ).toUpperCase()}
               </span>
               <p
                 className={cn(

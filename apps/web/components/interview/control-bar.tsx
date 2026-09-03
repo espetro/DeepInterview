@@ -9,7 +9,10 @@
  */
 
 import { Mic, MicOff, PhoneOff } from "lucide-react";
+import * as React from "react";
 import { cn } from "@/lib/cn";
+import { useMessages } from "@/lib/i18n/client";
+import { t } from "@/lib/i18n";
 
 export interface ControlBarProps {
   /** True when the mic is publishing; false when muted. */
@@ -31,6 +34,32 @@ export function ControlBar({
   ending = false,
   className,
 }: ControlBarProps) {
+  const messages = useMessages();
+  // Two-tap end: the first tap arms ("Tap again to end"), the second fires.
+  // Ending an interview mid-call is irreversible, and End sits next to Mute.
+  const [armed, setArmed] = React.useState(false);
+  const armTimer = React.useRef<number | null>(null);
+
+  React.useEffect(
+    () => () => {
+      if (armTimer.current != null) window.clearTimeout(armTimer.current);
+    },
+    [],
+  );
+
+  function handleEnd() {
+    if (disabled || ending) return;
+    if (!armed) {
+      setArmed(true);
+      if (armTimer.current != null) window.clearTimeout(armTimer.current);
+      armTimer.current = window.setTimeout(() => setArmed(false), 4000);
+      return;
+    }
+    if (armTimer.current != null) window.clearTimeout(armTimer.current);
+    setArmed(false);
+    onEnd();
+  }
+
   return (
     <div
       className={cn(
@@ -39,14 +68,18 @@ export function ControlBar({
         className,
       )}
       role="group"
-      aria-label="Interview controls"
+      aria-label={t(messages, "interview.controls")}
     >
       <button
         type="button"
         onClick={onToggleMute}
         disabled={disabled}
         aria-pressed={!micEnabled}
-        aria-label={micEnabled ? "Mute microphone" : "Unmute microphone"}
+        aria-label={
+          micEnabled
+            ? t(messages, "interview.mute")
+            : t(messages, "interview.unmute")
+        }
         className={cn(
           "inline-flex h-10 w-10 items-center justify-center rounded-full",
           "transition-colors duration-150",
@@ -66,19 +99,32 @@ export function ControlBar({
 
       <button
         type="button"
-        onClick={onEnd}
+        onClick={handleEnd}
+        onBlur={() => setArmed(false)}
         disabled={disabled || ending}
-        aria-label="End interview"
+        aria-label={
+          armed
+            ? t(messages, "interview.confirmEnd")
+            : t(messages, "interview.end")
+        }
+        aria-live="polite"
         className={cn(
           "inline-flex h-10 items-center gap-2 rounded-full px-4",
-          "bg-ink text-[13px] font-medium text-white",
-          "transition-colors duration-150 hover:bg-ink-soft",
+          "text-[13px] font-medium",
+          armed
+            ? "bg-accent text-white hover:bg-accent"
+            : "bg-ink text-white hover:bg-ink-soft",
+          "transition-colors duration-150",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-paper",
           "disabled:opacity-40 disabled:pointer-events-none",
         )}
       >
         <PhoneOff className="h-4 w-4" aria-hidden />
-        {ending ? "Ending…" : "End"}
+        {ending
+          ? t(messages, "interview.ending")
+          : armed
+            ? t(messages, "interview.confirmEnd")
+            : t(messages, "interview.endButton")}
       </button>
     </div>
   );

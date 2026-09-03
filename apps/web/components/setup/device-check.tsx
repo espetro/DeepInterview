@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Mic, MicOff, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useMessages } from "@/lib/i18n/client";
+import { t } from "@/lib/i18n";
 import { cn } from "@/lib/cn";
 
 type Status = "idle" | "requesting" | "ok" | "denied" | "unsupported";
@@ -15,6 +17,7 @@ type Status = "idle" | "requesting" | "ok" | "denied" | "unsupported";
  * component SSRs cleanly. Streams + AudioContext are torn down on unmount.
  */
 export function DeviceCheck() {
+  const messages = useMessages();
   const [status, setStatus] = useState<Status>("idle");
   const [level, setLevel] = useState(0);
 
@@ -89,10 +92,29 @@ export function DeviceCheck() {
   const bars = 16;
   const lit = Math.round(level * bars);
 
+  // Release the mic after a pass (or on demand): without this the browser's
+  // recording indicator stays lit while the user fills the rest of the form.
+  function stop() {
+    teardown();
+    setLevel(0);
+    setStatus("idle");
+  }
+
+  const statusText =
+    status === "ok"
+      ? t(messages, "setup.micWorking")
+      : status === "requesting"
+        ? t(messages, "setup.micRequesting")
+        : status === "denied"
+          ? t(messages, "setup.micDenied")
+          : status === "unsupported"
+            ? t(messages, "setup.micUnsupported")
+            : t(messages, "setup.micIdle");
+
   return (
     <div className="rounded-[10px] border border-line bg-panel p-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" role="status">
           {status === "ok" ? (
             <CheckCircle2 className="h-4 w-4 text-ok" aria-hidden />
           ) : status === "denied" || status === "unsupported" ? (
@@ -100,20 +122,15 @@ export function DeviceCheck() {
           ) : (
             <Mic className="h-4 w-4 text-muted" aria-hidden />
           )}
-          <span className="text-[13px] text-ink-soft">
-            {status === "ok"
-              ? "Microphone working"
-              : status === "requesting"
-                ? "Requesting access…"
-                : status === "denied"
-                  ? "Access denied — check browser permissions"
-                  : status === "unsupported"
-                    ? "Mic capture unavailable on this origin"
-                    : "Not checked yet"}
-          </span>
+          <span className="text-[13px] text-ink-soft">{statusText}</span>
         </div>
         {status === "ok" ? (
-          <Badge variant="ok">PASS</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="ok">PASS</Badge>
+            <Button type="button" variant="ghost" size="sm" onClick={stop}>
+              {t(messages, "setup.micStop")}
+            </Button>
+          </div>
         ) : status === "denied" || status === "unsupported" ? (
           <Badge variant="outline">FAIL</Badge>
         ) : (
@@ -124,7 +141,7 @@ export function DeviceCheck() {
             onClick={start}
             disabled={status === "requesting"}
           >
-            Test mic
+            {t(messages, "setup.micTest")}
           </Button>
         )}
       </div>

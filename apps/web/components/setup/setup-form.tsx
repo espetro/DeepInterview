@@ -350,6 +350,15 @@ export function SetupForm({ r2Configured }: { r2Configured: boolean }) {
         </CardHeader>
         <CardContent className="flex flex-col gap-4 pb-6">
           <div
+            role="button"
+            tabIndex={0}
+            aria-label={t(messages, "setup.cvDrop")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
             onDragOver={(e) => {
               e.preventDefault();
               setDragging(true);
@@ -359,6 +368,7 @@ export function SetupForm({ r2Configured }: { r2Configured: boolean }) {
             onClick={() => fileInputRef.current?.click()}
             className={cn(
               "flex cursor-pointer flex-col items-center gap-2 rounded-[10px] border border-dashed px-4 py-8 text-center transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
               dragging
                 ? "border-accent bg-accent-soft"
                 : "border-line hover:border-ink",

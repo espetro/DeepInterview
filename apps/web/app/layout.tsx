@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -50,10 +51,18 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  // Screen readers pick pronunciation from `lang` — resolve it from the same
+  // `locale` cookie the LanguageToggle writes (EN default).
+  const store = await cookies();
+  const lang = store.get("locale")?.value === "vi" ? "vi" : "en";
   return (
     <html
-      lang="en"
+      lang={lang}
       className={`${inter.variable} ${fraunces.variable} ${jetbrains.variable}`}
     >
       <body className="font-sans">

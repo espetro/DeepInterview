@@ -14,6 +14,8 @@
 
 import * as React from "react";
 import { cn } from "@/lib/cn";
+import { useMessages } from "@/lib/i18n/client";
+import { t } from "@/lib/i18n";
 
 export interface SessionTimerProps {
   /** When true the clock ticks; flip on connect. Static 00:00 when false. */
@@ -28,6 +30,7 @@ function format(totalSeconds: number): string {
 }
 
 export function SessionTimer({ running, className }: SessionTimerProps) {
+  const messages = useMessages();
   const [seconds, setSeconds] = React.useState(0);
   // Remember when the clock first started so a pause/resume keeps the total.
   const startedAtRef = React.useRef<number | null>(null);
@@ -60,7 +63,7 @@ export function SessionTimer({ running, className }: SessionTimerProps) {
         className,
       )}
       role="timer"
-      aria-label="Interview elapsed time"
+      aria-label={t(messages, "interview.elapsed")}
     >
       <span
         className={cn(

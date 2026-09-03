@@ -96,7 +96,13 @@ export default async function InterviewPage({
     const JOINABLE = new Set(["prep", "ready"]);
     if (!JOINABLE.has(session.status)) {
       return (
-        <LiveRoom sessionId={id} persona={persona} token={null} url={null} />
+        <LiveRoom
+          sessionId={id}
+          persona={persona}
+          token={null}
+          url={null}
+          previewReason="ended"
+        />
       );
     }
 
