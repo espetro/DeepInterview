@@ -1,0 +1,31 @@
+# Example config for local development with the in-repo mock provider.
+# Start the mock provider first: bun run evals/mock-provider/main.ts --port 9000
+
+server:
+  port: 3000
+  auth: none
+
+llm:
+  provider: mock
+  base_url: http://localhost:9000/v1
+  model: mock-llm
+
+stt:
+  base_url: http://localhost:9000/v1
+  model: mock-stt
+  mode: buffered
+
+tts:
+  base_url: http://localhost:9000/v1
+  model: mock-tts
+  voice: alloy
+
+livekit:
+  url: ws://localhost:7880
+  api_key: devkey
+  api_secret: secret
+
+files:
+  db_path: .deepinterview/di.db
+  log_path: .deepinterview/di.log
+  data_dir: .deepinterview/data
