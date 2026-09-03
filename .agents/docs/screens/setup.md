@@ -1,91 +1,50 @@
 # Screen: Setup (`/setup`)
 
-## ASCII mockup (iteration 2 state)
+## ASCII mockup
 
 ```
 +------------------------------------------------------------------+
-|  [logo]                                 Prep      Avatars        |
+|  [logo di]                 configure interview          history   |
 +------------------------------------------------------------------+
-|  Set up your interview                                           |
 |                                                                  |
-|  (1) FACTS                                                       |
-|  +------------------------------------------------------------+ |
-|  |  Drop your CV / resume  (.pdf .docx .md .txt)              | |
-|  |  [ drag & drop zone ]        or  [ choose file ]           | |
-|  |  --------------------------------------------------------  | |
-|  |  Paste text (optional; wins over the file on collision)    | |
-|  |  +------------------------------------------------------+ | |
-|  |  | (textarea)                                           | | |
-|  |  +------------------------------------------------------+ | |
-|  +------------------------------------------------------------+ |
+|  PRESETS                                                         |
+|  ( (sys design) (behavioral) (frontend) (ML) (custom) )          |
 |                                                                  |
-|  (1b) JOB DETAILS (small fields, kept for PrepRequest)           |
-|  +------------------------------------------------------------+ |
-|  |  Job description  [________________]                       | |
-|  |  Company          [________________]                       | |
+|  CUSTOM PROMPT                                                   |
+|  +----------------------------------------------------------+   |
+|  | textarea: paste a job description, your resume context,  |   |
+|  | or anything the agent should know about                  |   |
+|  +----------------------------------------------------------+   |
 |                                                                  |
-|  (2) DIFFICULTY                                                  |
-|  +------------------------------------------------------------+ |
-|  |  ( easy )  [ medium ]  ( hard )        <- segmented select  | |
-|  +------------------------------------------------------------+ |
+|  FILES (text-only: pdf, md, txt, docx — 10 files / 20MB max)     |
+|  +----------------------------------------------------------+   |
+|  |  [drop files or click to browse]                         |   |
+|  +----------------------------------------------------------+   |
+|  ( resume.pdf 24kB x ) ( jd.md 2kB x )                           |
 |                                                                  |
-|  (3) VOICE & LANGUAGE & DURATION                                 |
-|  +------------------------------------------------------------+ |
-|  |  Voice   [ dropdown v ]   (from apps/agent/config/ui.toml)  | |
-|  |  Language ( en ) ( vi ) ( es ) ( zh ) ( fr ) ( de ) ( ja )  | |
-|  |  Duration [ 30 ] min   clamp 5-60                           | |
-|  |  presets: (20) (30) (45) (60)                               | |
-|  +------------------------------------------------------------+ |
+|  FORM                                                            |
+|  duration: (20) (30) (45) (60) min                               |
+|  tone:     [dropdown]     difficulty: [dropdown]                 |
+|  language: [dropdown]     mode:  (interview) (coach*)            |
 |                                                                  |
-|  (4) DEVICE + START                                              |
-|  +------------------------------------------------------------+ |
-|  |  DeviceCheck: mic [ok]  speaker [ok]  [ re-test ]           | |
-|  |                    +------------------------+               | |
-|  |                    |  Start interview  ->   |               | |
-|  |                    +------------------------+               | |
-|  +------------------------------------------------------------+ |
+|              +-----------------------------+                     |
+|              |      validate & start       |  => /validate/[id]  |
+|              +-----------------------------+                     |
+|              proceed without validation => /interview/[id]       |
+|                                                                  |
 +------------------------------------------------------------------+
 ```
 
-## Section inventory (current, iteration 2)
+## Behavior
 
-1. **Facts**: file upload (`.pdf` / `.docx` / `.md` / `.txt`, drag-drop, base64
-   data URL) + optional paste textarea. If both are provided, the pasted text
-   wins. Plus small JD + company fields (still required strings in the
-   `PrepRequest` schema).
-2. **Difficulty**: easy / medium / hard selector, default medium. No persona
-   picker (the live room renders the default persona).
-3. **Voice / language / duration**: voice dropdown + language chips, config
-   driven from `GET /api/config/ui` (backed by `apps/agent/config/ui.toml`);
-   duration input in minutes, clamped 5-60, default 30, preset buttons
-   20 / 30 / 45 / 60.
-4. **Device check + Start**: DeviceCheck (mic/speaker), then Start.
+- Preset scenario chips fill the custom-prompt textarea with canned content; selecting a preset is just a textarea pre-fill.
+- File drop: text-only parsing deferred (M3 RAG); v1 stores the files against the session. Label the caps in the UI (10 files / 20MB).
+- Form fields: duration (20/30/45/60), tone, difficulty, language (interview language, NOT the UI locale), mode (`interview|coach`).
+- Primary action **validate & start** creates the session (POST /v1/sessions) then routes to `/validate/[id]`.
+- Link **proceed without validation** routes straight to `/interview/[id]`.
+- Coach mode button is disabled but animated, with an explanatory tooltip ("available after your first report") until a report exists.
 
-## Primary CTAs
+## URL / state
 
-- **Start interview** -> POST `startSession` server action ->
-  `POST /api/prep?fast=true` (difficulty / voice / duration_min included) ->
-  navigate `/session/{id}` (no persona query param).
-
-## States
-
-- Idle / validating file (type + size checks).
-- Uploading (base64 data URL built client-side).
-- Submitting (server action in flight; Start disabled).
-- Device check failed (Start gated until mic granted).
-- Error banner (submit failure).
-
-## Nav links
-
-- Header: `/prep`, `/avatars`. On success: `/session/{id}`.
-
-## Key files
-
-- `apps/web/app/setup/page.tsx` - route
-- `apps/web/components/setup/setup-form.tsx` - form, upload, chips, duration
-- `apps/web/components/setup/device-check.tsx` - mic/speaker check
-- `apps/web/app/setup/actions.ts` - `startSession` server action -> `/api/prep`
-- `apps/web/app/api/config/ui/route.ts` - Next proxy to the agent
-  `GET /api/config/ui`
-- `apps/web/lib/setup-config.ts` - config fetch + fallback, duration clamp
-- `apps/agent/config/ui.toml` - languages / voices / difficulties config
+- No URL params on entry. On submit, the created session id drives the next route.
+- Form state is local + valibot schema (`CreateSessionRequest` from `@di/shared` via formisch).

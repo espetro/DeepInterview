@@ -1,66 +1,48 @@
 # Screen: Report (`/report/[id]`)
 
-## ASCII mockup (current state)
+## ASCII mockup
 
 ```
 +------------------------------------------------------------------+
-|  [logo]        INTERVIEW REPORT   session {id}                   |
+|  [logo di]   report: {session title}            (export) history  |
 +------------------------------------------------------------------+
-|  +----------------+  +----------------+  +----------------+      |
-|  | SCORE BENTO    |  | overall  7.4   |  | verdict badge  |      |
-|  +----------------+  +----------------+  +----------------+      |
-|  +----------------------------------------------+                |
-|  | COMPETENCY CHART (radar / bars per skill)    |                |
-|  +----------------------------------------------+                |
-|  +--------------------------+  +--------------------------+      |
-|  | LANGUAGE REPORT CARD     |  | STRENGTHS & GAPS         |      |
-|  | (per-language breakdown) |  | + strengths  - gaps      |      |
-|  +--------------------------+  +--------------------------+      |
-|  +----------------------------------------------+                |
-|  | MODEL ANSWERS (ideal responses per question) |                |
-|  +----------------------------------------------+                |
-|  +----------------------------------------------+                |
-|  | TRANSCRIPT SECTION (full interview log)      |                |
-|  +----------------------------------------------+                |
-|  +------------------------------------------------------------+ |
-|  |        +-----------------------------+                     | |
-|  |        |  Coach me ->                |  => /prep?session=  | |
-|  |        +-----------------------------+                     | |
-|  +------------------------------------------------------------+ |
+|                                                                  |
+|  +---------------+  +---------------+  +---------------------+   |
+|  | overall       |  | coverage      |  | duration / turns    |   |
+|  |    7.2 / 10   |  |    80%        |  | 32 min · 14 turns   |   |
+|  +---------------+  +---------------+  +---------------------+   |
+|                                                                  |
+|  COMPETENCIES (bento + bars)                                     |
+|  +-----------------------------------------------------------+   |
+|  | system design       [==========--] 8.0                    |   |
+|  |  WORKED  "I would shard by user id" (turn 12)             |   |
+|  |  IMPROVE "didn't address failover" (turn 18)              |   |
+|  | api design          [========-----] 6.5                    |   |
+|  |  WORKED  "idempotency keys on POST" (turn 9)              |   |
+|  |  DROP    "forgot auth on the webhook" (turn 22)           |   |
+|  +-----------------------------------------------------------+   |
+|                                                                  |
+|  MODEL ANSWERS                                                   |
+|  +-----------------------------------------------------------+   |
+|  | Q: design a URL shortener                                 |   |
+|  | A: a strong answer covers key space, collisions, 301/302… |   |
+|  +-----------------------------------------------------------+   |
+|                                                                  |
+|         +--------------------------------------+                 |
+|         |   practice weak areas ->             |  (coach, M5)    |
+|         +--------------------------------------+                 |
 +------------------------------------------------------------------+
 ```
 
-While scoring is pending, a ScoringPoll section polls until results arrive.
+## Behavior
 
-## Section inventory
+- Score bento at top: overall / 10, coverage %, meta (duration, turns).
+- Competency list: name + bar + score; under each, verbatim evidence quotes tagged `worked / improve / drop` with turn references. Quotes are verbatim transcript text (hallucination guard: every claim carries a quote that exists in the transcript).
+- Model answers section: question text + reference answer.
+- **Export**: downloads the report JSON (GET /v1/sessions/[id]/report).
+- **Practice weak areas ->** coach CTA seeds a coach session (M5; rendered disabled with tooltip in M1).
+- Scoring is async (ScoringPoll pattern): if report not ready, show pending state and poll.
 
-- ScoreBento (overall score tiles).
-- CompetencyChart.
-- LanguageReportCard.
-- StrengthsGaps.
-- ModelAnswers.
-- TranscriptSection.
-- ScoringPoll (pending-state poller).
-- Coach CTA band.
+## URL / state
 
-## Primary CTAs
-
-- **Coach me** -> `/prep?session={id}`.
-
-## States
-
-- `scoring` - ScoringPoll active; skeletons shown.
-- `ready` - full report rendered.
-- `failed` - scoring failed; retry message.
-- `notFound` - invalid session id.
-
-## Nav links
-
-- Header nav; Coach me -> `/prep?session={id}`.
-
-## Key files
-
-- `apps/web/app/report/[id]/page.tsx` - route
-- `apps/web/components/report/*` - score-bento, competency-chart,
-  language-report-card, strengths-gaps, model-answers, transcript-section,
-  scoring-poll
+- `id` path param: session id. Report via TanStack Query (GET /v1/sessions/[id]/report).
