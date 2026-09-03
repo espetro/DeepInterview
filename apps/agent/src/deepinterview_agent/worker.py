@@ -67,8 +67,12 @@ def wire_audio_path_logging(ctx: JobContext, session) -> None:
         log.info("audio-path: track SUBSCRIBED kind=%s from %s", _kind(pub), p.identity)
 
     @ctx.room.on("track_muted")
-    def _on_muted(pub, p) -> None:
+    def _on_muted(p, pub) -> None:
         log.info("audio-path: track MUTED kind=%s by %s", _kind(pub), p.identity)
+
+    @ctx.room.on("track_unmuted")
+    def _on_unmuted(p, pub) -> None:
+        log.info("audio-path: track UNMUTED kind=%s by %s", _kind(pub), p.identity)
 
     for p in ctx.room.remote_participants.values():
         pubs = {sid: _kind(pub) for sid, pub in p.track_publications.items()}
