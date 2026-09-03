@@ -107,6 +107,9 @@ importers:
       yaml:
         specifier: ^2.9.0
         version: 2.9.0
+      zx:
+        specifier: ^8.1.4
+        version: 8.8.5
     devDependencies:
       '@types/node':
         specifier: ^26.1.1
@@ -3346,6 +3349,11 @@ packages:
       react:
         optional: true
 
+  zx@8.8.5:
+    resolution: {integrity: sha512-SNgDF5L0gfN7FwVOdEFguY3orU5AkfFZm9B5YSHog/UDHv+lvmd82ZAsOenOkQixigwH2+yyH198AwNdKhj+RA==}
+    engines: {node: '>= 12.17.0'}
+    hasBin: true
+
 snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
@@ -6255,3 +6263,5 @@ snapshots:
       '@types/react': 19.2.17
       immer: 11.1.15
       react: 19.2.8
+
+  zx@8.8.5: {}

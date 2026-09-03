@@ -2,6 +2,7 @@ import { runAvatars } from "./commands/avatars";
 import { runInit } from "./commands/init";
 import { runSkills } from "./commands/skills";
 import { runTraces } from "./commands/traces";
+import { runRunLocalProd } from "./commands/run-local-prod";
 
 const [, , command, ...args] = process.argv;
 
@@ -24,6 +25,9 @@ Usage:
   deepinterview traces [list]    Show recent agent runs (prep/score/live) from
                                  the local trace store (.deepinterview/traces)
   deepinterview traces show <id> Replay one run: nested spans, LLM calls, errors
+
+  deepinterview run-local-prod    Boot the full local prod stack (zx-based;
+                                 replaces scripts/run-local-prod.sh)
 
 \`init\` writes three files:
   .env                 → read by docker compose (the full stack)
@@ -49,6 +53,9 @@ async function main(): Promise<void> {
       break;
     case "traces":
       await runTraces(args);
+      break;
+    case "run-local-prod":
+      await runRunLocalProd(args);
       break;
     case undefined:
     case "help":

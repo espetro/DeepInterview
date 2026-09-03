@@ -5,7 +5,8 @@
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
-    "deepinterview": "./dist/index.js"
+    "deepinterview": "./dist/index.js",
+    "deepinterview-run-local-prod": "./dist/run-local-prod.js"
   },
   "files": [
     "dist"
@@ -18,7 +19,8 @@
   "dependencies": {
     "@clack/prompts": "^1.7.0",
     "@deepinterview/shared": "workspace:*",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "zx": "^8.1.4"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
