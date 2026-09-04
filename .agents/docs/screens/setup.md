@@ -44,6 +44,12 @@
   error copy; bad-type and cap violations never navigate. Files are listed under
   the drop zone with size and a remove control. Upload failure shows an error but
   does not block starting the interview.
+- Mic check: compact client-side component (`web/src/components/mic-check.tsx`)
+  between files and the form. Idle by default; "test mic" requests getUserMedia,
+  shows a segmented live input-level meter (persimmon, red-ish top segments) and
+  a microphone device picker (populated post-permission). Switching devices
+  restarts capture. Deny/no-device errors show inline copy. Nothing is recorded
+  or transmitted; stop releases the stream.
 - Form fields: duration (20/30/45/60), tone, difficulty, language (interview language, NOT the UI locale), mode (`interview|coach`).
 - Primary action **validate & start** creates the session (POST /v1/sessions) then routes to `/validate/[id]`.
 - Link **proceed without validation** routes straight to `/interview/[id]`.
