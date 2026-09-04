@@ -13,6 +13,38 @@ import { InterviewAgent } from "./agent.ts";
 import { WhisperStt, whisperStreamAdapter } from "./stt/whisper-stt.ts";
 import { PocketTts } from "./tts/pocket-tts.ts";
 import type { SessionContext } from "./prompt.ts";
+import type { Turn } from "@di/shared";
+
+/** Post a turn with bounded retry: 3 attempts total, 250ms then 1s backoff. */
+export async function postTurnWithRetry(
+  api: DiApiClient,
+  sessionId: string,
+  turn: Turn,
+  delays: readonly number[] = [250, 1000],
+): Promise<void> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await api.postTurn(sessionId, turn);
+      return;
+    } catch (err) {
+      if (attempt >= delays.length) {
+        throw err;
+      }
+      await new Promise((resolve) => setTimeout(resolve, delays[attempt]));
+    }
+  }
+}
+
+/** Install last-resort fatal error handlers; uncaughtException exits for supervisor restart. */
+export function installFatalHandlers(log = console.error): void {
+  process.on("unhandledRejection", (err) => {
+    log(JSON.stringify({ event: "worker_fatal", err: String(err) }));
+  });
+  process.on("uncaughtException", (err) => {
+    log(JSON.stringify({ event: "worker_fatal", err: String(err) }));
+    process.exit(1);
+  });
+}
 
 /** Build the provider-configured LLM instance. mock rides the openai plugin. */
 export function buildLlm(config: WorkerConfig) {
@@ -97,19 +129,26 @@ export async function runJob(ctx: JobContext): Promise<void> {
   let seqLock = Promise.resolve();
   session.on("conversation_item_added", (ev) => {
     // Serialize posts so concurrent items keep monotonically increasing seqs.
-    seqLock = seqLock.then(() =>
-      api
-        .postTurn(sessionId, {
-          id: crypto.randomUUID(),
-          session_id: sessionId,
-          seq: seq++,
-          speaker: ev.item.role === "user" ? "user" : "agent",
-          text: ev.item.textContent ?? "",
-          created_at: new Date().toISOString(),
-          source: "voice",
-        })
-        .catch((err) => console.warn(`[worker] failed to post turn: ${err}`)),
-    );
+    seqLock = seqLock.then(() => {
+      const turn: Turn = {
+        id: crypto.randomUUID(),
+        session_id: sessionId,
+        seq: seq++,
+        speaker: ev.item.role === "user" ? "user" : "agent",
+        text: ev.item.textContent ?? "",
+        created_at: new Date().toISOString(),
+        source: "voice",
+      };
+      return postTurnWithRetry(api, sessionId, turn).catch((err) => {
+        console.error(
+          `[worker] failed to persist turn after retries: session_id=${sessionId} seq=${turn.seq}: ${err}`,
+        );
+        // Best-effort telemetry; a persist failure must not crash the job.
+        api
+          .postEvent(sessionId, "turn.persist_failed", { seq: turn.seq, error: String(err) })
+          .catch(() => undefined);
+      });
+    });
   });
 
   // Greet so the candidate hears the agent first; also guarantees at least one
@@ -118,6 +157,9 @@ export async function runJob(ctx: JobContext): Promise<void> {
     await session.say("Hi, I'm ready to begin your mock interview whenever you are.");
   } catch (err) {
     console.warn(`[worker] greeting failed: ${err}`);
+    api
+      .postEvent(sessionId, "greeting_failed", { error: String(err) })
+      .catch(() => undefined);
   }
   ctx.addShutdownCallback(async () => {
     await roomIo.close();
@@ -159,6 +201,7 @@ void agent; // re-exported for tests; the bundled agent entry lives in agent-mai
  * unreachable so `node worker.js` fails fast in M1.
  */
 async function main(): Promise<void> {
+  installFatalHandlers();
   let config: WorkerConfig;
   try {
     config = workerConfig();

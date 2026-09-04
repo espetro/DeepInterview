@@ -6,7 +6,9 @@
  */
 import { VAD as SileroVAD } from "@livekit/agents-plugin-silero";
 import { defineAgent } from "@livekit/agents";
-import { runJob } from "./entry.ts";
+import { runJob, installFatalHandlers } from "./entry.ts";
+
+installFatalHandlers();
 
 export const agent = defineAgent({
   entry: runJob,
