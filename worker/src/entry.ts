@@ -26,7 +26,15 @@ export function buildLlm(config: WorkerConfig) {
 
 export async function runJob(ctx: JobContext): Promise<void> {
   const config = workerConfig();
-  const sessionId = readSessionId(ctx.room.metadata ?? "") ?? crypto.randomUUID();
+  // Session id comes from the room name ("interview-<sid>", minted server-side).
+  // ctx.room.name is only populated after ctx.connect(), so prefer the job
+  // assignment's copy of the room name. AccessToken metadata lands on the
+  // participant, not the room, so room metadata is not a reliable channel.
+  const roomName = ctx.job.room?.name ?? ctx.room.name ?? "";
+  const sessionId =
+    readSessionIdFromRoomName(roomName) ??
+    readSessionId(ctx.room.metadata ?? "") ??
+    crypto.randomUUID();
   const api = new DiApiClient({ baseUrl: config.di_api_base });
   const sessionCtx: SessionContext = { mode: "interview" };
   // Ground the agent in uploaded documents when retrieval is available.
@@ -63,6 +71,9 @@ export async function runJob(ctx: JobContext): Promise<void> {
     tts: ttsImpl,
   });
 
+  // Join the room before wiring IO; without this the agent never connects.
+  await ctx.connect();
+
   const room = ctx.room;
   const roomIo = new RoomIO({ agentSession: session, room });
   await session.start({
@@ -72,6 +83,42 @@ export async function runJob(ctx: JobContext): Promise<void> {
     inputOptions: { textEnabled: true, audioEnabled: true },
   });
   roomIo.start();
+
+  // Registered before the greeting: say() emits conversation_item_added during
+  // its await, and the greeting turn must not be missed.
+  // Seq: fetch the existing turn count first so per-job counters don't collide
+  // with turns already persisted (e.g. text input before the agent joined).
+  let seq = (
+    await api
+      .getTurns(sessionId)
+      .then((turns) => turns.length)
+      .catch(() => 0)
+  );
+  let seqLock = Promise.resolve();
+  session.on("conversation_item_added", (ev) => {
+    // Serialize posts so concurrent items keep monotonically increasing seqs.
+    seqLock = seqLock.then(() =>
+      api
+        .postTurn(sessionId, {
+          id: crypto.randomUUID(),
+          session_id: sessionId,
+          seq: seq++,
+          speaker: ev.item.role === "user" ? "user" : "agent",
+          text: ev.item.textContent ?? "",
+          created_at: new Date().toISOString(),
+          source: "voice",
+        })
+        .catch((err) => console.warn(`[worker] failed to post turn: ${err}`)),
+    );
+  });
+
+  // Greet so the candidate hears the agent first; also guarantees at least one
+  // persisted turn even before the candidate speaks.
+  try {
+    await session.say("Hi, I'm ready to begin your mock interview whenever you are.");
+  } catch (err) {
+    console.warn(`[worker] greeting failed: ${err}`);
+  }
   ctx.addShutdownCallback(async () => {
     await roomIo.close();
     await session.close();
@@ -87,6 +134,14 @@ function readSessionId(metadata: string): string | undefined {
   }
 }
 
+/** Extract the session id from a room name of the form "interview-<sid>". */
+function readSessionIdFromRoomName(roomName: string): string | undefined {
+  const prefix = "interview-";
+  if (!roomName.startsWith(prefix)) return undefined;
+  const sid = roomName.slice(prefix.length);
+  return /^[0-9a-f-]{36}$/i.test(sid) ? sid : undefined;
+}
+
 export const agent = defineAgent({
   entry: runJob,
   prewarm: async (proc) => {
@@ -95,6 +150,8 @@ export const agent = defineAgent({
 });
 
 export default agent;
+
+void agent; // re-exported for tests; the bundled agent entry lives in agent-main.ts
 
 /**
  * Standalone entrypoint: validate config, probe the LiveKit endpoint, then run
@@ -127,7 +184,7 @@ async function main(): Promise<void> {
   const { fileURLToPath } = await import("node:url");
   const server = new AgentServer(
     new ServerOptions({
-      agent: fileURLToPath(new URL("./entry.js", import.meta.url)),
+      agent: fileURLToPath(new URL("./agent.js", import.meta.url)),
       requestFunc: async (job) => {
         await job.accept();
       },

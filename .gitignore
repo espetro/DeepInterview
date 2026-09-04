@@ -53,3 +53,8 @@ apps/web/public/avatars/
 cli/.run-logs/
 !/build/
 .playwright-cli/
+
+# Worker bundle artifacts (built by worker/build.ts)
+worker/*.js
+worker/*.js.map
+worker/silero_vad.onnx

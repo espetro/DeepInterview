@@ -29,6 +29,16 @@ export class DiApiClient {
     }
   }
 
+  async getTurns(sessionId: string): Promise<Turn[]> {
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/sessions/${sessionId}/turns`);
+    if (!res.ok) {
+      throw new Error(`getTurns failed: ${res.status} ${await res.text().catch(() => "")}`);
+    }
+    const rows: unknown = await res.json();
+    if (!Array.isArray(rows)) return [];
+    return rows.map((row) => parse(TurnSchema, row));
+  }
+
   /** Editor + whiteboard state the browser pushed to di. Empty strings when never pushed. */
   async getToolState(sessionId: string): Promise<ToolState> {
     const res = await this.fetchImpl(`${this.baseUrl}/v1/sessions/${sessionId}/tools`);

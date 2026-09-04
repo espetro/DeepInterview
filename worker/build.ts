@@ -3,9 +3,18 @@ import * as esbuild from "esbuild";
 const outdir = ".";
 const outfile = "worker.js";
 
+// The agents-js ProcPool forks job child processes from
+// `./job_proc_lazy_main.js` resolved next to the bundled worker file; the
+// child then dynamic-imports the agent entry (argv[2]) and speaks the agents
+// IPC protocol. Bundle the published dist file as its own entry so all its
+// imports are inlined and it runs standalone next to worker.js.
 await esbuild.build({
-  entryPoints: ["src/entry.ts"],
-  outfile,
+  entryPoints: {
+    "worker": "src/entry.ts",
+    "agent": "src/agent-main.ts",
+    "job_proc_lazy_main": "node_modules/@livekit/agents/dist/ipc/job_proc_lazy_main.js",
+  },
+  outdir,
   bundle: true,
   platform: "node",
   target: "node24",
@@ -36,4 +45,14 @@ await esbuild.build({
   },
 });
 
-console.log(`built ${outdir}/${outfile}`);
+console.log(`built worker.js, agent.js, job_proc_lazy_main.js`);
+
+// silero VAD resolves its model relative to import.meta.url; copy it next to
+// the bundles so agent prewarm can load it in bundled mode.
+await (async () => {
+  const { copyFile } = await import("node:fs/promises");
+  await copyFile(
+    "node_modules/@livekit/agents-plugin-silero/dist/silero_vad.onnx",
+    "silero_vad.onnx",
+  );
+})();
