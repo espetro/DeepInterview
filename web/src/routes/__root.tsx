@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-import { AppIntlProvider, useIsRtl } from "../locales/i18n";
+import { AppIntlProvider, useIsRtl, useHtmlLang } from "../locales/i18n";
 import "../theme.css";
 
 export const Route = createRootRoute({
@@ -9,14 +9,17 @@ export const Route = createRootRoute({
 
 function RootDocument() {
   const isRtl = useIsRtl();
+  const lang = useHtmlLang();
 
-  // RTL support at the html level (e.g. for ar).
+  // RTL support at the html level (e.g. for ar), for in-app (non-landing) paths
+  // where locale is store-driven and only known post-mount.
   useEffect(() => {
     document.documentElement.dir = isRtl ? "rtl" : "ltr";
-  }, [isRtl]);
+    document.documentElement.lang = lang;
+  }, [isRtl, lang]);
 
   return (
-    <html lang="en" dir={isRtl ? "rtl" : "ltr"}>
+    <html lang={lang} dir={isRtl ? "rtl" : "ltr"}>
       <head>
         <HeadContent />
       </head>
