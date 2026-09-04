@@ -1,7 +1,8 @@
 @import "tailwindcss";
+@import "./fonts.css";
 
 /*
- * deep-interview design tokens — Variant B "playful notebook".
+ * di design tokens — Variant B "playful notebook".
  * Warm cream ground, confident orange, espresso ink.
  * All semantic; arbitrary values confined to this file.
  */
@@ -32,7 +33,7 @@
   --color-hairline: rgba(43, 33, 24, 0.08);
 
   /* type */
-  --font-display: "Gabarito", ui-rounded, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
   --font-body: "Inter var", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Berkeley Mono", ui-monospace, "SF Mono", monospace;
 
