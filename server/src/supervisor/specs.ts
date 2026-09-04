@@ -31,7 +31,6 @@ export function buildChildSpecs(config: Config): ChildSpec[] {
     }
   };
   flatten(config, []);
-  if (process.env.DI_TEST_MODE === "1") childEnv.DI_STT__MODE = "mock";
 
   const apiBase = `http://localhost:${config.server.port}`;
   specs.push({

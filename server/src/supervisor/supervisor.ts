@@ -98,7 +98,19 @@ export class Supervisor {
       env: spec.env ? { ...process.env, ...spec.env } : undefined,
       stdout: logFd,
       stderr: logFd,
-      stdin: "ignore",
+      // Own process group: agents-js job subprocesses are grandchildren of
+      // `worker`, so a plain proc.kill() would only signal the immediate
+      // child and orphan the rest. `detached` makes this pid its own process
+      // group leader; killGroup() below signals the whole group by -pid.
+      detached: true,
+      // Parent-liveness channel, left open (not ended) for the child's
+      // lifetime: the OS closes this pipe automatically if the supervisor
+      // dies for any reason, including SIGKILL, delivering EOF to the
+      // child's stdin. worker/src/entry.ts's main() exits on that EOF. This
+      // is the POSIX-reliable way to guarantee no orphan survives a
+      // SIGKILLed supervisor — signals alone can't reach a process that
+      // outlived a killed parent before the kill lands.
+      stdin: "pipe",
     });
     proc.exited.then((code) => {
       try {
@@ -125,7 +137,7 @@ export class Supervisor {
     for (const m of this.managed.values()) {
       if (!(await m.spec.healthy())) {
         console.warn(`[supervisor] ${m.spec.name} health check failed; killing for restart`);
-        m.proc.kill();
+        killGroup(m.proc);
       }
     }
   }
@@ -156,10 +168,23 @@ export class Supervisor {
   async stop(): Promise<void> {
     this.stopping = true;
     for (const m of this.managed.values()) {
-      m.proc.kill();
+      killGroup(m.proc);
     }
     await Promise.allSettled(
       [...this.managed.values()].map((m) => m.proc.exited),
     );
+  }
+}
+
+/**
+ * Kill a detached child's whole process group (spawned with pid == pgid via
+ * `detached: true`). Falls back to killing just the pid if the group signal
+ * fails (e.g. already reaped, or non-POSIX platform).
+ */
+function killGroup(proc: Bun.Subprocess): void {
+  try {
+    process.kill(-proc.pid, "SIGTERM");
+  } catch {
+    proc.kill();
   }
 }

@@ -47,7 +47,7 @@ Full-stack app test with real voice (no cloud STT/TTS): `scripts/local-voice-sta
 
 The fastest way to exercise the whole app without a browser:
 
-1. Start mock provider on 9000 and the server with `DI_TEST_MODE=1` (commands above). Test mode mounts `/v1/test/*` and forces `DI_STT__MODE=mock` on supervised children.
+1. Start mock provider on 9000 and the server with `DI_TEST_MODE=1` (commands above). Test mode mounts `/v1/test/*`.
 2. `curl -s $DI_URL/v1/test/ping` must return `{"testMode":true}`; if it 404s, test mode is off.
 3. `POST /v1/sessions` with `{title, mode, duration_min}` (duration 5..120, mode `interview|coach`). Response is 201 with a uuid `id`.
 4. `POST /v1/sessions/:id/turns` with a full turn: `{id: uuid, seq, speaker: user|agent, text, created_at: ISO, source: voice|text}`.
@@ -63,6 +63,6 @@ Readable scenario source of truth is `tests/e2e/specs/*.md`; `playwright.spec.ts
 - Config env overrides use `DI_` + `__` separator (`DI_LLM__MODEL`), and digit-only values are coerced to numbers. Nested keys are lowercase after the prefix.
 - `stt.mode` only accepts `buffered` in v1; streaming is a documented M2+ caveat.
 - `POST /v1/token` (LiveKit token minting) is a 501 stub.
-- The supervisor only starts children without `--no-supervise`; in test mode it injects `DI_STT__MODE=mock` into child env (`server/src/supervisor/specs.ts`).
+- The supervisor only starts children without `--no-supervise` (`server/src/supervisor/specs.ts`).
 - Report payloads: `overall_score` and competency scores are 0..10 (not 0..100); `competencies[].evidence[].verdict` is `worked|improve|drop`. See `shared/src/report.ts`.
 - Screen behavior changes must update the matching `.agents/docs/screens/*.md` in the same commit.

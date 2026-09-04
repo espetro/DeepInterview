@@ -61,6 +61,7 @@ export async function main(argv: string[]): Promise<number> {
   };
   process.on("SIGINT", () => void shutdown());
   process.on("SIGTERM", () => void shutdown());
+  process.on("SIGHUP", () => void shutdown());
   process.on("unhandledRejection", (reason) => {
     console.error(
       JSON.stringify({

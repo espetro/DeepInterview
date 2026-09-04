@@ -82,7 +82,7 @@ Standalone env vars:
 
 | Var | Effect |
 | --- | --- |
-| `DI_TEST_MODE=1` | mounts `/v1/test/*` debug routes; supervisor forces `DI_STT__MODE=mock` on children |
+| `DI_TEST_MODE=1` | mounts `/v1/test/*` debug routes |
 | `DI_URL` | target server for the e2e suite (default `http://localhost:3000`) |
 | `DI_<SECTION>__<KEY>` | yaml override for any config key, see rules above |
 

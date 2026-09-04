@@ -239,6 +239,15 @@ void agent; // re-exported for tests; the bundled agent entry lives in agent-mai
  */
 async function main(): Promise<void> {
   installFatalHandlers();
+  // Parent-liveness channel: the supervisor keeps our stdin pipe open for our
+  // lifetime and never writes to it, so EOF only happens when the supervisor
+  // process itself dies (the OS closes the pipe). Exit immediately rather
+  // than reparenting to init and continuing to retry LiveKit.
+  process.stdin.on("end", () => {
+    console.error("[worker] stdin EOF (parent gone); exiting");
+    process.exit(1);
+  });
+  process.stdin.resume();
   let config: WorkerConfig;
   try {
     config = workerConfig();
