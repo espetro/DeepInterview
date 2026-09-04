@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "@nanostores/react";
 import { FormattedMessage, useIntl } from "react-intl";
+import { LanguageDescription, LanguageSupport } from "@codemirror/language";
 import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { LanguageDescription, LanguageSupport } from "@codemirror/language";
-import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
+
+import { markdown } from "@codemirror/lang-markdown";
+
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
 import { json } from "@codemirror/lang-json";
@@ -17,7 +19,7 @@ const LANGUAGES = ["markdown", "javascript", "typescript", "python", "json", "sq
 const LANGUAGE_DESCRIPTIONS: readonly LanguageDescription[] = [
   LanguageDescription.of({
     name: "markdown",
-    load: () => Promise.resolve(markdown({ codeLanguages: [markdownLanguage] })),
+    load: () => Promise.resolve(markdown()),
   }),
   LanguageDescription.of({
     name: "javascript",
@@ -44,8 +46,10 @@ const LANGUAGE_DESCRIPTIONS: readonly LanguageDescription[] = [
 function languageSupport(name: string): LanguageSupport {
   const desc =
     LANGUAGE_DESCRIPTIONS.find((d) => d.name === name) ?? LANGUAGE_DESCRIPTIONS[0]!;
-  // sync loads only; support is set immediately by Promise.resolve loaders
-  return desc.support ?? new LanguageSupport([]);
+  // loaders resolve synchronously (Promise.resolve), so support is populated
+  // immediately after the first load(); this covers the initial render.
+  if (!desc.support) void desc.load();
+  return desc.support!;
 }
 
 /** Dark theme matching the app's espresso palette. */
@@ -112,7 +116,7 @@ export function EditorPanel() {
           EditorView.lineWrapping,
           languageComp.current.of(languageExtension),
           themeComp.current.of(themeExtension),
-          EditorView.updateListener.of((update) => {
+          EditorView.updateListener.of((update: import("@codemirror/view").ViewUpdate) => {
             if (update.docChanged) $editorBuffer.set(update.state.doc.toString());
           }),
         ],
@@ -141,7 +145,7 @@ export function EditorPanel() {
     if (!view) return;
     const current = view.state.doc.toString();
     if (current !== buffer) {
-      view.dispatch({ changes: { from: 0, to: current, insert: buffer } });
+      view.dispatch({ changes: { from: 0, to: current.length, insert: buffer } });
     }
   }, [buffer, host]);
 
