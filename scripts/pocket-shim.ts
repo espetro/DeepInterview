@@ -1,8 +1,12 @@
-// OpenAI-compatible /v1/audio/speech -> pocket-tts /tts (multipart WAV) shim.
+// OpenAI-compatible /v1/audio/speech -> kyutai pocket-tts /tts shim.
+// pocket-tts serve only exposes multipart POST /tts returning WAV; the
+// worker's PocketTts adapter calls OpenAI POST /v1/audio/speech with JSON
+// {input, voice, model, response_format}. This shim translates between them.
 Bun.serve({
   port: Number(process.env.SHIM_PORT ?? 9005),
   async fetch(req) {
     const url = new URL(req.url);
+    if (url.pathname === "/health") return new Response("ok");
     if (url.pathname !== "/v1/audio/speech") return new Response("not found", { status: 404 });
     const body = (await req.json()) as { input: string };
     const form = new FormData();
