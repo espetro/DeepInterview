@@ -62,7 +62,12 @@ export function useVoiceRoom(sessionId: string, muted: boolean): VoiceRoom {
       setState((s) => (s.status === "error" ? s : { ...s, status: "idle", agentSpeaking: false }));
     });
 
-    (async () => {
+    // StrictMode mounts this effect twice; the first mount's cleanup can fire
+    // while room.connect() is still in flight. Racing room.disconnect()
+    // against an in-flight connect() lets LiveKit finish joining with an
+    // identity the cleanup already meant to evict, so track the connect
+    // promise and await it in cleanup before disconnecting.
+    const connectPromise = (async () => {
       try {
         setState((s) => ({ ...s, status: "connecting" }));
         const { token, livekit_url } = await mintToken(sessionId);
@@ -84,7 +89,7 @@ export function useVoiceRoom(sessionId: string, muted: boolean): VoiceRoom {
 
     return () => {
       cancelled = true;
-      room.disconnect();
+      void connectPromise.finally(() => room.disconnect());
       roomRef.current = null;
     };
     // sessionId fixed per mount; muted handled by the follow-up effect below
