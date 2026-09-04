@@ -100,3 +100,14 @@ export function workerConfig(): WorkerConfig {
   cached ??= buildWorkerConfig();
   return cached;
 }
+
+/**
+ * Clear the process-wide config cache. Config is read once per worker
+ * process by design (env doesn't change mid-job), but that same caching
+ * silently poisons any test that calls workerConfig() (directly, or via
+ * runJob) more than once with different env in the same process — call
+ * this in beforeEach when a test suite does that.
+ */
+export function resetWorkerConfigCacheForTests(): void {
+  cached = undefined;
+}
