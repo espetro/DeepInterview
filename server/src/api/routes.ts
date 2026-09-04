@@ -2,8 +2,12 @@ import { Hono } from "hono";
 import * as v from "valibot";
 import {
   CreateSessionRequestSchema,
+  DocumentSchema,
   ReportSchema,
+  RetrievedChunkSchema,
+  SessionContextResponseSchema,
   SessionEventSchema,
+  SessionIdSchema,
   SessionSchema,
   ToolStateSchema,
   TurnSchema,
@@ -20,12 +24,6 @@ import {
   loadVectors,
 } from "../rag/ingest";
 import { retrieve } from "../rag/embeddings";
-import {
-  DocumentSchema,
-  RetrievedChunkSchema,
-  SessionContextResponseSchema,
-  SessionSchema,
-} from "@di/shared";
 
 const TurnInputSchema = v.omit(TurnSchema, ["session_id"]);
 
@@ -84,7 +82,14 @@ export function apiRoutes(
       .where("id", "=", id)
       .executeTakeFirst();
     if (!session) return c.json({ error: "not found" }, 404);
-    const turn = { ...body, session_id: id };
+    // The server owns sequencing: concurrent writers (voice worker, text
+    // input, tests) cannot agree on the next seq among themselves.
+    const [{ max_seq }] = await db
+      .selectFrom("turns")
+      .select((eb) => eb.fn.coalesce(eb.fn.max("seq"), eb.lit(-1)).as("max_seq"))
+      .where("session_id", "=", id)
+      .execute();
+    const turn = { ...body, session_id: id, seq: Number(max_seq) + 1 };
     await db.insertInto("turns").values(turn).execute();
     return c.json(v.parse(TurnSchema, turn), 201);
   });
@@ -186,7 +191,7 @@ export function apiRoutes(
       .executeTakeFirst();
     if (!session) return c.json({ error: "session not found" }, 404);
     const { AccessToken } = await import("livekit-server-sdk");
-    const at = new AccessToken(deps.livekit.api_key, deps.livekit.api_secret, {
+    const at = new AccessToken(opts.livekit.api_key, opts.livekit.api_secret, {
       identity: `candidate-${body.session_id}`,
       metadata: JSON.stringify({ session_id: body.session_id }),
       ttl: "2h",
@@ -201,7 +206,7 @@ export function apiRoutes(
     return c.json({
       token: await at.toJwt(),
       room: `interview-${body.session_id}`,
-      livekit_url: deps.livekit.url,
+      livekit_url: opts.livekit.url,
     });
   });
 
