@@ -65,6 +65,21 @@ export class Supervisor {
     return out;
   }
 
+  /** Restart a child that exited unexpectedly, honoring the restart limit. */
+  private scheduleRestart(spec: ChildSpec, code: number): void {
+    const m = this.managed.get(spec.name);
+    const limit = this.opts.restartLimit ?? 5;
+    if (m && m.restarts < limit) {
+      m.restarts++;
+      console.warn(
+        `[supervisor] ${spec.name} exited (${code}), restart ${m.restarts}/${limit}`,
+      );
+      this.spawn(spec, true);
+    } else {
+      console.error(`[supervisor] ${spec.name} exceeded restart limit; giving up`);
+    }
+  }
+
   private spawn(spec: ChildSpec, restart = false): void {
     console.log(`[supervisor] spawning ${spec.name}: ${spec.command.join(" ")}`);
     mkdirSync(this.logDir, { recursive: true });
@@ -91,19 +106,10 @@ export class Supervisor {
       } catch {
         // already closed
       }
-      if (!this.stopping && code !== 0) {
-        const m = this.managed.get(spec.name);
-        const limit = this.opts.restartLimit ?? 5;
-        if (m && m.restarts < limit) {
-          m.restarts++;
-          console.warn(
-            `[supervisor] ${spec.name} exited (${code}), restart ${m.restarts}/${limit}`,
-          );
-          this.spawn(spec, true);
-        } else {
-          console.error(`[supervisor] ${spec.name} exceeded restart limit; giving up`);
-        }
-      }
+      // A signal-killed child can report a clean exit code (livekit-server
+      // exits 0 on SIGTERM), so any exit while the supervisor is running is
+      // restart-worthy regardless of code.
+      if (!this.stopping) this.scheduleRestart(spec, code);
     });
     this.managed.set(spec.name, {
       spec,

@@ -110,3 +110,33 @@ describe("log writing while running", () => {
     expect(readFileSync(logFile, "utf8")).toContain("first");
   });
 });
+
+describe("supervisor restarts", () => {
+  it("restarts a child that exits cleanly on its own (exit 0 is still unexpected)", async () => {
+    const dir = tmpDir();
+    let n = 0;
+    const sup = new Supervisor(
+      [
+        {
+          name: "worker",
+          // First run exits 0 immediately (as livekit-server does on SIGTERM);
+          // second run signals via the log and stays alive.
+          command: [
+            "bash",
+            "-c",
+            `if [ ! -f ${dir}/flag ]; then touch ${dir}/flag; exit 0; else echo second-run; sleep 30; fi`,
+          ],
+          healthy: async () => true,
+        },
+      ],
+      { logDir: join(dir, "logs") },
+    );
+    sup.start();
+    await Bun.sleep(600);
+    const detail = await sup.childrenDetail();
+    expect(detail.worker.restarts).toBe(1);
+    expect(detail.worker.up).toBe(true);
+    await sup.stop();
+    expect(readFileSync(join(dir, "logs", "worker.log"), "utf8")).toContain("second-run");
+  });
+});
