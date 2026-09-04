@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import * as React from "react";
 import { useStore } from "@nanostores/react";
 import { $draft } from "../stores/session";
 import { createSession } from "../lib/api";
@@ -30,7 +31,7 @@ function Setup() {
   }
 
   return (
-    <div className="grain min-h-[100dvh] bg-cream">
+    <div className="ambient grain min-h-[100dvh] bg-cream">
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 pt-8 md:px-8">
         <a href="/" className="font-display text-xl font-bold tracking-tight">di<span className="text-persimmon">.</span></a>
         <span className="text-sm text-espresso-soft">configure interview</span>
@@ -39,7 +40,7 @@ function Setup() {
       <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-10 md:px-8">
         <div className="rounded-shell bg-paper p-2 ring-1 ring-hairline">
           <div className="rounded-[calc(2rem-0.375rem)] bg-cream p-6 md:p-10">
-            <section>
+            <section className="rise-in" style={{ "--rise-delay": "0ms" } as React.CSSProperties}>
               <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">presets</h2>
               <div className="mt-3 flex flex-wrap gap-2">
                 {PRESETS.map((p) => (
@@ -58,7 +59,7 @@ function Setup() {
               </div>
             </section>
 
-            <section className="mt-8">
+            <section className="rise-in mt-8" style={{ "--rise-delay": "120ms" } as React.CSSProperties}>
               <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">custom prompt</h2>
               <textarea
                 value={draft.prompt}
@@ -69,7 +70,7 @@ function Setup() {
               />
             </section>
 
-            <section className="mt-8">
+            <section className="rise-in mt-8" style={{ "--rise-delay": "240ms" } as React.CSSProperties}>
               <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">
                 files <span className="normal-case tracking-normal text-espresso-faint/70">· text-only: pdf md txt docx — 10 files / 20MB max</span>
               </h2>
@@ -78,7 +79,7 @@ function Setup() {
               </div>
             </section>
 
-            <section className="mt-8 grid gap-6 md:grid-cols-2">
+            <section className="rise-in mt-8 grid gap-6 md:grid-cols-2" style={{ "--rise-delay": "360ms" } as React.CSSProperties}>
               <div>
                 <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">duration</h2>
                 <div className="mt-3 flex gap-2">
@@ -113,7 +114,7 @@ function Setup() {
               </div>
             </section>
 
-            <section className="mt-10 flex flex-col items-center gap-3">
+            <section className="rise-in mt-10 flex flex-col items-center gap-3" style={{ "--rise-delay": "480ms" } as React.CSSProperties}>
               <button
                 onClick={() => void start(true)}
                 className="group inline-flex items-center gap-3 rounded-full bg-espresso px-8 py-4 font-display text-lg font-semibold text-cream transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-persimmon active:scale-[0.98]"

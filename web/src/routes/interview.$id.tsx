@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@nanostores/react";
+import * as React from "react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { getSession, getTurns, postTextTurn, pushToolState } from "../lib/api";
 import { $editorBuffer, $muted, $question, $transcriptOpen } from "../stores/session";
@@ -66,7 +67,7 @@ function Interview() {
   }
 
   return (
-    <div className="grain flex h-[100dvh] flex-col overflow-hidden bg-cream">
+    <div className="ambient grain flex h-[100dvh] flex-col overflow-hidden bg-cream">
       {/* top bar */}
       <header className="flex items-center justify-between px-4 py-3 md:px-8">
         <span className="font-display font-semibold">{session?.title ?? "…"}</span>
@@ -76,9 +77,10 @@ function Interview() {
           </span>
           <div
             className={`h-10 w-10 rounded-full bg-gradient-to-br from-persimmon to-persimmon-deep transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-              muted ? "opacity-30 saturate-0" : "animate-pulse"
+              muted ? "opacity-30 saturate-0" : "orb-live"
             }`}
-            aria-label="agent voice"
+            role="img"
+            aria-label={muted ? "agent voice muted" : "agent voice active"}
           />
         </div>
       </header>
@@ -90,13 +92,17 @@ function Interview() {
           <section className="rounded-card bg-paper p-2 ring-1 ring-hairline">
             <div className="rounded-[calc(1.5rem-0.375rem)] bg-persimmon-faint p-5 md:p-6">
               <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-persimmon-deep">current question</p>
-              <p className="mt-2 font-display text-xl font-semibold leading-snug md:text-2xl">
+              <p key={question.text} className="rise-in mt-2 font-display text-xl font-semibold leading-snug md:text-2xl">
                 {question.text || "the agent is preparing your first question…"}
               </p>
               {question.hints.length > 0 && (
                 <ul className="mt-3 flex flex-wrap gap-2">
-                  {question.hints.map((h) => (
-                    <li key={h} className="rounded-full bg-white px-3 py-1 text-xs text-espresso-soft ring-1 ring-hairline">{h}</li>
+                  {question.hints.map((h, i) => (
+                    <li
+                      key={h}
+                      style={{ "--rise-delay": `${i * 80}ms` } as React.CSSProperties}
+                      className="rise-in rounded-full bg-white px-3 py-1 text-xs text-espresso-soft ring-1 ring-hairline"
+                    >{h}</li>
                   ))}
                 </ul>
               )}
@@ -169,7 +175,7 @@ function Interview() {
             <>
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-3">
                 {(turns ?? []).map((t) => (
-                  <div key={t.id} className={`rounded-2xl px-3 py-2 text-sm ${t.speaker === "agent" ? "bg-persimmon-faint" : "bg-white/70"}`}>
+                  <div key={t.id} className={`rise-in rounded-2xl px-3 py-2 text-sm ${t.speaker === "agent" ? "bg-persimmon-faint" : "bg-white/70"}`}>
                     <span className="block text-[10px] uppercase tracking-wider text-espresso-faint">{t.speaker} · {t.source}</span>
                     {t.text}
                   </div>

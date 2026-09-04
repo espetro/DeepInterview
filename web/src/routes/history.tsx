@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listSessions } from "../lib/api";
 
@@ -24,7 +25,7 @@ function History() {
   }
 
   return (
-    <div className="grain min-h-[100dvh] bg-cream">
+    <div className="ambient grain min-h-[100dvh] bg-cream">
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 pt-8 md:px-8">
         <a href="/" className="font-display text-xl font-bold tracking-tight">di<span className="text-persimmon">.</span></a>
         <span className="text-sm text-espresso-soft">history</span>
@@ -37,11 +38,12 @@ function History() {
           <p className="text-sm text-espresso-faint">no sessions yet — go get grilled.</p>
         ) : (
           <div className="space-y-3">
-            {(sessions ?? []).map((s) => (
+            {(sessions ?? []).map((s, i) => (
               <Link
                 key={s.id}
+                style={{ "--rise-delay": `${Math.min(i * 70, 500)}ms` } as React.CSSProperties}
                 to={target(s.status, s.id)}
-                className="flex items-center justify-between rounded-card bg-paper p-2 ring-1 ring-hairline transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:ring-persimmon/40 active:scale-[0.99]"
+                className="rise-in flex items-center justify-between rounded-card bg-paper p-2 ring-1 ring-hairline transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:ring-persimmon/40 active:scale-[0.99]"
               >
                 <div className="rounded-[calc(1.5rem-0.375rem)] bg-cream px-5 py-4">
                   <p className="font-display font-semibold">{s.title}</p>

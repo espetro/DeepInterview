@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getReport, getSession } from "../lib/api";
 
@@ -39,7 +40,7 @@ function Report() {
   }
 
   return (
-    <div className="grain min-h-[100dvh] bg-cream">
+    <div className="ambient grain min-h-[100dvh] bg-cream">
       <header className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 pt-8 md:px-8">
         <a href="/" className="font-display text-xl font-bold tracking-tight">di<span className="text-persimmon">.</span></a>
         <span className="text-sm text-espresso-soft">report: {session?.title}</span>
@@ -48,15 +49,15 @@ function Report() {
       <main className="mx-auto w-full max-w-4xl px-4 pb-24 pt-10 md:px-8">
         {/* score bento */}
         <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-card bg-espresso p-6 text-cream">
+          <div className="rise-in rounded-card bg-espresso p-6 text-cream">
             <p className="text-[10px] uppercase tracking-[0.2em] text-cream/60">overall</p>
-            <p className="mt-2 font-display text-5xl font-extrabold">{report.overall_score}<span className="text-xl text-cream/60"> /10</span></p>
+            <p className="mt-2 font-display text-5xl font-extrabold tabular-nums">{report.overall_score}<span className="text-xl text-cream/60"> /10</span></p>
           </div>
-          <div className="rounded-card bg-paper p-6 ring-1 ring-hairline">
+          <div className="rise-in rounded-card bg-paper p-6 ring-1 ring-hairline" style={{ "--rise-delay": "120ms" } as React.CSSProperties}>
             <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">coverage</p>
             <p className="mt-2 font-display text-5xl font-extrabold">{report.coverage_pct}<span className="text-xl text-espresso-faint">%</span></p>
           </div>
-          <div className="rounded-card bg-persimmon-faint p-6">
+          <div className="rise-in rounded-card bg-persimmon-faint p-6" style={{ "--rise-delay": "240ms" } as React.CSSProperties}>
             <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-persimmon-deep">session</p>
             <p className="mt-2 font-display text-xl font-bold">{session?.mode} · {session?.duration_min} min</p>
           </div>
@@ -65,8 +66,8 @@ function Report() {
         {/* competencies */}
         <h2 className="mt-12 text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">competencies</h2>
         <div className="mt-4 space-y-4">
-          {report.competencies.map((c) => (
-            <div key={c.name} className="rounded-card bg-paper p-2 ring-1 ring-hairline">
+          {report.competencies.map((c, i) => (
+            <div key={c.name} className="rise-in rounded-card bg-paper p-2 ring-1 ring-hairline" style={{ "--rise-delay": `${Math.min(i * 90, 450)}ms` } as React.CSSProperties}>
               <div className="rounded-[calc(1.5rem-0.375rem)] bg-cream p-5">
                 <div className="flex items-center justify-between">
                   <span className="font-display font-semibold">{c.name}</span>

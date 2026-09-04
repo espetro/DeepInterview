@@ -73,3 +73,58 @@ html {
 .transition-fluid {
   transition: all 700ms var(--ease-out-expo);
 }
+
+/* ambient depth — fixed radial orbs behind all content */
+.ambient::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(42rem 42rem at 85% -10%, rgba(255, 111, 30, 0.1), transparent 65%),
+    radial-gradient(36rem 36rem at -8% 100%, rgba(138, 155, 125, 0.09), transparent 65%),
+    radial-gradient(28rem 28rem at 70% 110%, rgba(242, 201, 76, 0.07), transparent 60%);
+}
+
+/* scroll/load entry reveal — heavy fade-up resolving to crisp */
+.reveal {
+  opacity: 0;
+  transform: translateY(2.5rem);
+  filter: blur(8px);
+  transition:
+    opacity 800ms var(--ease-out-expo) var(--reveal-delay, 0ms),
+    transform 800ms var(--ease-out-expo) var(--reveal-delay, 0ms),
+    filter 800ms var(--ease-out-expo) var(--reveal-delay, 0ms);
+}
+
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* agent voice orb — breathing ring */
+@keyframes orb-breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 111, 30, 0.35); }
+  50% { transform: scale(1.08); box-shadow: 0 0 0 10px rgba(255, 111, 30, 0); }
+}
+
+.orb-live {
+  animation: orb-breathe 2.4s var(--ease-out-expo) infinite;
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(1.25rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rise-in {
+  animation: rise-in 700ms var(--ease-out-expo) both;
+  animation-delay: var(--rise-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; filter: none; transition: none; }
+  .orb-live, .rise-in { animation: none; }
+}

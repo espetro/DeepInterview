@@ -53,14 +53,14 @@ function Finish() {
   }, [menuOpen]);
 
   return (
-    <div className="grain flex min-h-[100dvh] items-center justify-center bg-cream px-4">
+    <div className="ambient grain flex min-h-[100dvh] items-center justify-center bg-cream px-4">
       <div className="w-full max-w-md text-center">
-        <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">interview complete</p>
+        <div className="rise-in"><p className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">interview complete</p>
         <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight">{session?.title ?? "session"}</h1>
-        <p className="mt-2 text-sm text-espresso-soft">{session?.duration_min} min · {turns?.length ?? 0} turns</p>
+        <p className="mt-2 text-sm text-espresso-soft">{session?.duration_min} min · {turns?.length ?? 0} turns</p></div>
 
         <div className="mt-10 space-y-3">
-          <div ref={menuRef} className="relative">
+          <div ref={menuRef} className="rise-in relative" style={{ "--rise-delay": "200ms" } as React.CSSProperties}>
             <button
               onClick={downloadMarkdown}
               className="w-full rounded-full bg-white px-6 py-3.5 font-display font-semibold ring-1 ring-hairline transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:ring-persimmon/50 active:scale-[0.98]"
@@ -89,6 +89,8 @@ function Finish() {
             )}
           </div>
           <button
+            style={{ "--rise-delay": "350ms" } as React.CSSProperties}
+            className="rise-in group flex w-full items-center justify-center gap-3 rounded-full bg-espresso px-6 py-3.5 font-display font-semibold text-cream transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-persimmon active:scale-[0.98]"
             onClick={() => navigate({ to: "/report/$id", params: { id } })}
             className="group flex w-full items-center justify-center gap-3 rounded-full bg-espresso px-6 py-3.5 font-display font-semibold text-cream transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-persimmon active:scale-[0.98]"
           >
