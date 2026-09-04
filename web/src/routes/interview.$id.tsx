@@ -70,7 +70,7 @@ function Interview() {
     <div className="ambient grain flex h-[100dvh] flex-col overflow-hidden bg-cream">
       {/* top bar */}
       <header className="flex items-center justify-between px-4 py-3 md:px-8">
-        <span className="font-display font-semibold">{session?.title ?? "…"}</span>
+        <h1 className="font-display text-base font-semibold">{session?.title ?? "…"}</h1>
         <div className="flex items-center gap-4">
           <span className={`font-mono text-sm tabular-nums ${wrapping ? "text-persimmon" : "text-espresso-soft"}`}>
             {mm}:{ss}
@@ -176,7 +176,7 @@ function Interview() {
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-3">
                 {(turns ?? []).map((t) => (
                   <div key={t.id} className={`rise-in rounded-2xl px-3 py-2 text-sm ${t.speaker === "agent" ? "bg-persimmon-faint" : "bg-white/70"}`}>
-                    <span className="block text-[10px] uppercase tracking-wider text-espresso-faint">{t.speaker} · {t.source}</span>
+                    <span className="block text-[10px] uppercase tracking-wider text-espresso-soft">{t.speaker} · {t.source}</span>
                     {t.text}
                   </div>
                 ))}
@@ -187,7 +187,7 @@ function Interview() {
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && void sendText()}
                   placeholder="type instead…"
-                  className="w-full rounded-full bg-white px-4 py-2.5 text-sm ring-1 ring-hairline outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-espresso-faint/70 focus:ring-2 focus:ring-persimmon/50"
+                  className="w-full rounded-full bg-white px-4 py-2.5 text-sm ring-1 ring-hairline outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-espresso-soft focus:ring-2 focus:ring-persimmon/50"
                 />
               </div>
             </>

@@ -1,0 +1,12 @@
+- generic [ref=f36e2]:
+  - banner [ref=f36e3]:
+    - link "di." [ref=f36e4] [cursor=pointer]:
+      - /url: /
+    - heading "history" [level=1] [ref=f36e5]
+  - main [ref=f36e6]:
+    - link "behavioral interview · 45 min · created · today →" [ref=f36e8] [cursor=pointer]:
+      - /url: /interview/e3ea65d2-3602-409a-9ef5-21b417e877b9
+      - generic [ref=f36e9]:
+        - paragraph [ref=f36e10]: behavioral
+        - paragraph [ref=f36e11]: interview · 45 min · created · today
+      - generic [ref=f36e12]: →

@@ -5,6 +5,7 @@ import { $draft } from "../stores/session";
 import { createSession } from "../lib/api";
 
 export const Route = createFileRoute("/setup")({
+  head: () => ({ meta: [{ title: "setup — di" }] }),
   component: Setup,
 });
 
@@ -34,14 +35,14 @@ function Setup() {
     <div className="ambient grain min-h-[100dvh] bg-cream">
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 pt-8 md:px-8">
         <a href="/" className="font-display text-xl font-bold tracking-tight">di<span className="text-persimmon">.</span></a>
-        <span className="text-sm text-espresso-soft">configure interview</span>
+        <h1 className="text-sm font-normal text-espresso-soft">configure interview</h1>
       </header>
 
       <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-10 md:px-8">
         <div className="rounded-shell bg-paper p-2 ring-1 ring-hairline">
           <div className="rounded-[calc(2rem-0.375rem)] bg-cream p-6 md:p-10">
             <section className="rise-in" style={{ "--rise-delay": "0ms" } as React.CSSProperties}>
-              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">presets</h2>
+              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">presets</h2>
               <div className="mt-3 flex flex-wrap gap-2">
                 {PRESETS.map((p) => (
                   <button
@@ -60,28 +61,28 @@ function Setup() {
             </section>
 
             <section className="rise-in mt-8" style={{ "--rise-delay": "120ms" } as React.CSSProperties}>
-              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">custom prompt</h2>
+              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">custom prompt</h2>
               <textarea
                 value={draft.prompt}
                 onChange={(e) => $draft.set({ ...draft, prompt: e.target.value })}
                 placeholder="paste a job description, your resume context, or anything the agent should know…"
                 rows={4}
-                className="mt-3 w-full resize-none rounded-card bg-white p-4 text-sm ring-1 ring-hairline outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-espresso-faint/70 focus:ring-2 focus:ring-persimmon/50"
+                className="mt-3 w-full resize-none rounded-card bg-white p-4 text-sm ring-1 ring-hairline outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-espresso-soft focus:ring-2 focus:ring-persimmon/50"
               />
             </section>
 
             <section className="rise-in mt-8" style={{ "--rise-delay": "240ms" } as React.CSSProperties}>
-              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">
-                files <span className="normal-case tracking-normal text-espresso-faint/70">· text-only: pdf md txt docx — 10 files / 20MB max</span>
+              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
+                files <span className="normal-case tracking-normal text-espresso-soft">· text-only: pdf md txt docx — 10 files / 20MB max</span>
               </h2>
-              <div className="mt-3 rounded-card border border-dashed border-espresso-faint/40 bg-white/60 p-8 text-center text-sm text-espresso-faint transition-fluid hover:border-persimmon/50 hover:text-espresso-soft">
+              <div className="mt-3 rounded-card border border-dashed border-espresso-faint/40 bg-white/60 p-8 text-center text-sm text-espresso-soft transition-fluid hover:border-persimmon/50 hover:text-espresso-soft">
                 drop files or click to browse
               </div>
             </section>
 
             <section className="rise-in mt-8 grid gap-6 md:grid-cols-2" style={{ "--rise-delay": "360ms" } as React.CSSProperties}>
               <div>
-                <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">duration</h2>
+                <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">duration</h2>
                 <div className="mt-3 flex gap-2">
                   {DURATIONS.map((d) => (
                     <button
@@ -97,7 +98,7 @@ function Setup() {
                 </div>
               </div>
               <div>
-                <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">mode</h2>
+                <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">mode</h2>
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={() => $draft.set({ ...draft, mode: "interview" })}
@@ -107,7 +108,7 @@ function Setup() {
                   >
                     interview
                   </button>
-                  <span title="available after your first report" aria-disabled className="flex-1 cursor-not-allowed rounded-full bg-white/50 py-2 text-center text-sm font-medium text-espresso-faint ring-1 ring-hairline animate-pulse">
+                  <span title="available after your first report" aria-disabled className="flex-1 cursor-not-allowed rounded-full bg-white/50 py-2 text-center text-sm font-medium text-espresso-soft ring-1 ring-hairline animate-pulse">
                     coach
                   </span>
                 </div>

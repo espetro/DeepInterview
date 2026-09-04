@@ -1,0 +1,13 @@
+- generic [ref=f28e3]:
+  - generic [ref=f28e4]:
+    - paragraph [ref=f28e5]: interview complete
+    - heading "behavioral" [level=1] [ref=f28e6]
+    - paragraph [ref=f28e7]: 45 min · 1 turns
+  - generic [ref=f28e8]:
+    - generic [ref=f28e9]:
+      - button "get transcript" [ref=f28e10]
+      - button "more transcript formats" [ref=f28e11]
+    - button "generate report →" [ref=f28e14]:
+      - text: generate report
+      - generic [ref=f28e15]: →
+    - button "discard" [ref=f28e16]

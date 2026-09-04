@@ -54,8 +54,8 @@ function Finish() {
 
   return (
     <div className="ambient grain flex min-h-[100dvh] items-center justify-center bg-cream px-4">
-      <div className="w-full max-w-md text-center">
-        <div className="rise-in"><p className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">interview complete</p>
+      <main className="w-full max-w-md text-center">
+        <div className="rise-in"><p className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">interview complete</p>
         <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight">{session?.title ?? "session"}</h1>
         <p className="mt-2 text-sm text-espresso-soft">{session?.duration_min} min · {turns?.length ?? 0} turns</p></div>
 
@@ -92,7 +92,6 @@ function Finish() {
             style={{ "--rise-delay": "350ms" } as React.CSSProperties}
             className="rise-in group flex w-full items-center justify-center gap-3 rounded-full bg-espresso px-6 py-3.5 font-display font-semibold text-cream transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-persimmon active:scale-[0.98]"
             onClick={() => navigate({ to: "/report/$id", params: { id } })}
-            className="group flex w-full items-center justify-center gap-3 rounded-full bg-espresso px-6 py-3.5 font-display font-semibold text-cream transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-persimmon active:scale-[0.98]"
           >
             generate report
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cream/15 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:scale-105">→</span>
@@ -104,7 +103,7 @@ function Finish() {
             discard
           </button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

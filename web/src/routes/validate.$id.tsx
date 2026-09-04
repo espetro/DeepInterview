@@ -30,7 +30,7 @@ function Validate() {
 
         <div className="rise-in rounded-shell bg-paper p-2 ring-1 ring-hairline" style={{ "--rise-delay": "150ms" } as React.CSSProperties}>
           <div className="rounded-[calc(2rem-0.375rem)] bg-cream p-6">
-            <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-faint">interview plan</h2>
+            <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">interview plan</h2>
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between"><dt className="text-espresso-soft">type</dt><dd>{session?.title}</dd></div>
               <div className="flex justify-between"><dt className="text-espresso-soft">duration</dt><dd>{session?.duration_min} min</dd></div>

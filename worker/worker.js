@@ -179916,6 +179916,8 @@ ${err instanceof Error ? err.message : err}`);
     process.exit(2);
   }
   const { AgentServer: AgentServer2, ServerOptions: ServerOptions2 } = await Promise.resolve().then(() => (init_dist7(), dist_exports2));
+  const { initializeLogger: initializeLogger2 } = await Promise.resolve().then(() => (init_dist7(), dist_exports2));
+  initializeLogger2({ level: "info" });
   const { fileURLToPath: fileURLToPath3 } = await import("node:url");
   const server = new AgentServer2(
     new ServerOptions2({

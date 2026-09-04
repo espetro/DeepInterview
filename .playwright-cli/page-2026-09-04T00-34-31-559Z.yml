@@ -1,0 +1,24 @@
+- generic [ref=f34e2]:
+  - banner [ref=f34e3]:
+    - link "di." [ref=f34e4] [cursor=pointer]:
+      - /url: /
+    - navigation [ref=f34e5]:
+      - link "history" [ref=f34e6] [cursor=pointer]:
+        - /url: /history
+      - link "github" [ref=f34e7] [cursor=pointer]:
+        - /url: https://github.com
+  - main [ref=f34e8]:
+    - generic [ref=f34e9]: mock interviews
+    - heading "the AI agent you practice your interviews with." [level=1] [ref=f34e12]
+    - paragraph [ref=f34e14]: voice interviews with an agent that actually pushes back. then get the receipts.
+    - link "grill me →" [ref=f34e17] [cursor=pointer]:
+      - /url: /setup
+      - text: grill me
+      - generic [ref=f34e18]: →
+    - generic:
+      - generic: “tell me about a time you failed.”
+      - generic: “system design · 45 min · hard”
+      - generic: “walk me through your resume.”
+      - generic: “why did you leave your last job?”
+      - generic: "“quick fire: 5 questions, 5 minutes.”"
+    - paragraph [ref=f34e20]: no signup · runs local · your audio never leaves the machine

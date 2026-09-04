@@ -2,12 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Reveal } from "../components/reveal";
 
 export const Route = createFileRoute("/")({
+  head: () => ({ meta: [{ title: "di — mock interviews" }] }),
   component: Landing,
 });
 
 const STICKERS = [
   { text: "tell me about a time you failed.", rotate: "-rotate-3", tone: "bg-persimmon-soft", pos: "top-8 right-10", delay: 500 },
-  { text: "system design · 45 min · hard", rotate: "rotate-2", tone: "bg-white", pos: "top-44 -left-2", delay: 650 },
+  { text: "system design · 45 min · hard", rotate: "rotate-2", tone: "bg-white", pos: "top-64 right-1/3", delay: 650 },
   { text: "walk me through your resume.", rotate: "-rotate-2", tone: "bg-white", pos: "bottom-28 right-16", delay: 800 },
   { text: "why did you leave your last job?", rotate: "rotate-1", tone: "bg-persimmon-faint", pos: "top-72 right-44", delay: 950 },
   { text: "quick fire: 5 questions, 5 minutes.", rotate: "-rotate-1", tone: "bg-white", pos: "bottom-10 left-10", delay: 1100 },
@@ -73,7 +74,7 @@ function Landing() {
         </div>
 
         <Reveal delay={500}>
-          <p className="mt-20 text-xs uppercase tracking-[0.15em] text-espresso-faint">
+          <p className="mt-20 text-xs uppercase tracking-[0.15em] text-espresso-soft">
             no signup · runs local · your audio never leaves the machine
           </p>
         </Reveal>

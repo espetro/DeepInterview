@@ -1,0 +1,25 @@
+- generic [ref=f3e83]:
+  - banner [ref=f3e84]:
+    - generic [ref=f3e85]: behavioral
+    - generic [ref=f3e86]:
+      - generic [ref=f3e87]: 44:17
+      - img "agent voice active" [ref=f3e88]
+  - generic [ref=f3e89]:
+    - main [ref=f3e90]:
+      - generic [ref=f3e92]:
+        - paragraph [ref=f3e93]: current question
+        - paragraph [ref=f3e94]: the agent is preparing your first question…
+      - generic [ref=f3e95]:
+        - generic [ref=f3e96]:
+          - button "editor" [ref=f3e97]
+          - button "whiteboard" [ref=f3e98]
+        - textbox "write or paste your solution here…" [ref=f3e230]: "STAR: situation - migration project at scale. task - own the cut-over plan..."
+      - generic [ref=f3e102]:
+        - button "mute" [ref=f3e103]
+        - button "end early" [ref=f3e104]
+    - complementary [ref=f3e105]:
+      - button "transcript —" [expanded] [ref=f3e106]
+      - generic [ref=f3e231]:
+        - generic [ref=f3e232]: user · text
+        - text: lets start with the migration story
+      - textbox "type instead…" [active] [ref=f3e109]

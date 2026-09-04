@@ -26,8 +26,8 @@ export function Reveal({
       return;
     }
     const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
           el.classList.add("in");
           io.disconnect();
         }

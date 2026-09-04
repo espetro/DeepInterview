@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { listSessions } from "../lib/api";
 
 export const Route = createFileRoute("/history")({
+  head: () => ({ meta: [{ title: "history — di" }] }),
   component: History,
 });
 
@@ -28,14 +29,14 @@ function History() {
     <div className="ambient grain min-h-[100dvh] bg-cream">
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 pt-8 md:px-8">
         <a href="/" className="font-display text-xl font-bold tracking-tight">di<span className="text-persimmon">.</span></a>
-        <span className="text-sm text-espresso-soft">history</span>
+        <h1 className="text-sm font-normal text-espresso-soft">history</h1>
       </header>
 
       <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-10 md:px-8">
         {isLoading ? (
-          <p className="text-sm text-espresso-faint">loading…</p>
+          <p className="text-sm text-espresso-soft">loading…</p>
         ) : (sessions ?? []).length === 0 ? (
-          <p className="text-sm text-espresso-faint">no sessions yet — go get grilled.</p>
+          <p className="text-sm text-espresso-soft">no sessions yet — go get grilled.</p>
         ) : (
           <div className="space-y-3">
             {(sessions ?? []).map((s, i) => (
@@ -47,11 +48,11 @@ function History() {
               >
                 <div className="rounded-[calc(1.5rem-0.375rem)] bg-cream px-5 py-4">
                   <p className="font-display font-semibold">{s.title}</p>
-                  <p className="text-xs text-espresso-faint">
+                  <p className="text-xs text-espresso-soft">
                     {s.mode} · {s.duration_min} min · {s.status} · {relative(s.created_at)}
                   </p>
                 </div>
-                <span className="pr-4 text-espresso-faint">→</span>
+                <span className="pr-4 text-espresso-soft">→</span>
               </Link>
             ))}
           </div>

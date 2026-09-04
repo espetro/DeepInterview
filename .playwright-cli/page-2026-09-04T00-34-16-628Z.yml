@@ -1,0 +1,25 @@
+- generic [ref=f33e2]:
+  - banner [ref=f33e3]:
+    - heading "behavioral" [level=1] [ref=f33e4]
+    - generic [ref=f33e5]:
+      - generic [ref=f33e6]: 30:00
+      - img "agent voice active" [ref=f33e7]
+  - generic [ref=f33e8]:
+    - main [ref=f33e9]:
+      - generic [ref=f33e11]:
+        - paragraph [ref=f33e12]: current question
+        - paragraph [ref=f33e13]: the agent is preparing your first question…
+      - generic [ref=f33e14]:
+        - generic [ref=f33e15]:
+          - button "editor" [ref=f33e16]
+          - button "whiteboard" [ref=f33e17]
+        - textbox "write or paste your solution here…" [ref=f33e20]
+      - generic [ref=f33e21]:
+        - button "mute" [ref=f33e22]
+        - button "end early" [ref=f33e23]
+    - complementary [ref=f33e24]:
+      - button "transcript —" [expanded] [ref=f33e25]
+      - generic [ref=f33e27]:
+        - generic [ref=f33e28]: user · text
+        - text: lets start with the migration story
+      - textbox "type instead…" [ref=f33e30]
