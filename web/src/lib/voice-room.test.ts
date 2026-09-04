@@ -79,6 +79,8 @@ describe("useVoiceRoom", () => {
     const { result, unmount } = renderHook(() => useVoiceRoom("s1", false));
     await waitFor(() => expect(result.current.status).toBe("connected"));
     unmount();
-    expect(disconnect).toHaveBeenCalled();
+    // Cleanup awaits the (already-settled) connect promise before
+    // disconnecting, so disconnect() lands a microtask after unmount().
+    await waitFor(() => expect(disconnect).toHaveBeenCalled());
   });
 });
