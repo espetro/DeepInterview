@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
+import { FormattedMessage, useIntl } from "react-intl";
 import { listSessions } from "../lib/api";
 
 export const Route = createFileRoute("/history")({
@@ -8,15 +9,19 @@ export const Route = createFileRoute("/history")({
   component: History,
 });
 
-function relative(iso: string): string {
-  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-  if (days < 1) return "today";
-  if (days === 1) return "yesterday";
-  if (days < 7) return `${days}d ago`;
-  return `${Math.floor(days / 7)}w ago`;
+function useRelative() {
+  const intl = useIntl();
+  return (iso: string) => {
+    const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+    if (days < 1) return intl.formatMessage({ id: "history.today" });
+    if (days === 1) return intl.formatMessage({ id: "history.yesterday" });
+    if (days < 7) return intl.formatMessage({ id: "history.daysAgo" }, { n: days });
+    return intl.formatMessage({ id: "history.weeksAgo" }, { n: Math.floor(days / 7) });
+  };
 }
 
 function History() {
+  const relative = useRelative();
   const { data: sessions, isLoading } = useQuery({ queryKey: ["sessions"], queryFn: listSessions });
 
   function target(status: string, id: string) {
@@ -29,14 +34,14 @@ function History() {
     <div className="ambient grain min-h-[100dvh] bg-cream">
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 pt-8 md:px-8">
         <a href="/" className="font-display text-xl font-bold tracking-tight">di<span className="text-persimmon">.</span></a>
-        <h1 className="text-sm font-normal text-espresso-soft">history</h1>
+        <h1 className="text-sm font-normal text-espresso-soft"><FormattedMessage id="history.title" /></h1>
       </header>
 
       <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-10 md:px-8">
         {isLoading ? (
-          <p className="text-sm text-espresso-soft">loading…</p>
+          <p className="text-sm text-espresso-soft"><FormattedMessage id="history.loading" /></p>
         ) : (sessions ?? []).length === 0 ? (
-          <p className="text-sm text-espresso-soft">no sessions yet — go get grilled.</p>
+          <p className="text-sm text-espresso-soft"><FormattedMessage id="history.empty" /></p>
         ) : (
           <div className="space-y-3">
             {(sessions ?? []).map((s, i) => (

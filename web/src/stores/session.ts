@@ -44,3 +44,10 @@ export const $muted = atom(false);
 
 /** UI locale, persisted. Interview language is a separate config field. */
 export const $locale = persistentAtom<string>("di:locale", "en");
+
+/** Locales shipped in web/src/locales. */
+export const LOCALES = ["en", "de", "es", "fr", "ja", "pt-BR", "zh-CN", "ko", "it", "ar"] as const;
+
+/** Locales rendered right-to-left. */
+export const RTL_LOCALES: readonly string[] = ["ar"];
+

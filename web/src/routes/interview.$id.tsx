@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@nanostores/react";
 import * as React from "react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { FormattedMessage, useIntl } from "react-intl";
 import { getSession, getTurns, postTextTurn, pushToolState } from "../lib/api";
 import { $editorBuffer, $muted, $question, $transcriptOpen } from "../stores/session";
 import { $whiteboard } from "../stores/session";
@@ -28,6 +29,7 @@ function useCountdown(durationMin: number) {
 }
 
 function Interview() {
+  const intl = useIntl();
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { data: session } = useQuery({ queryKey: ["session", id], queryFn: () => getSession(id) });
@@ -80,7 +82,7 @@ function Interview() {
               muted ? "opacity-30 saturate-0" : "orb-live"
             }`}
             role="img"
-            aria-label={muted ? "agent voice muted" : "agent voice active"}
+            aria-label={intl.formatMessage({ id: muted ? "interview.voiceMuted" : "interview.voiceActive" })}
           />
         </div>
       </header>
@@ -91,9 +93,9 @@ function Interview() {
           {/* question block — agent-editable */}
           <section className="rounded-card bg-paper p-2 ring-1 ring-hairline">
             <div className="rounded-[calc(1.5rem-0.375rem)] bg-persimmon-faint p-5 md:p-6">
-              <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-persimmon-deep">current question</p>
+              <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-persimmon-deep"><FormattedMessage id="interview.question" /></p>
               <p key={question.text} className="rise-in mt-2 font-display text-xl font-semibold leading-snug md:text-2xl">
-                {question.text || "the agent is preparing your first question…"}
+                {question.text || intl.formatMessage({ id: "interview.preparing" })}
               </p>
               {question.hints.length > 0 && (
                 <ul className="mt-3 flex flex-wrap gap-2">
@@ -120,7 +122,7 @@ function Interview() {
                     tab === t ? "bg-espresso text-cream" : "text-espresso-soft hover:bg-cream-deep"
                   }`}
                 >
-                  {t}
+                  <FormattedMessage id={t === "editor" ? "interview.tab.editor" : "interview.tab.whiteboard"} />
                 </button>
               ))}
             </div>
@@ -130,13 +132,13 @@ function Interview() {
               ) : mounted ? (
                 <Suspense
                   fallback={
-                    <div className="h-full w-full animate-pulse rounded-2xl bg-espresso/5" aria-label="whiteboard loading" />
+                    <div className="h-full w-full animate-pulse rounded-2xl bg-espresso/5" aria-label={intl.formatMessage({ id: "interview.whiteboardLoading" })} />
                   }
                 >
                   <WhiteboardPanel />
                 </Suspense>
               ) : (
-                <div className="h-full w-full animate-pulse rounded-2xl bg-espresso/5" aria-label="whiteboard loading" />
+                <div className="h-full w-full animate-pulse rounded-2xl bg-espresso/5" aria-label={intl.formatMessage({ id: "interview.whiteboardLoading" })} />
               )}
             </div>
           </section>
@@ -147,13 +149,13 @@ function Interview() {
               onClick={() => $muted.set(!muted)}
               className="rounded-full bg-white px-5 py-2.5 text-sm font-medium ring-1 ring-hairline transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:ring-persimmon/50 active:scale-[0.97]"
             >
-              {muted ? "unmute" : "mute"}
+              <FormattedMessage id={muted ? "interview.unmute" : "interview.mute"} />
             </button>
             <button
               onClick={() => navigate({ to: "/finish/$id", params: { id } })}
               className="rounded-full bg-espresso px-5 py-2.5 text-sm font-medium text-cream transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-persimmon active:scale-[0.97]"
             >
-              end early
+              <FormattedMessage id="interview.endEarly" />
             </button>
           </div>
         </main>
@@ -186,7 +188,7 @@ function Interview() {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && void sendText()}
-                  placeholder="type instead…"
+                  placeholder={intl.formatMessage({ id: "interview.typeInstead" })}
                   className="w-full rounded-full bg-white px-4 py-2.5 text-sm ring-1 ring-hairline outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-espresso-soft focus:ring-2 focus:ring-persimmon/50"
                 />
               </div>
@@ -199,13 +201,14 @@ function Interview() {
 }
 
 function EditorPanel() {
+  const intl = useIntl();
   const buffer = useStore($editorBuffer);
   return (
     <div className="flex h-full flex-col gap-2">
       <textarea
         value={buffer}
         onChange={(e) => $editorBuffer.set(e.target.value)}
-        placeholder="write or paste your solution here…"
+        placeholder={intl.formatMessage({ id: "interview.editorPlaceholder" })}
         spellCheck={false}
         className="w-full flex-1 resize-none rounded-2xl bg-[#1a1512] p-4 font-mono text-sm leading-relaxed text-[#e8e0d8] outline-none placeholder:text-[#6b5d4f]"
       />
