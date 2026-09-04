@@ -1,6 +1,5 @@
 import {
   AgentSession,
-  RoomIO,
   defineAgent,
   type JobContext,
 } from "@livekit/agents";
@@ -82,7 +81,9 @@ export async function runJob(ctx: JobContext): Promise<void> {
     console.warn(`[worker] failed to log agent.started: ${err}`);
   });
 
-  const vad = await SileroVAD.load();
+  const vad = ctx.proc.userData.vad instanceof SileroVAD
+    ? ctx.proc.userData.vad
+    : await SileroVAD.load();
   const sttImpl = new WhisperStt({
     baseUrl: config.stt.base_url,
     apiKey: config.stt.api_key,
@@ -107,14 +108,16 @@ export async function runJob(ctx: JobContext): Promise<void> {
   await ctx.connect();
 
   const room = ctx.room;
-  const roomIo = new RoomIO({ agentSession: session, room });
   await session.start({
     room,
     agent: new InterviewAgent(config, { sessionId, api, ctx: sessionCtx }),
     // RoomIO text input (chat/text streams) hits this same LLM pipeline.
+    // session.start() owns RoomIO construction; a manually constructed second
+    // RoomIO here previously stole session.input.audio after the session's
+    // forwarding loop had already latched onto the first one, so STT never
+    // received frames. Do not add a second RoomIO.
     inputOptions: { textEnabled: true, audioEnabled: true },
   });
-  roomIo.start();
 
   // Registered before the greeting: say() emits conversation_item_added during
   // its await, and the greeting turn must not be missed.
@@ -162,7 +165,6 @@ export async function runJob(ctx: JobContext): Promise<void> {
       .catch(() => undefined);
   }
   ctx.addShutdownCallback(async () => {
-    await roomIo.close();
     await session.close();
   });
 }
