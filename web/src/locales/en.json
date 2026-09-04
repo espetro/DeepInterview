@@ -93,5 +93,11 @@
   "history.yesterday": "yesterday",
   "history.daysAgo": "{n}d ago",
   "history.weeksAgo": "{n}w ago",
-  "locale.label": "language"
+  "locale.label": "language",
+  "interview.voiceIdle": "voice idle",
+  "interview.phase.listening": "listening",
+  "interview.phase.userSpeaking": "you're speaking",
+  "interview.phase.thinking": "thinking",
+  "interview.phase.agentSpeaking": "agent speaking",
+  "interview.phase.interrupted": "interrupted"
 }

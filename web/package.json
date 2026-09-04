@@ -22,12 +22,12 @@
     "@formisch/react": "^1",
     "@nanostores/persistent": "^1",
     "@nanostores/react": "^1",
+    "@ricky0123/vad-web": "^0.0.30",
     "@tanstack/react-query": "^5",
     "@tanstack/react-router": "^1",
     "@tanstack/react-start": "^1",
     "clsx": "^2",
     "codemirror": "^6",
-    "livekit-client": "^2.22.2",
     "lucide-react": "^0.550",
     "nanostores": "^1",
     "react": "^19",
@@ -37,7 +37,8 @@
     "sonner": "^2",
     "tailwind-merge": "^3",
     "tldraw": "^5.4.0",
-    "valibot": "^1"
+    "valibot": "^1",
+    "xstate": "^5.32.6"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4",
@@ -47,8 +48,10 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5",
     "jsdom": "^30.0.1",
+    "onnxruntime-web": "1.29.0",
     "tailwindcss": "^4",
     "vite": "^7",
+    "vite-plugin-static-copy": "^4.1.1",
     "vitest": "^3"
   }
 }

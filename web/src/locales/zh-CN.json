@@ -93,5 +93,11 @@
   "setup.mic.device": "麦克风",
   "setup.mic.defaultDevice": "默认麦克风",
   "setup.mic.denied": "麦克风访问被拒绝 - 请在浏览器设置中允许",
-  "setup.mic.error": "无法访问麦克风"
+  "setup.mic.error": "无法访问麦克风",
+  "interview.voiceIdle": "语音待机",
+  "interview.phase.listening": "正在聆听",
+  "interview.phase.userSpeaking": "你在说话",
+  "interview.phase.thinking": "思考中",
+  "interview.phase.agentSpeaking": "智能体发言中",
+  "interview.phase.interrupted": "已打断"
 }
