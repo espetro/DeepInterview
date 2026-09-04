@@ -29,6 +29,14 @@ export async function runJob(ctx: JobContext): Promise<void> {
   const sessionId = readSessionId(ctx.room.metadata ?? "") ?? crypto.randomUUID();
   const api = new DiApiClient({ baseUrl: config.di_api_base });
   const sessionCtx: SessionContext = { mode: "interview" };
+  // Ground the agent in uploaded documents when retrieval is available.
+  const context = await api.getContext(sessionId).catch(() => undefined);
+  if (context && context.chunks.length > 0) {
+    sessionCtx.documents = context.chunks.map((c) => ({
+      name: c.document_name,
+      text: c.text,
+    }));
+  }
 
   await api.postEvent(sessionId, "agent.started", { room: ctx.room.name }).catch((err) => {
     console.warn(`[worker] failed to log agent.started: ${err}`);

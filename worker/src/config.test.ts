@@ -22,6 +22,19 @@ describe("buildPrompt", () => {
     expect(prompt).toContain("1. Warmup");
     expect(prompt).toContain("mentions caching; discusses tradeoffs");
   });
+
+  it("includes retrieved document chunks when present", () => {
+    const prompt = buildPrompt({
+      mode: "interview",
+      documents: [{ name: "resume.pdf", text: "built the billing pipeline" }],
+    });
+    expect(prompt).toContain("resume.pdf");
+    expect(prompt).toContain("built the billing pipeline");
+  });
+
+  it("omits the documents section when no chunks", () => {
+    expect(buildPrompt({ mode: "interview" })).not.toContain("reference documents");
+  });
 });
 
 describe("worker config env parsing", () => {

@@ -1,6 +1,6 @@
-import type { ToolState, Turn, SessionEvent } from "@di/shared";
+import type { ToolState, Turn, SessionEvent, SessionContextResponse } from "@di/shared";
 import { parse } from "valibot";
-import { TurnSchema, SessionEventSchema, ToolStateSchema } from "@di/shared";
+import { TurnSchema, SessionEventSchema, ToolStateSchema, SessionContextResponseSchema } from "@di/shared";
 
 export interface DiApiClientOptions {
   baseUrl: string;
@@ -36,6 +36,15 @@ export class DiApiClient {
       throw new Error(`getToolState failed: ${res.status} ${await res.text().catch(() => "")}`);
     }
     return parse(ToolStateSchema, await res.json());
+  }
+
+  /** Retrieved document chunks for grounding the interview prompt. */
+  async getContext(sessionId: string): Promise<SessionContextResponse> {
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/sessions/${sessionId}/context`);
+    if (!res.ok) {
+      throw new Error(`getContext failed: ${res.status} ${await res.text().catch(() => "")}`);
+    }
+    return parse(SessionContextResponseSchema, await res.json());
   }
 
   async postEvent(

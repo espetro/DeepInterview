@@ -44,7 +44,32 @@ export function makeWav(): Uint8Array {
 
 type Handler = (req: Request, fixture: MockFixture) => Response | Promise<Response>
 
+/** Deterministic embedding: 64-dim token-hash bag-of-words, L2-normalized. */
+export function mockEmbed(text: string, dims = 64): number[] {
+  const vec = new Array<number>(dims).fill(0);
+  for (const token of text.toLowerCase().match(/[a-z0-9]+/g) ?? []) {
+    let h = 2166136261;
+    for (let i = 0; i < token.length; i++) {
+      h ^= token.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    vec[Math.abs(h) % dims]! += 1;
+  }
+  const norm = Math.sqrt(vec.reduce((s, x) => s + x * x, 0));
+  return norm === 0 ? vec : vec.map((x) => x / norm);
+}
+
 const routes: [string, string, Handler][] = [
+  ['POST', '/v1/embeddings', async (req) => {
+    const body = await req.json() as { input: string | string[] }
+    const inputs = Array.isArray(body.input) ? body.input : [body.input]
+    return Response.json({
+      object: 'list',
+      model: 'mock-embed',
+      data: inputs.map((text, index) => ({ object: 'embedding', index, embedding: mockEmbed(text) })),
+      usage: { prompt_tokens: 0, total_tokens: 0 },
+    })
+  }],
   ['POST', '/v1/chat/completions', (_req, fx) => {
     return Response.json({
       id: 'chatcmpl-mock',
