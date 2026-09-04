@@ -131,7 +131,7 @@ async function collectNativeDeps(target: Target): Promise<string[]> {
 // Installer + README generated per archive.
 // ---------------------------------------------------------------------------
 const installer = `#!/bin/sh
-# deep-interview runtime installer. Installs bun (if needed) plus the platform
+# di runtime installer. Installs bun (if needed) plus the platform
 # native runtime bits that cannot be bundled (livekit-server SFU binary).
 set -e
 
@@ -167,7 +167,7 @@ fi
 echo "[install] done. Next: cp config.example.yaml config.yaml, edit it, then run ./di --config config.yaml"
 `;
 
-const readme = (target: Target) => `# deep-interview ${version} (${TRIPLES[target]})
+const readme = (target: Target) => `# di ${version} (${TRIPLES[target]})
 
 Self-contained distribution: compiled \`di\` server binary, voice-agent worker
 bundle, and web SPA.

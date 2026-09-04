@@ -54,7 +54,7 @@ export async function createApp(deps: AppDeps): Hono {
 function openApiSpec(config: Config): Record<string, unknown> {
   return {
     openapi: "3.1.0",
-    info: { title: "deep-interview API", version: "0.1.0" },
+    info: { title: "di API", version: "0.1.0" },
     servers: [{ url: `http://localhost:${config.server.port}` }],
     paths: {
       "/v1/sessions": {

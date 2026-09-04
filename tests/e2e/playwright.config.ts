@@ -1,6 +1,6 @@
 import { defineConfig } from "@playwright/test";
 
-// Requires a running deep-interview server in test mode:
+// Requires a running di server in test mode:
 //   cd server && DI_TEST_MODE=1 bun run src/cli.ts --config config.example.yaml --no-supervise
 const baseURL = process.env.DI_URL ?? "http://localhost:3000";
 

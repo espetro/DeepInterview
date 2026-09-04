@@ -1,5 +1,5 @@
 {
-  "name": "deep-interview",
+  "name": "dits",
   "private": true,
   "packageManager": "bun@1.2.23",
   "workspaces": ["shared", "server", "worker", "web", "evals"],
