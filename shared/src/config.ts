@@ -13,7 +13,7 @@ export const SttSchema = v.object({
   base_url: v.pipe(v.string(), v.url()),
   api_key: v.optional(v.string()),
   model: v.string(),
-  /** v1 is buffered-only; streaming is a documented M2+ caveat. */
+  /** Transport is streaming (WS frames); recognition is per-utterance buffered. Kept for compat. */
   mode: v.picklist(["buffered"]),
 });
 export type Stt = v.InferOutput<typeof SttSchema>;
@@ -42,11 +42,6 @@ export const ConfigSchema = v.object({
       model: v.string(),
     }),
   ),
-  livekit: v.object({
-    url: v.pipe(v.string(), v.url()),
-    api_key: v.string(),
-    api_secret: v.string(),
-  }),
   phoenix: v.optional(
     v.object({
       endpoint: v.pipe(v.string(), v.url()),

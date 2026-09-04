@@ -137,8 +137,6 @@ describe("contract round-trip properties", () => {
       llm: { provider: "mock", base_url: "http://x/v1", model: "m" },
       stt: { base_url: "http://x/v1", model: "m", mode: "buffered" },
       tts: { base_url: "http://x/v1", model: "m", voice: "v" },
-      livekit: { url: "ws://l", api_key: "k", api_secret: "s" },
-      files: { db_path: "d", log_path: "l", data_dir: "dd" },
     });
     fc.assert(
       fc.property(fc.constantFrom("oops", -1, 99999, null), (port) => {
