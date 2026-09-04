@@ -26,8 +26,6 @@ for arg in "$@"; do
 done
 
 stray_patterns=(
-  "worker\.js"
-  "livekit-server --dev"
   "pocket-tts serve"
   "parakeet-server"
 )

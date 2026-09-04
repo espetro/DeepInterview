@@ -6,7 +6,7 @@ node = "24"
 _.file = ".env"
 
 # Web dev server (TanStack Start/vite). Server + mock provider:
-#   cd server && DI_TEST_MODE=1 bun run src/cli.ts --config config.example.yaml --no-supervise
+#   cd server && DI_TEST_MODE=1 bun run src/cli.ts --config config.example.yaml
 #   bun run evals/mock-provider/main.ts --port 9000
 [tasks.dev]
 description = "Run web dev server (vite dev) in web/"
@@ -14,18 +14,17 @@ run = "bun run dev"
 dir = "web"
 
 [tasks.build]
-description = "Build web SPA + esbuild worker bundle"
+description = "Build web SPA"
 run = """
 set -e
 cd web && bun run build
-cd ../worker && bun run build
 """
 
 [tasks.test]
 description = "Run vitest across server, worker, web, evals, shared"
 run = """
 set -e
-for pkg in shared server worker evals; do
+for pkg in shared server evals; do
   echo "== $pkg =="
   (cd $pkg && bun run --bun vitest run)
 done
@@ -70,10 +69,10 @@ run = "bun run --bun vitest run"
 dir = "evals"
 
 [tasks.logs]
-description = "Tail .di/logs/{worker,sfu}.log with pino pretty printing via jq"
+description = "Tail .di/logs/*.log with pino pretty printing via jq"
 run = '''
-tail -n 100 -f .di/logs/worker.log .di/logs/sfu.log | jq -rR --unbuffered '
-  fromjson? | "\(.time // .timestamp // "") [\(.level // "")] \(.msg // .)" // .'
+tail -n 100 -f .di/logs/*.log | jq -rR --unbuffered '
+  fromjson? | "\(.time // .timestamp // "") [\(.level // "")] \(.msg // .)" // .]'
 '''
 [tasks.smoke]
 description = "Behavioral smoke probe: create session, post turn, assert persisted"
@@ -83,7 +82,7 @@ curl -sf -m 10 "${DI_URL:-http://localhost:3000}/v1/test/smoke" | jq -e '.ok == 
 '''
 
 # Precondition: a DI server must already be running in test mode:
-#   cd server && DI_TEST_MODE=1 bun run src/cli.ts --config config.example.yaml --no-supervise
+#   cd server && DI_TEST_MODE=1 bun run src/cli.ts --config config.example.yaml
 # Override the target with DI_URL (default http://localhost:3000).
 [tasks.e2e]
 description = "Run Playwright e2e specs in tests/e2e (requires DI server in test mode running; DI_URL to override)"

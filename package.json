@@ -2,7 +2,6 @@
   "name": "dits",
   "private": true,
   "packageManager": "bun@1.2.23",
-  "workspaces": ["shared", "server", "worker", "web", "evals"],
   "type": "module",
   "devDependencies": {
     "@testing-library/react": "^16.3.3",

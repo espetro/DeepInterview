@@ -54,11 +54,6 @@ tts:
   model: mock-tts
   voice: alloy
 
-livekit:
-  url: ws://localhost:7880
-  api_key: devkey
-  api_secret: secret
-
 files:
   db_path: .deepinterview/di.db
   log_path: .deepinterview/di.log
@@ -131,4 +126,4 @@ Summarize: versions installed, build result, `--check` output, the session id, a
 - Port 8090 or 9000 in use: `lsof -ti :8090 | xargs kill`, or change `server.port` in config.yaml.
 - `/v1/test/ping` 404: server was started without `DI_TEST_MODE=1`.
 - Blank page on `http://localhost:8090`: `web/dist/client` missing, rerun `mise run build`.
-- Voice/LiveKit: the mock stack does not join real voice rooms; `livekit.url` is only used by the worker. API-level sessions work without a LiveKit server.
+- Voice: the WS voice loop runs in-process against the mock provider; no extra services needed.
