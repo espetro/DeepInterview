@@ -3,11 +3,11 @@ import { Hono } from "hono";
 import { apiRoutes } from "./routes";
 import { createDatabase, migrate } from "../store/db";
 
-async function makeApp() {
+async function makeApp(testMode = false) {
   const db = createDatabase(":memory:");
   await migrate(db);
   const app = new Hono();
-  app.route("/v1", apiRoutes(db, { testMode: false }));
+  app.route("/v1", apiRoutes(db, { testMode }));
   return app;
 }
 
@@ -63,5 +63,27 @@ describe("tool state routes", () => {
       body: JSON.stringify({ editor: "", whiteboard: "" }),
     });
     expect(missing.status).toBe(404);
+  });
+});
+
+describe("test mode smoke route", () => {
+  it("returns ok with latency when test mode is on", async () => {
+    const app = await makeApp(true);
+    const res = await app.request("/v1/test/smoke");
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      ok: boolean;
+      latency_ms: number;
+      session_id: string;
+    };
+    expect(body.ok).toBe(true);
+    expect(typeof body.latency_ms).toBe("number");
+    expect(body.session_id).toBeTruthy();
+  });
+
+  it("404s when test mode is off", async () => {
+    const app = await makeApp(false);
+    const res = await app.request("/v1/test/smoke");
+    expect(res.status).toBe(404);
   });
 });
