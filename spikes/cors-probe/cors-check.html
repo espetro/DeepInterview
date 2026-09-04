@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>di CORS probe — direct browser fetch to LLM providers</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body { font: 14px/1.5 ui-sans-serif, system-ui, sans-serif; margin: 2rem auto; max-width: 60rem; padding: 0 1rem; }
+      h1 { font-size: 1.3rem; }
+      fieldset { border: 1px solid #8884; border-radius: 8px; margin: 1rem 0; padding: 1rem; }
+      .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin: .25rem 0; }
+      input { font: inherit; }
+      input[type="text"], input[type="password"] { flex: 1; min-width: 12rem; padding: .3rem .5rem; }
+      table { border-collapse: collapse; width: 100%; margin-top: .5rem; }
+      th, td { border: 1px solid #8884; padding: .35rem .5rem; text-align: left; vertical-align: top; }
+      code, pre { font-family: ui-monospace, monospace; font-size: .85em; }
+      pre { background: #8882; padding: .5rem; overflow-x: auto; white-space: pre-wrap; }
+      .ok { color: #2a8; font-weight: 600; }
+      .fail { color: #c44; font-weight: 600; }
+      .muted { opacity: .7; }
+      .pill { display: inline-block; border-radius: 99px; padding: 0 .6rem; background: #8883; }
+    </style>
+  </head>
+  <body>
+    <h1>di CORS probe</h1>
+    <p class="muted">
+      Minimal direct fetches from this browser origin to Groq, OpenAI, Anthropic.
+      Keys are supplied in the form (or pre-seeded from <code>KEY_SEED</code> query params at dev time)
+      and never leave this page except as request headers to the provider. Nothing is committed or logged server-side; this is a static page.
+    </p>
+
+    <fieldset>
+      <legend>Keys (test keys only)</legend>
+      <div class="row"><label style="width:6rem">Groq</label><input type="password" id="key-groq" placeholder="gsk_..." autocomplete="off" /></div>
+      <div class="row"><label style="width:6rem">OpenAI</label><input type="password" id="key-openai" placeholder="sk-..." autocomplete="off" /></div>
+      <div class="row"><label style="width:6rem">Anthropic</label><input type="password" id="key-anthropic" placeholder="sk-ant-..." autocomplete="off" /></div>
+      <div class="row">
+        <button id="run">Run probe</button>
+        <button id="clear">Clear output</button>
+        <span class="muted">Each provider runs: (1) explicit OPTIONS preflight, (2) real minimal POST.</span>
+      </div>
+    </fieldset>
+
+    <h2>Results</h2>
+    <table>
+      <thead>
+        <tr><th>Provider</th><th>Preflight</th><th>Actual call</th><th>CORS headers observed</th><th>Detail</th></tr>
+      </thead>
+      <tbody id="results"></tbody>
+    </table>
+    <pre id="log"></pre>
+
+    <script>
+      // ---------------------------------------------------------------- config
+      const PROVIDERS = {
+        groq: {
+          url: 'https://api.groq.com/openai/v1/chat/completions',
+          authHeader: 'authorization',
+          authPrefix: 'Bearer ',
+          body: {
+            model: 'llama-3.1-8b-instant',
+            max_tokens: 1,
+            messages: [{ role: 'user', content: 'hi' }],
+          },
+        },
+        openai: {
+          url: 'https://api.openai.com/v1/chat/completions',
+          authHeader: 'authorization',
+          authPrefix: 'Bearer ',
+          body: {
+            model: 'gpt-4o-mini',
+            max_tokens: 1,
+            messages: [{ role: 'user', content: 'hi' }],
+          },
+        },
+        anthropic: {
+          url: 'https://api.anthropic.com/v1/messages',
+          authHeader: 'x-api-key',
+          authPrefix: '',
+          // non-standard headers => always triggers preflight
+          extraHeaders: {
+            'anthropic-version': '2023-06-01',
+            // opt-in header Anthropic requires for direct browser calls (CORS),
+            // see https://simonwillison.net/2024/Aug/23/anthropic-dangerous-direct-browser-access/
+            'anthropic-dangerous-direct-browser-access': 'true',
+          },
+          body: {
+            model: 'claude-3-5-haiku-latest',
+            max_tokens: 1,
+            messages: [{ role: 'user', content: 'hi' }],
+          },
+        },
+      };
+
+      const CORS_HEADERS = [
+        'access-control-allow-origin',
+        'access-control-allow-credentials',
+        'access-control-allow-methods',
+        'access-control-allow-headers',
+        'access-control-expose-headers',
+        'access-control-max-age',
+      ];
+
+      const interesting = (h) =>
+        CORS_HEADERS.includes(h) ||
+        h.startsWith('access-control-') ||
+        ['content-type', 'www-authenticate', 'retry-after'].includes(h);
+
+      // ---------------------------------------------------------------- ui
+      const $ = (id) => document.getElementById(id);
+      const log = (line) => { $('log').textContent += line + '\n'; };
+      const esc = (s) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+
+      function setResult(id, cells) {
+        let tr = $('row-' + id);
+        if (!tr) {
+          tr = document.createElement('tr');
+          tr.id = 'row-' + id;
+          while (tr.cells.length < 5) tr.insertCell();
+          $('results').appendChild(tr);
+        }
+        cells.forEach((html, i) => { tr.cells[i].innerHTML = html; });
+        return tr;
+      }
+
+      const pending = (id, name) =>
+        setResult(id, [esc(name), '…', '…', '', '']);
+
+      // ---------------------------------------------------------------- probe
+      async function timedFetch(url, init) {
+        const t0 = performance.now();
+        try {
+          const res = await fetch(url, init);
+          return { res, ms: Math.round(performance.now() - t0) };
+        } catch (err) {
+          return { err, ms: Math.round(performance.now() - t0) };
+        }
+      }
+
+      function corsHeadersOf(res) {
+        const found = {};
+        for (const h of CORS_HEADERS) {
+          const v = res.headers.get(h);
+          if (v !== null) found[h] = v;
+        }
+        return found;
+      }
+
+      async function probeProvider(name, cfg, key) {
+        const id = name;
+        pending(id, name);
+        const headers = { 'content-type': 'application/json', [cfg.authHeader]: cfg.authPrefix + key, ...(cfg.extraHeaders || {}) };
+
+        // 1. Explicit preflight — a real OPTIONS with the same headers/method.
+        let preflight = '<span class="fail">error</span>';
+        let preflightDetail = '';
+        const pf = await timedFetch(cfg.url, {
+          method: 'OPTIONS',
+          headers, // browser turns this into an OPTIONS preflight against a no-cors-allowed request; if the preflight fails, fetch throws TypeError
+        });
+        if (pf.err) {
+          preflight = '<span class="fail">blocked</span>';
+          preflightDetail = 'fetch rejected (likely preflight failure): ' + esc(pf.err.message);
+        } else if (!pf.res.ok && pf.res.status >= 400) {
+          // Some servers answer OPTIONS with 4xx but still emit CORS headers; report what we can see.
+          preflight = '<span class="fail">HTTP ' + pf.res.status + '</span>';
+          preflightDetail = 'status ' + pf.res.status + ' (' + pf.ms + ' ms)';
+        } else {
+          preflight = '<span class="ok">ok</span> <span class="pill">' + pf.res.status + '</span>';
+          preflightDetail = 'status ' + pf.res.status + ' (' + pf.ms + ' ms)';
+        }
+
+        // 2. Actual call (this is what matters; it re-runs the preflight implicitly).
+        let actual = '<span class="fail">error</span>';
+        let actualDetail = '';
+        let corsCell = '<span class="muted">unreachable</span>';
+        const ac = await timedFetch(cfg.url, { method: 'POST', headers, body: JSON.stringify(cfg.body) });
+        if (ac.err) {
+          actual = '<span class="fail">blocked</span>';
+          actualDetail = 'fetch rejected (CORS or network): ' + esc(ac.err.message);
+        } else {
+          const status = ac.res.status;
+          const cors = corsHeadersOf(ac.res);
+          const aco = cors['access-control-allow-origin'] ?? '(none)';
+          corsCell = '<code>' + esc(JSON.stringify(cors, null, 1)) + '</code>';
+          if (status >= 200 && status < 300) {
+            actual = '<span class="ok">HTTP ' + status + '</span>';
+            const body = await ac.res.clone().json().then((j) => JSON.stringify(j).slice(0, 120)).catch(() => '(non-json body)');
+            actualDetail = esc(body);
+          } else if (status === 401 || status === 403) {
+            // CORS passed (we could READ the status), key is just invalid.
+            actual = '<span class="ok">CORS ok</span>, auth failed <span class="pill">' + status + '</span>';
+            actualDetail = 'reached the API; key rejected — CORS itself works (status was readable)';
+          } else {
+            actual = '<span class="fail">HTTP ' + status + '</span>';
+            actualDetail = 'ACAO=' + esc(aco) + '; ' + (ac.ms + ' ms');
+          }
+        }
+
+        setResult(id, [esc(name), preflight, actual, corsCell, esc(preflightDetail) + '<br>' + esc(actualDetail)]);
+        log(name + ': preflight=' + (pf.err ? 'blocked' : pf.res.status) + ' actual=' + (ac.err ? 'blocked' : ac.res.status));
+      }
+
+      async function runProbe() {
+        $('log').textContent = '';
+        const params = new URLSearchParams(location.search);
+        const keyFor = (name) => $(  'key-' + name).value || params.get('k_' + name) || '';
+        const jobs = [];
+        for (const [name, cfg] of Object.entries(PROVIDERS)) {
+          const key = keyFor(name);
+          if (!key) {
+            setResult(name, [esc(name), '<span class="muted">skipped</span>', '<span class="muted">no key</span>', '', 'enter a key or pass ?k_' + esc(name) + '=…']);
+            continue;
+          }
+          jobs.push(probeProvider(name, cfg, key));
+        }
+        if (!jobs.length) log('No keys supplied — nothing to probe.');
+        await Promise.all(jobs);
+        log('done. origin=' + location.origin);
+      }
+
+      $('run').addEventListener('click', runProbe);
+      $('clear').addEventListener('click', () => { $('log').textContent = ''; $('results').textContent = ''; });
+      // Dev convenience: ?k_groq=… seeds the fields (never commit URLs with keys).
+      const params = new URLSearchParams(location.search);
+      for (const name of Object.keys(PROVIDERS)) {
+        const v = params.get('k_' + name);
+        if (v) $('key-' + name).value = v;
+      }
+    </script>
+  </body>
+</html>
