@@ -66,11 +66,11 @@ describe("useVoiceRoom", () => {
     const { result } = renderHook(() => useVoiceRoom("s1", false));
     await waitFor(() => expect(result.current.status).toBe("connected"));
     act(() => {
-      listeners.ActiveSpeakersChanged([{ identity: "candidate-s1", isLocal: false }]);
+      listeners.ActiveSpeakersChanged!([{ identity: "candidate-s1", isLocal: false }]);
     });
     expect(result.current.agentSpeaking).toBe(true);
     act(() => {
-      listeners.ActiveSpeakersChanged([]);
+      listeners.ActiveSpeakersChanged!([]);
     });
     expect(result.current.agentSpeaking).toBe(false);
   });

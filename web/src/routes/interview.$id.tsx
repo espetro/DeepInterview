@@ -84,7 +84,7 @@ function Interview() {
             className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-espresso-soft"
             title={
               voice.status === "error"
-                ? intl.formatMessage({ id: "interview.voiceError", values: { message: voice.error ?? "" } })
+                ? intl.formatMessage({ id: "interview.voiceError" }, { message: voice.error ?? "" })
                 : undefined
             }
           >
@@ -100,7 +100,7 @@ function Interview() {
             {voice.status === "connected"
               ? intl.formatMessage({ id: "interview.voiceConnected" })
               : voice.status === "error"
-                ? intl.formatMessage({ id: "interview.voiceError", values: { message: voice.error ?? "" } })
+                ? intl.formatMessage({ id: "interview.voiceError" }, { message: voice.error ?? "" })
                 : intl.formatMessage({ id: "interview.voiceConnecting" })}
           </span>
           <div
