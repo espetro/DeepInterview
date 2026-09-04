@@ -20,6 +20,11 @@ tts:
   model: mock-tts
   voice: alloy
 
+# optional: enables document ingestion (RAG). omit to disable file uploads.
+embeddings:
+  base_url: http://localhost:9000/v1
+  model: mock-embed
+
 livekit:
   url: ws://localhost:7880
   api_key: devkey

@@ -98,6 +98,10 @@ The full machine-readable surface lives at `GET /v1/openapi.json` on a running s
 | `GET /v1/sessions/:id/turns` | read transcript |
 | `POST /v1/sessions/:id/events` | worker -> server session event |
 | `PUT` / `GET /v1/sessions/:id/tools` | editor + whiteboard state the worker reads via `read_editor` / `read_whiteboard` |
+| `POST /v1/sessions/:id/documents` | upload files for RAG ingestion (multipart `file`, repeatable; pdf/md/txt/docx, 10 files / 20MB caps) |
+| `GET /v1/sessions/:id/documents` | list uploaded documents with ingestion status |
+| `DELETE /v1/sessions/:id/documents/:docId` | remove a document and its chunks |
+| `GET /v1/sessions/:id/context` | retrieved document chunks grounding the agent (optional `?query=`) |
 | `PUT` / `GET /v1/sessions/:id/report` | store / read the scored report |
 | `POST /v1/token` | LiveKit token minting, 501 stub for now |
 

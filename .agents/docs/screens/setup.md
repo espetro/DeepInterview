@@ -38,7 +38,12 @@
 ## Behavior
 
 - Preset scenario chips fill the custom-prompt textarea with canned content; selecting a preset is just a textarea pre-fill.
-- File drop: text-only parsing deferred (M3 RAG); v1 stores the files against the session. Label the caps in the UI (10 files / 20MB).
+- File drop: functional since M3. Files upload to `POST /v1/sessions/:id/documents`
+  right after session creation (before navigating away). Text-only: pdf, md, txt,
+  docx. Caps enforced client- and server-side (10 files / 20MB total) with inline
+  error copy; bad-type and cap violations never navigate. Files are listed under
+  the drop zone with size and a remove control. Upload failure shows an error but
+  does not block starting the interview.
 - Form fields: duration (20/30/45/60), tone, difficulty, language (interview language, NOT the UI locale), mode (`interview|coach`).
 - Primary action **validate & start** creates the session (POST /v1/sessions) then routes to `/validate/[id]`.
 - Link **proceed without validation** routes straight to `/interview/[id]`.
