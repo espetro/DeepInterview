@@ -79,5 +79,9 @@
   "history.yesterday": "昨天",
   "history.daysAgo": "{n} 天前",
   "history.weeksAgo": "{n} 周前",
-  "locale.label": "语言"
+  "locale.label": "语言",
+  "setup.filesBadType": "{name}：不支持的类型（仅限 pdf、md、txt、docx）",
+  "setup.filesTooMany": "最多 {max} 个文件",
+  "setup.filesTooBig": "总大小超过 20MB",
+  "setup.fileRemove": "移除 {name}"
 }

@@ -37,6 +37,35 @@ export async function createSession(body: {
   return res.json();
 }
 
+export interface DocumentDto {
+  id: string;
+  session_id: string;
+  name: string;
+  kind: "pdf" | "md" | "txt" | "docx";
+  size_bytes: number;
+  status: "pending" | "processing" | "ready" | "failed";
+  error?: string;
+  chunk_count?: number;
+  created_at: string;
+}
+
+export async function uploadDocuments(
+  id: string,
+  files: File[],
+): Promise<{ documents: DocumentDto[] }> {
+  const form = new FormData();
+  for (const f of files) form.append("file", f);
+  const res = await fetch(`${BASE}/v1/sessions/${id}/documents`, {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `upload failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 export async function listSessions(): Promise<SessionDto[]> {
   const res = await fetch(`${BASE}/v1/sessions`);
   if (!res.ok) throw new Error(`list sessions failed: ${res.status}`);

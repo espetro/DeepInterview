@@ -79,5 +79,9 @@
   "history.yesterday": "أمس",
   "history.daysAgo": "قبل {n} يوم",
   "history.weeksAgo": "قبل {n} أسبوع",
-  "locale.label": "اللغة"
+  "locale.label": "اللغة",
+  "setup.filesBadType": "{name}: نوع غير مدعوم (pdf وmd وtxt وdocx فقط)",
+  "setup.filesTooMany": "الحد الأقصى {max} ملفات",
+  "setup.filesTooBig": "الحجم الإجمالي يتجاوز 20MB",
+  "setup.fileRemove": "إزالة {name}"
 }

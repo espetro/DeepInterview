@@ -79,5 +79,9 @@
   "history.yesterday": "ontem",
   "history.daysAgo": "há {n} d",
   "history.weeksAgo": "há {n} sem",
-  "locale.label": "idioma"
+  "locale.label": "idioma",
+  "setup.filesBadType": "{name}: tipo nao suportado (apenas pdf, md, txt, docx)",
+  "setup.filesTooMany": "maximo de {max} arquivos",
+  "setup.filesTooBig": "o tamanho total excede 20MB",
+  "setup.fileRemove": "remover {name}"
 }

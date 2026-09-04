@@ -79,5 +79,9 @@
   "history.yesterday": "昨日",
   "history.daysAgo": "{n}日前",
   "history.weeksAgo": "{n}週間前",
-  "locale.label": "言語"
+  "locale.label": "言語",
+  "setup.filesBadType": "{name}: 対応していない形式です（pdf・md・txt・docxのみ）",
+  "setup.filesTooMany": "最大{max}ファイル",
+  "setup.filesTooBig": "合計サイズが20MBを超えています",
+  "setup.fileRemove": "{name}を削除"
 }

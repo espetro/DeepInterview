@@ -79,5 +79,9 @@
   "history.yesterday": "어제",
   "history.daysAgo": "{n}일 전",
   "history.weeksAgo": "{n}주 전",
-  "locale.label": "언어"
+  "locale.label": "언어",
+  "setup.filesBadType": "{name}: 지원되지 않는 형식입니다(pdf, md, txt, docx만 가능)",
+  "setup.filesTooMany": "최대 {max}개 파일",
+  "setup.filesTooBig": "전체 크기가 20MB를 초과합니다",
+  "setup.fileRemove": "{name} 제거"
 }

@@ -4,7 +4,11 @@ import { LocaleSwitcher } from "../components/locale-switcher";
 import * as React from "react";
 import { useStore } from "@nanostores/react";
 import { $draft } from "../stores/session";
-import { createSession } from "../lib/api";
+import { createSession, uploadDocuments } from "../lib/api";
+
+const MAX_FILES = 10;
+const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
+const ACCEPTED = [".pdf", ".md", ".markdown", ".txt", ".docx"];
 
 export const Route = createFileRoute("/setup")({
   head: () => ({ meta: [{ title: "setup — di" }] }),
@@ -24,14 +28,58 @@ function Setup() {
   const intl = useIntl();
   const draft = useStore($draft);
   const navigate = useNavigate();
+  const [files, setFiles] = React.useState<File[]>([]);
+  const [error, setError] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState(false);
+  const fileInput = React.useRef<HTMLInputElement>(null);
+
+  function addFiles(incoming: FileList | null) {
+    if (!incoming?.length) return;
+    setError(null);
+    const accepted: File[] = [];
+    for (const f of incoming) {
+      const ext = `.${f.name.split(".").pop()?.toLowerCase()}`;
+      if (!ACCEPTED.includes(ext)) {
+        setError(intl.formatMessage({ id: "setup.filesBadType" }, { name: f.name }));
+        continue;
+      }
+      accepted.push(f);
+    }
+    setFiles((prev) => {
+      const next = [...prev, ...accepted];
+      if (next.length > MAX_FILES) {
+        setError(intl.formatMessage({ id: "setup.filesTooMany" }, { max: MAX_FILES }));
+        return next.slice(0, MAX_FILES);
+      }
+      if (next.reduce((n, f) => n + f.size, 0) > MAX_TOTAL_BYTES) {
+        setError(intl.formatMessage({ id: "setup.filesTooBig" }));
+        return prev;
+      }
+      return next;
+    });
+  }
 
   async function start(validate: boolean) {
-    const session = await createSession({
-      title: draft.title || PRESETS.find((p) => draft.prompt === p.prompt)?.id || "practice session",
-      mode: draft.mode,
-      duration_min: draft.durationMin,
-    });
-    navigate({ to: validate ? "/validate/$id" : "/interview/$id", params: { id: session.id } });
+    setBusy(true);
+    setError(null);
+    try {
+      const session = await createSession({
+        title: draft.title || PRESETS.find((p) => draft.prompt === p.prompt)?.id || "practice session",
+        mode: draft.mode,
+        duration_min: draft.durationMin,
+      });
+      if (files.length > 0) {
+        try {
+          await uploadDocuments(session.id, files);
+        } catch (err) {
+          // ingestion failure must not block starting the interview
+          setError(err instanceof Error ? err.message : "upload failed");
+        }
+      }
+      navigate({ to: validate ? "/validate/$id" : "/interview/$id", params: { id: session.id } });
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -78,9 +126,56 @@ function Setup() {
               <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
                 <FormattedMessage id="setup.files" /> <span className="normal-case tracking-normal text-espresso-soft">· <FormattedMessage id="setup.filesHint" /></span>
               </h2>
-              <div className="mt-3 rounded-card border border-dashed border-espresso-faint/40 bg-white/60 p-8 text-center text-sm text-espresso-soft transition-fluid hover:border-persimmon/50 hover:text-espresso-soft">
+              <input
+                ref={fileInput}
+                type="file"
+                multiple
+                accept={ACCEPTED.join(",")}
+                className="hidden"
+                onChange={(e) => {
+                  addFiles(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label={intl.formatMessage({ id: "setup.dropHint" })}
+                onClick={() => fileInput.current?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") fileInput.current?.click();
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  addFiles(e.dataTransfer.files);
+                }}
+                className="mt-3 cursor-pointer rounded-card border border-dashed border-espresso-faint/40 bg-white/60 p-8 text-center text-sm text-espresso-soft transition-fluid hover:border-persimmon/50 hover:text-espresso-soft"
+              >
                 <FormattedMessage id="setup.dropHint" />
               </div>
+              {files.length > 0 && (
+                <ul className="mt-3 space-y-1.5">
+                  {files.map((f, i) => (
+                    <li key={`${f.name}-${i}`} className="flex items-center justify-between rounded-full bg-white px-4 py-2 text-sm ring-1 ring-hairline">
+                      <span className="truncate text-espresso">{f.name}</span>
+                      <span className="ml-3 flex shrink-0 items-center gap-3 text-xs text-espresso-soft">
+                        {Math.round(f.size / 1024)} kb
+                        <button
+                          aria-label={intl.formatMessage({ id: "setup.fileRemove" }, { name: f.name })}
+                          onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
+                          className="text-espresso-soft transition-fluid hover:text-persimmon"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {error && (
+                <p role="alert" className="mt-3 text-sm text-persimmon-deep">{error}</p>
+              )}
             </section>
 
             <section className="rise-in mt-8 grid gap-6 md:grid-cols-2" style={{ "--rise-delay": "360ms" } as React.CSSProperties}>
@@ -121,7 +216,8 @@ function Setup() {
             <section className="rise-in mt-10 flex flex-col items-center gap-3" style={{ "--rise-delay": "480ms" } as React.CSSProperties}>
               <button
                 onClick={() => void start(true)}
-                className="group inline-flex items-center gap-3 rounded-full bg-espresso px-8 py-4 font-display text-lg font-semibold text-cream transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-persimmon active:scale-[0.98]"
+                disabled={busy}
+                className="group inline-flex items-center gap-3 rounded-full bg-espresso px-8 py-4 font-display text-lg font-semibold text-cream transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-persimmon active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
               >
                 <FormattedMessage id="setup.validate" />
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-cream/15 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:scale-105">→</span>
