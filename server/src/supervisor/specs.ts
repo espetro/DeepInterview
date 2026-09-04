@@ -1,6 +1,17 @@
 import type { Config } from "@di/shared";
 import type { ChildSpec } from "./supervisor";
 
+/** Probe the LiveKit HTTP endpoint (derived from the ws:// config url). */
+export async function livekitHttpHealthy(url: string): Promise<boolean> {
+  const http = url.replace(/^ws(s?):\/\//, "http$1://");
+  try {
+    const res = await fetch(http, { signal: AbortSignal.timeout(2000) });
+    return res.status < 500;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Child process specs supervised by di:
  *  - worker: agents-js voice agent, run with system Node 24 (onnxruntime natives)
@@ -31,27 +42,20 @@ export function buildChildSpecs(config: Config): ChildSpec[] {
       DI_API_BASE: apiBase,
     },
     healthy: async () => {
-      // The worker registers with LiveKit and only exits on fatal errors, so
-      // liveness is "process still running". A di /api/health probe here would
-      // be self-referential (the supervisor serves that endpoint itself) and
-      // says nothing about the child.
-      return true;
+      // The worker is only useful once it can talk to the SFU, so liveness is
+      // "LiveKit reachable". Process aliveness is layered on top by the
+      // supervisor (exitCode check). A di /api/health probe here would be
+      // self-referential (the supervisor serves that endpoint itself).
+      return livekitHttpHealthy(config.livekit.url);
     },
   });
 
   specs.push({
     name: "sfu",
     command: ["livekit-server", "--dev"],
-    healthy: async () => {
-      try {
-        const res = await fetch("http://localhost:7880", {
-          signal: AbortSignal.timeout(2000),
-        });
-        return res.status < 500;
-      } catch {
-        return false;
-      }
-    },
+    // SFU health stays process-alive (checked by the supervisor); the HTTP
+    // endpoint is the worker's dependency, not a reliable SFU liveness signal.
+    healthy: async () => true,
   });
 
   return specs;

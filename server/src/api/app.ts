@@ -31,7 +31,8 @@ export async function createApp(deps: AppDeps): Hono {
 
   app.get("/api/health", async (c) => {
     const children = deps.supervisor ? await deps.supervisor.health() : {};
-    return c.json({ ok: true, children, testMode: deps.testMode });
+    const children_detail = deps.supervisor ? await deps.supervisor.childrenDetail() : {};
+    return c.json({ ok: true, children, children_detail, testMode: deps.testMode });
   });
 
   if (deps.webAssets) {

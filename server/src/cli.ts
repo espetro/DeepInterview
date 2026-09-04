@@ -61,6 +61,30 @@ export async function main(argv: string[]): Promise<number> {
   };
   process.on("SIGINT", () => void shutdown());
   process.on("SIGTERM", () => void shutdown());
+  process.on("unhandledRejection", (reason) => {
+    console.error(
+      JSON.stringify({
+        event: "server_fatal",
+        kind: "unhandledRejection",
+        message: reason instanceof Error ? reason.message : String(reason),
+        stack: reason instanceof Error ? reason.stack : undefined,
+        ts: new Date().toISOString(),
+      }),
+    );
+  });
+  process.on("uncaughtException", (err) => {
+    console.error(
+      JSON.stringify({
+        event: "server_fatal",
+        kind: "uncaughtException",
+        message: err.message,
+        stack: err.stack,
+        ts: new Date().toISOString(),
+      }),
+    );
+    server.stop(true);
+    void supervisor?.stop().finally(() => process.exit(1));
+  });
   // Keep the event loop alive while the server runs; shutdown() exits.
   await new Promise<never>(() => {});
   return 0; // unreachable, satisfies noImplicitReturns
