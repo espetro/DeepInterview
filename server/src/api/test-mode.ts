@@ -19,6 +19,17 @@ const PIPELINE_STAGES = new Set([
 const TERMINAL_STAGE = "tts.result";
 
 /**
+ * Derive where a session's voice pipeline last progressed, from the ordered
+ * list of pipeline-stage event types (already filtered to PIPELINE_STAGES,
+ * in event-id/arrival order — not deduped or reordered). null means the
+ * chain reached its terminal stage, or never started.
+ */
+export function deriveStalledAt(stageTypes: readonly string[]): string | null {
+  const last = stageTypes[stageTypes.length - 1];
+  return last === undefined || last === TERMINAL_STAGE ? null : last;
+}
+
+/**
  * Debug routes, mounted only when DI_TEST_MODE=1.
  * Agents drive the app by URL and assert against these endpoints instead of DOM scraping.
  */
@@ -72,13 +83,10 @@ export function testRoutes(db: Db): Hono {
         payload: e.payload === null ? undefined : JSON.parse(e.payload),
         at: e.at,
       }));
-    const lastStage = stages.length > 0 ? stages[stages.length - 1].stage : undefined;
     return c.json({
       session_id: sessionId,
       stages,
-      // null once the chain reached its terminal stage; otherwise the last
-      // stage reached names exactly where the pipeline is stuck.
-      stalled_at: lastStage === undefined || lastStage === TERMINAL_STAGE ? null : lastStage,
+      stalled_at: deriveStalledAt(stages.map((s) => s.stage)),
     });
   });
 
