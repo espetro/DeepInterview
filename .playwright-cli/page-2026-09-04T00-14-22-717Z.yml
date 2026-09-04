@@ -1,0 +1,22 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "di." [ref=e4] [cursor=pointer]:
+      - /url: /
+    - navigation [ref=e5]:
+      - link "history" [ref=e6] [cursor=pointer]:
+        - /url: /history
+      - link "github" [ref=e7] [cursor=pointer]:
+        - /url: https://github.com
+  - main [ref=e8]:
+    - generic [ref=e9]: mock interviews
+    - heading "the AI agent you practice your interviews with." [level=1] [ref=e11]
+    - paragraph [ref=e13]: voice interviews with an agent that actually pushes back. then get the receipts.
+    - link "grill me→" [ref=e16] [cursor=pointer]:
+      - /url: /setup
+    - generic [ref=e17]:
+      - generic [ref=e18]: “tell me about a time you failed.”
+      - generic [ref=e19]: “system design · 45 min · hard”
+      - generic [ref=e20]: “walk me through your resume.”
+      - generic [ref=e21]: “why did you leave your last job?”
+      - generic [ref=e22]: "“quick fire: 5 questions, 5 minutes.”"
+    - paragraph [ref=e24]: no signup · runs local · your audio never leaves the machine

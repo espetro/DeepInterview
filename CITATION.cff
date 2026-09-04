@@ -1,15 +1,24 @@
 cff-version: 1.2.0
-message: "If you use DeepInterview, please cite it as below."
-title: DeepInterview
+message: "If you use dits, please cite it as below."
+title: dits
 abstract: >-
-  Open-source (Apache-2.0), voice-first AI mock-interview platform. It reads a CV and
+  Open-source (CPAL-1.0), voice-first AI mock-interview platform. It reads a CV and
   job description, researches the target company, runs an adaptive real-time voice
   interview with a stylized video avatar, scores it, and coaches weak areas.
-  English-first, multilingual.
+  English-first, multilingual. A fork of DeepInterview by Pham Van Ngoan and the
+  DeepInterview contributors (Apache-2.0, https://github.com/ngoanpv/DeepInterview).
 type: software
-license: Apache-2.0
-repository-code: "https://github.com/ngoanpv/DeepInterview"
+license: CPAL-1.0
+repository-code: "https://github.com/espetro/dits"
 authors:
-  - name: "The DeepInterview contributors"
-version: 0.3.0
-date-released: 2026-08-02
+  - name: "Joaquin Terrasa and the dits contributors"
+references:
+  - type: software
+    title: DeepInterview
+    authors:
+      - name: "Pham Van Ngoan and the DeepInterview contributors"
+    repository-code: "https://github.com/ngoanpv/DeepInterview"
+    license: Apache-2.0
+# TODO: set to the fork's actual first tagged release once one exists.
+version: 0.1.0
+date-released: 2026-09-04

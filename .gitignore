@@ -51,3 +51,13 @@ apps/web/public/avatars/
 
 # Local prod launcher artifacts (logs, pids)
 cli/.run-logs/
+!/build/
+.playwright-cli/
+
+# Worker bundle artifacts (built by worker/build.ts)
+worker/*.js
+worker/*.js.map
+worker/silero_vad.onnx
+
+# Local voice stack: process-compose.yaml is checked in, logs are not.
+.di/logs/

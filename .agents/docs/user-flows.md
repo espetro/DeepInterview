@@ -4,12 +4,12 @@
 
 ```mermaid
 flowchart LR
-    L[/: landing] -->|Start| S[/setup]
+    L[landing] -->|Start| S[/setup]
     S -->|POST /api/prep?fast=true| P[/session/{id} poll]
     P -->|ready| I[/interview/{id} live room]
     I -->|ended| R[/report/{id}]
     R -->|Coach me| C[/prep?session={id}]
-    C -->|Socratic CTA| S
+    C -->|Socratic CTA|
 ```
 
 Steps:

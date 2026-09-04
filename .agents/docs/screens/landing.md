@@ -1,59 +1,42 @@
-# Screen: Landing (`/`)
+# Screen: Landing (`/`) — Variant B "playful notebook"
 
-## ASCII mockup (current state)
+## ASCII mockup
 
 ```
 +------------------------------------------------------------------+
-|  [logo deep-interview]            Avatars   Prep   |   (no auth) |
+|  [logo di]                                    history   github   |
 +------------------------------------------------------------------+
 |                                                                  |
-|                        ~ ~ ~ ~ ~ ~ ~ ~                           |
-|                   AI MOCK INTERVIEWS                             |
-|                Practice like it's the real thing.                |
-|             Grounded prep, live voice rooms, scored reports.     |
+|   ~ practice like you mean it ~                                  |
 |                                                                  |
-|                  +-----------------------------+                 |
-|                  |        Start  ->            |   (=> /setup)   |
-|                  +-----------------------------+                 |
+|   THE AI AGENT            +----------------+                     |
+|   YOU PRACTICE            :  [sticker 1]   :                     |
+|   YOUR INTERVIEWS WITH.   :  "tell me     :   +---------------+  |
+|   (chunky rounded         :   about a time:   :  [sticker 2]   :  |
+|   display type, tilted)   :   you failed." :   :  system design :  |
+|                           +----------------+   :  45 min, hard  :  |
+|        +-------------------+                   +---------------+  |
+|        |  [sticker 3]      |      +---------------------------------+
+|        |  behavioral q's   |      |  [sticker 4] why did you     |
+|        |  quick fire       |      |  [sticker 5] leave your job? |
+|        +-------------------+      +---------------------------------+
 |                                                                  |
-|     [ hero visual / illustration region ]                        |
+|              +-----------------------------+                     |
+|              |        grill me ->          |   (=> /setup)       |
+|              +-----------------------------+                     |
 |                                                                  |
-+------------------------------------------------------------------+
-|  HOW IT WORKS                                                    |
-|  +--------------+  +--------------+  +--------------+            |
-|  | 1. Upload CV |  | 2. Live room |  | 3. Report    |            |
-|  | + JD facts   |  | voice agent  |  | scores + gap |            |
-|  +--------------+  +--------------+  +--------------+            |
-+------------------------------------------------------------------+
-|  CTA BAND                                                        |
-|      Ready to practice?      [ Start an interview -> /setup ]    |
-+------------------------------------------------------------------+
-|  footer: (c) deep-interview                                      |
+|        voice interviews with an AI that actually pushes back.    |
 +------------------------------------------------------------------+
 ```
 
-## Section inventory
+## Behavior
 
-- Top nav: logo + links (Avatars `/avatars`, Prep `/prep`).
-- Hero: headline, subcopy, primary CTA.
-- How-it-works: 3-step explainer band.
-- CTA band: secondary conversion block with Start button.
-- Footer.
+- CTA **"grill me ->"** navigates to `/setup`.
+- Nav: logo (home), history (`/history`), github (external).
+- 5 tilted sticker/post-it cards with real interview-question content, placed at edges; decorative rotation, no interactivity.
+- Trust micro-line under CTA: single sentence, no stats (v1).
 
-## Primary CTAs
+## Notes
 
-- Hero **Start** -> `/setup`
-- CTA band **Start an interview** -> `/setup`
-
-## States
-
-- Static marketing page; no data-dependent states.
-
-## Nav links
-
-- `/setup` (CTAs), `/avatars`, `/prep`.
-
-## Key files
-
-- `apps/web/app/page.tsx` - route
-- `apps/web/components/landing/*` - hero, steps, CTA band
+- Warm cream bg + orange accents (Variant B tokens from `theme.css`).
+- Screen state is fully static; no URL params, no store reads.

@@ -1,0 +1,13 @@
+{
+  "name": "@di/evals",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun run --bun vitest run"
+  },
+  "dependencies": {
+    "@aeriondyseti/drizzle-sqlite-vec": "^0.1.0",
+    "sqlite-vec": "^0.1.9"
+  }
+}

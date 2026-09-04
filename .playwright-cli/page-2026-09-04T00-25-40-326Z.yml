@@ -1,0 +1,18 @@
+- generic [ref=f6e2]:
+  - banner [ref=f6e3]:
+    - link "di." [ref=f6e4] [cursor=pointer]:
+      - /url: /
+    - navigation [ref=f6e5]:
+      - link "history" [ref=f6e6] [cursor=pointer]:
+        - /url: /history
+      - link "github" [ref=f6e7] [cursor=pointer]:
+        - /url: https://github.com
+  - main [ref=f6e8]:
+    - generic [ref=f6e9]: mock interviews
+    - heading "the AI agent you practice your interviews with." [level=1] [ref=f6e12]
+    - paragraph [ref=f6e14]: voice interviews with an agent that actually pushes back. then get the receipts.
+    - link "grill me →" [ref=f6e17] [cursor=pointer]:
+      - /url: /setup
+      - text: grill me
+      - generic [ref=f6e18]: →
+    - paragraph [ref=f6e20]: no signup · runs local · your audio never leaves the machine

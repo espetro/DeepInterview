@@ -1,0 +1,91 @@
+[tools]
+bun = "latest"
+node = "24"
+
+[env]
+_.file = ".env"
+
+# Web dev server (TanStack Start/vite). Server + mock provider:
+#   cd server && DI_TEST_MODE=1 bun run src/cli.ts --config config.example.yaml --no-supervise
+#   bun run evals/mock-provider/main.ts --port 9000
+[tasks.dev]
+description = "Run web dev server (vite dev) in web/"
+run = "bun run dev"
+dir = "web"
+
+[tasks.build]
+description = "Build web SPA + esbuild worker bundle"
+run = """
+set -e
+cd web && bun run build
+cd ../worker && bun run build
+"""
+
+[tasks.test]
+description = "Run vitest across server, worker, web, evals, shared"
+run = """
+set -e
+for pkg in shared server worker evals; do
+  echo "== $pkg =="
+  (cd $pkg && bun run --bun vitest run)
+done
+echo "== web =="
+(cd web && bunx vitest run)
+"""
+
+[tasks.check]
+description = "Heavy verification lane: full vitest + web typecheck, serialized to avoid stacked memory pressure"
+run = """
+set -e
+LOCK=/tmp/.di-check.lock
+# shlock is stock macOS; stale locks from dead pids are auto-removed by shlock -p
+shlock -f "$LOCK" -p $$ || {
+  echo "another check is running (pid $(cat "$LOCK" 2>/dev/null)); waiting..."
+  i=0
+  while ! shlock -f "$LOCK" -p $$; do
+    i=$((i+1)); [ $i -gt 240 ] && { echo "timed out waiting for lock"; exit 1; }
+    sleep 5
+  done
+}
+trap 'rm -f "$LOCK"' EXIT
+# cap runaway type-checker RSS (tsgo/tsc are the heavy part); skip GOGC tuning
+export GOMEMLIMIT=2GiB
+mise run test
+echo "== web typecheck =="
+cd web && bunx tsc --noEmit
+"""
+
+[tasks.release]
+description = "Build per-OS release archives into dist/releases/ (requires mise run build first)"
+run = "bun run build/release.ts"
+
+
+[tasks.intl]
+description = "Advisory locale consistency check (key parity, empty values, interpolation)"
+run = "bun run scripts/check-locales.ts"
+
+[tasks.evals]
+description = "Run evals vitest suite"
+run = "bun run --bun vitest run"
+dir = "evals"
+
+[tasks.logs]
+description = "Tail .di/logs/{worker,sfu}.log with pino pretty printing via jq"
+run = '''
+tail -n 100 -f .di/logs/worker.log .di/logs/sfu.log | jq -rR --unbuffered '
+  fromjson? | "\(.time // .timestamp // "") [\(.level // "")] \(.msg // .)" // .'
+'''
+[tasks.smoke]
+description = "Behavioral smoke probe: create session, post turn, assert persisted"
+run = '''
+curl -sf -m 10 "${DI_URL:-http://localhost:3000}/v1/test/smoke" | jq -e '.ok == true' >/dev/null \
+  && echo "smoke ok" || { echo "smoke FAILED" >&2; exit 1; }
+'''
+
+# Precondition: a DI server must already be running in test mode:
+#   cd server && DI_TEST_MODE=1 bun run src/cli.ts --config config.example.yaml --no-supervise
+# Override the target with DI_URL (default http://localhost:3000).
+[tasks.e2e]
+description = "Run Playwright e2e specs in tests/e2e (requires DI server in test mode running; DI_URL to override)"
+run = "bun x playwright test"
+dir = "tests/e2e"

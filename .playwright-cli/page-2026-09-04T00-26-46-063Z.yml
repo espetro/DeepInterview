@@ -1,0 +1,38 @@
+- generic [ref=f13e2]:
+  - banner [ref=f13e3]:
+    - link "di." [ref=f13e4] [cursor=pointer]:
+      - /url: /
+    - generic [ref=f13e5]: configure interview
+  - main [ref=f13e6]:
+    - generic [ref=f13e8]:
+      - generic [ref=f13e9]:
+        - heading "presets" [level=2] [ref=f13e10]
+        - generic [ref=f13e11]:
+          - button "sys design" [ref=f13e12]
+          - button "behavioral" [ref=f13e13]
+          - button "frontend" [ref=f13e14]
+          - button "ML" [ref=f13e15]
+      - generic [ref=f13e16]:
+        - heading "custom prompt" [level=2] [ref=f13e17]
+        - textbox "paste a job description, your resume context, or anything the agent should know…" [ref=f13e18]
+      - generic [ref=f13e19]:
+        - 'heading "files · text-only: pdf md txt docx — 10 files / 20MB max" [level=2] [ref=f13e20]'
+        - generic [ref=f13e21]: drop files or click to browse
+      - generic [ref=f13e22]:
+        - generic [ref=f13e23]:
+          - heading "duration" [level=2] [ref=f13e24]
+          - generic [ref=f13e25]:
+            - button "20" [ref=f13e26]
+            - button "30" [ref=f13e27]
+            - button "45" [ref=f13e28]
+            - button "60" [ref=f13e29]
+        - generic [ref=f13e30]:
+          - heading "mode" [level=2] [ref=f13e31]
+          - generic [ref=f13e32]:
+            - button "interview" [ref=f13e33]
+            - generic "available after your first report" [ref=f13e34]: coach
+      - generic [ref=f13e35]:
+        - button "validate & start →" [ref=f13e36]:
+          - text: validate & start
+          - generic [ref=f13e37]: →
+        - button "proceed without validation" [ref=f13e38]

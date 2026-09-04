@@ -1,0 +1,76 @@
+# di local stack - single owner for every process. `process-compose up` in repo root.
+# Log paths live here (not /tmp) so diagnosis has one place to look.
+version: "0.5"
+environment:
+  - "DI_LOG_DIR=.di/logs"
+processes:
+  parakeet-stt:
+    # stdin explicitly bound to /dev/null: a server reading EOF on an
+    # unattached stdin under process-compose is the leading suspect for the
+    # clean exit right after "listening on ...:9003" (verify by hand: run the
+    # binary directly with </dev/null and see whether it exits the same way).
+    command: "sh -c 'exec $HOME/bin/parakeet-server --model $HOME/.cache/parakeet.cpp/models/tdt_ctc-110m-q4_k.gguf --port 9003 </dev/null'"
+    availability:
+      # A clean (exit 0) restart-on-failure is never restarted; this process
+      # is observed exiting 0 right after bind, so it needs unconditional
+      # restart to stay up.
+      restart: "always"
+    readiness_probe:
+      exec:
+        command: "curl -sf -o /dev/null http://127.0.0.1:9003/health || curl -sf -o /dev/null -m 2 http://127.0.0.1:9003/"
+      initial_delay_seconds: 2
+      period_seconds: 5
+    log_location: .di/logs/parakeet.log
+  pocket-tts:
+    command: "pocket-tts serve --port 9004"
+    availability:
+      restart: "on_failure"
+      max_restarts: 0
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        port: 9004
+        path: /health
+        scheme: http
+      initial_delay_seconds: 2
+      period_seconds: 5
+    log_location: .di/logs/pocket-tts.log
+  pocket-shim:
+    command: "bun scripts/pocket-shim.ts"
+    environment:
+      - "POCKET_URL=http://localhost:9004"
+      - "SHIM_PORT=9005"
+    depends_on:
+      pocket-tts:
+        condition: process_healthy
+    availability:
+      restart: "on_failure"
+      max_restarts: 0
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        port: 9005
+        path: /health
+        scheme: http
+      initial_delay_seconds: 1
+      period_seconds: 5
+    log_location: .di/logs/pocket-shim.log
+  di:
+    command: "sh -c 'set -a; . scripts/dev-env.sh; set +a; DI_TEST_MODE=1 bun run server/src/cli.ts --config config.example.yaml'"
+    depends_on:
+      pocket-shim:
+        condition: process_healthy
+      parakeet-stt:
+        condition: process_healthy
+    availability:
+      restart: "on_failure"
+      max_restarts: 0
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        port: 3000
+        path: /api/health
+        scheme: http
+      initial_delay_seconds: 3
+      period_seconds: 5
+    log_location: .di/logs/di.log

@@ -1,8 +1,9 @@
 # Security Policy
 
-DeepInterview is a voice-first AI mock-interview platform. It handles candidate
-CVs, job descriptions, interview transcripts, and recordings — so we take
-security and privacy seriously and welcome responsible disclosure.
+dits (a fork of DeepInterview) is a voice-first AI mock-interview platform. It
+handles candidate CVs, job descriptions, interview transcripts, and
+recordings — so we take security and privacy seriously and welcome
+responsible disclosure.
 
 ## Reporting a vulnerability
 
@@ -10,11 +11,13 @@ security and privacy seriously and welcome responsible disclosure.
 pull requests.** A public report tells attackers about the problem before a fix
 exists.
 
-Instead, email **security@deepinterview.dev** with:
+<!-- TODO: no verified security contact exists yet for this fork. Replace
+     with a real, monitored address before relying on this policy. -->
+Instead, email **TODO-security-contact@example.invalid** with:
 
 - a description of the issue and the impact you believe it has;
-- the affected component (`apps/web`, `apps/agent`, `services/lightrag`, `cli`,
-  `packages/shared`, infra, or a dependency);
+- the affected component (`server`, `worker`, `web`, `shared`, `evals`, infra,
+  or a dependency);
 - step-by-step reproduction instructions or a proof-of-concept; and
 - any relevant logs, requests, or screenshots (please redact secrets and
   personal data).
@@ -30,7 +33,7 @@ initial (non-sensitive) message to the same address.
 
 ## Supported versions
 
-DeepInterview is **pre-v0.1 and under active development** — there is no
+dits is **pre-v0.1 and under active development** — there is no
 generally available release line yet. During this phase, security fixes land on
 the default branch (`main`) only; there are no maintained back-ports. Always run
 the latest `main` (or the latest tagged pre-release, once tags exist) to receive
@@ -45,7 +48,7 @@ This table will be replaced with a real version matrix once we cut `v0.1`.
 
 ## Secrets and configuration
 
-DeepInterview is **secrets-via-env-vars only**. To keep credentials out of the
+dits is **secrets-via-env-vars only**. To keep credentials out of the
 codebase and out of git history:
 
 - **Never commit `.env`, `.env.local`, real keys, tokens, or recordings.** Only

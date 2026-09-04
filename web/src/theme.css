@@ -1,0 +1,131 @@
+@import "tailwindcss";
+@import "./fonts.css";
+
+/*
+ * di design tokens — Variant B "playful notebook".
+ * Warm cream ground, confident orange, espresso ink.
+ * All semantic; arbitrary values confined to this file.
+ */
+
+@theme {
+  /* ground */
+  --color-cream: #fdfbf9;
+  --color-cream-deep: #f7f1ea;
+  --color-paper: #fffdfb;
+
+  /* ink */
+  --color-espresso: #2b2118;
+  --color-espresso-soft: #6b5d4f;
+  --color-espresso-faint: #a89a8a;
+
+  /* accent */
+  --color-persimmon: #ff6f1e;
+  --color-persimmon-deep: #c2480a;
+  --color-persimmon-soft: #ffe8d9;
+  --color-persimmon-faint: #fff3ea;
+
+  /* support */
+  --color-sage: #8a9b7d;
+  --color-sky-note: #7da7c4;
+  --color-butter: #f2c94c;
+
+  /* lines */
+  --color-hairline: rgba(43, 33, 24, 0.08);
+
+  /* type */
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-body: "Inter var", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Berkeley Mono", ui-monospace, "SF Mono", monospace;
+
+  /* motion */
+  --ease-out-expo: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+
+  /* radii */
+  --radius-card: 1.5rem;
+  --radius-shell: 2rem;
+}
+
+/* base */
+html {
+  background: var(--color-cream);
+  color: var(--color-espresso);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-persimmon-soft);
+  color: var(--color-espresso);
+}
+
+/* film grain, fixed + pointer-none only */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* shared motion */
+.transition-fluid {
+  transition: all 700ms var(--ease-out-expo);
+}
+
+/* ambient depth — fixed radial orbs behind all content */
+.ambient::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(42rem 42rem at 85% -10%, rgba(255, 111, 30, 0.1), transparent 65%),
+    radial-gradient(36rem 36rem at -8% 100%, rgba(138, 155, 125, 0.09), transparent 65%),
+    radial-gradient(28rem 28rem at 70% 110%, rgba(242, 201, 76, 0.07), transparent 60%);
+}
+
+/* scroll/load entry reveal — heavy fade-up resolving to crisp */
+.reveal {
+  opacity: 0;
+  transform: translateY(2.5rem);
+  filter: blur(8px);
+  transition:
+    opacity 800ms var(--ease-out-expo) var(--reveal-delay, 0ms),
+    transform 800ms var(--ease-out-expo) var(--reveal-delay, 0ms),
+    filter 800ms var(--ease-out-expo) var(--reveal-delay, 0ms);
+}
+
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* agent voice orb — breathing ring */
+@keyframes orb-breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 111, 30, 0.35); }
+  50% { transform: scale(1.08); box-shadow: 0 0 0 10px rgba(255, 111, 30, 0); }
+}
+
+.orb-live {
+  animation: orb-breathe 2.4s var(--ease-out-expo) infinite;
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(1.25rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rise-in {
+  animation: rise-in 700ms var(--ease-out-expo) both;
+  animation-delay: var(--rise-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; filter: none; transition: none; }
+  .orb-live, .rise-in { animation: none; }
+}
