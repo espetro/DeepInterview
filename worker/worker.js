@@ -179338,6 +179338,58 @@ var ReportSchema = object3({
   generated_at: pipe2(string5(), isoTimestamp())
 });
 
+// ../shared/src/document.ts
+var DocumentIdSchema = pipe2(string5(), uuid3());
+var DocumentKindSchema = picklist(["pdf", "md", "txt", "docx"]);
+var DocumentStatusSchema = picklist([
+  "pending",
+  "processing",
+  "ready",
+  "failed"
+]);
+var DocumentSchema = object3({
+  id: DocumentIdSchema,
+  session_id: pipe2(string5(), uuid3()),
+  name: pipe2(string5(), minLength(1)),
+  kind: DocumentKindSchema,
+  size_bytes: pipe2(number5(), integer3(), minValue(0)),
+  status: DocumentStatusSchema,
+  /** populated when status is "failed" */
+  error: optional2(string5()),
+  chunk_count: optional2(pipe2(number5(), integer3(), minValue(0))),
+  /** ISO 8601 */
+  created_at: pipe2(string5(), isoTimestamp())
+});
+var DOCUMENT_CAPS = {
+  maxFiles: 10,
+  maxTotalBytes: 20 * 1024 * 1024
+};
+var ChunkSchema = object3({
+  id: pipe2(string5(), uuid3()),
+  document_id: DocumentIdSchema,
+  session_id: pipe2(string5(), uuid3()),
+  seq: pipe2(number5(), integer3(), minValue(0)),
+  text: string5()
+});
+var RetrievedChunkSchema = object3({
+  document_id: DocumentIdSchema,
+  document_name: string5(),
+  seq: pipe2(number5(), integer3(), minValue(0)),
+  text: string5(),
+  score: pipe2(number5(), minValue(-1), maxValue(1))
+});
+var SessionContextResponseSchema = object3({
+  chunks: array2(RetrievedChunkSchema)
+});
+var EmbeddingResponseSchema = object3({
+  data: array2(
+    object3({
+      embedding: array2(number5()),
+      index: optional2(number5())
+    })
+  )
+});
+
 // src/config.ts
 var WorkerConfigSchema = object3({
   livekit: object3({
@@ -179450,6 +179502,14 @@ var DiApiClient = class {
     }
     return parse3(ToolStateSchema, await res.json());
   }
+  /** Retrieved document chunks for grounding the interview prompt. */
+  async getContext(sessionId) {
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/sessions/${sessionId}/context`);
+    if (!res.ok) {
+      throw new Error(`getContext failed: ${res.status} ${await res.text().catch(() => "")}`);
+    }
+    return parse3(SessionContextResponseSchema, await res.json());
+  }
   async postEvent(sessionId, type, payload, at2 = (/* @__PURE__ */ new Date()).toISOString()) {
     const body = parse3(SessionEventSchema, {
       session_id: sessionId,
@@ -179481,6 +179541,14 @@ function buildPrompt(ctx) {
   lines.push(`Interview mode: ${ctx.mode}.`);
   if (ctx.title) {
     lines.push(`Interview: ${ctx.title}.`);
+  }
+  if (ctx.documents?.length) {
+    lines.push(
+      "Candidate-provided reference documents (ground your questions in these; do not invent content they do not contain):"
+    );
+    for (const doc of ctx.documents) {
+      lines.push(`[${doc.name}] ${doc.text}`);
+    }
   }
   if (ctx.plan) {
     lines.push(`Interview plan:
@@ -179845,6 +179913,13 @@ async function runJob(ctx) {
   const sessionId = readSessionId(ctx.room.metadata ?? "") ?? crypto.randomUUID();
   const api = new DiApiClient({ baseUrl: config2.di_api_base });
   const sessionCtx = { mode: "interview" };
+  const context2 = await api.getContext(sessionId).catch(() => void 0);
+  if (context2 && context2.chunks.length > 0) {
+    sessionCtx.documents = context2.chunks.map((c2) => ({
+      name: c2.document_name,
+      text: c2.text
+    }));
+  }
   await api.postEvent(sessionId, "agent.started", { room: ctx.room.name }).catch((err) => {
     console.warn(`[worker] failed to log agent.started: ${err}`);
   });

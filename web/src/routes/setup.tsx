@@ -5,6 +5,7 @@ import * as React from "react";
 import { useStore } from "@nanostores/react";
 import { $draft } from "../stores/session";
 import { createSession, uploadDocuments } from "../lib/api";
+import { MicCheck } from "../components/mic-check";
 
 const MAX_FILES = 10;
 const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
@@ -176,6 +177,13 @@ function Setup() {
               {error && (
                 <p role="alert" className="mt-3 text-sm text-persimmon-deep">{error}</p>
               )}
+            </section>
+
+            <section className="rise-in mt-8" style={{ "--rise-delay": "300ms" } as React.CSSProperties}>
+              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft"><FormattedMessage id="setup.mic" /></h2>
+              <div className="mt-3">
+                <MicCheck />
+              </div>
             </section>
 
             <section className="rise-in mt-8 grid gap-6 md:grid-cols-2" style={{ "--rise-delay": "360ms" } as React.CSSProperties}>

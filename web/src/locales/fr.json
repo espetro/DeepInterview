@@ -83,5 +83,13 @@
   "setup.filesBadType": "{name} : type non pris en charge (pdf, md, txt, docx uniquement)",
   "setup.filesTooMany": "maximum {max} fichiers",
   "setup.filesTooBig": "la taille totale depasse 20 Mo",
-  "setup.fileRemove": "supprimer {name}"
+  "setup.fileRemove": "supprimer {name}",
+  "setup.mic": "test micro",
+  "setup.mic.start": "tester le micro",
+  "setup.mic.stop": "stop",
+  "setup.mic.level": "niveau d'entree",
+  "setup.mic.device": "microphone",
+  "setup.mic.defaultDevice": "microphone par defaut",
+  "setup.mic.denied": "acces au micro refuse - autorisez-le dans les parametres du navigateur",
+  "setup.mic.error": "impossible d'acceder au microphone"
 }

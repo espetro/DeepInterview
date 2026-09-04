@@ -83,5 +83,13 @@
   "setup.filesBadType": "{name}: نوع غير مدعوم (pdf وmd وtxt وdocx فقط)",
   "setup.filesTooMany": "الحد الأقصى {max} ملفات",
   "setup.filesTooBig": "الحجم الإجمالي يتجاوز 20MB",
-  "setup.fileRemove": "إزالة {name}"
+  "setup.fileRemove": "إزالة {name}",
+  "setup.mic": "اختبار الميكروفون",
+  "setup.mic.start": "اختبر الميكروفون",
+  "setup.mic.stop": "إيقاف",
+  "setup.mic.level": "مستوى الإدخال",
+  "setup.mic.device": "الميكروفون",
+  "setup.mic.defaultDevice": "الميكروفون الافتراضي",
+  "setup.mic.denied": "تم رفض الوصول إلى الميكروفون - اسمح به من إعدادات المتصفح",
+  "setup.mic.error": "تعذر الوصول إلى الميكروفون"
 }
