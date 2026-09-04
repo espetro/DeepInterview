@@ -51,3 +51,5 @@ apps/web/public/avatars/
 
 # Local prod launcher artifacts (logs, pids)
 cli/.run-logs/
+!/build/
+.playwright-cli/

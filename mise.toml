@@ -40,6 +40,15 @@ echo "== web typecheck =="
 cd web && bunx tsc --noEmit
 """
 
+[tasks.release]
+description = "Build per-OS release archives into dist/releases/ (requires mise run build first)"
+run = "bun run build/release.ts"
+
+
+[tasks.intl]
+description = "Advisory locale consistency check (key parity, empty values, interpolation)"
+run = "bun run scripts/check-locales.ts"
+
 [tasks.evals]
 description = "Run evals vitest suite"
 run = "bun run --bun vitest run"

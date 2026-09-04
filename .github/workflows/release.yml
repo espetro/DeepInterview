@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v2
+
+      - name: Install JS deps
+        run: bun install --frozen-lockfile
+
+      - name: Build web SPA + worker bundle
+        run: mise run build
+
+      - name: Build release archives (all targets)
+        run: mise run release
+
+      - name: Create GitHub Release with archives
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/releases/*.tar.gz
+          generate_release_notes: true
