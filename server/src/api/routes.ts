@@ -7,14 +7,12 @@ import {
   RetrievedChunkSchema,
   SessionContextResponseSchema,
   SessionEventSchema,
-  SessionIdSchema,
   SessionSchema,
   ToolStateSchema,
   TurnSchema,
 } from "@di/shared";
 import { vValidator } from "@hono/valibot-validator";
 import type { Db } from "../store/db";
-import type { Config } from "@di/shared";
 import { testRoutes } from "./test-mode";
 import {
   CapError,
@@ -35,7 +33,6 @@ export function apiRoutes(
   db: Db,
   opts: {
     testMode: boolean;
-    livekit: Config["livekit"];
     embeddings?: ReturnType<typeof import("../rag/ingest").embeddingsClientFromConfig>;
   },
 ): Hono {
@@ -179,36 +176,12 @@ export function apiRoutes(
     return c.json(JSON.parse(row.data));
   });
 
-  // Mint a browser token for the session's interview room. The room carries
-  // JSON metadata {session_id} so the worker job can bind the room to the session.
-  api.post("/token", async (c) => {
-    const BodySchema = v.object({ session_id: SessionIdSchema });
-    const body = v.parse(BodySchema, await c.req.json());
-    const session = await db
-      .selectFrom("sessions")
-      .select("id")
-      .where("id", "=", body.session_id)
-      .executeTakeFirst();
-    if (!session) return c.json({ error: "session not found" }, 404);
-    const { AccessToken } = await import("livekit-server-sdk");
-    const at = new AccessToken(opts.livekit.api_key, opts.livekit.api_secret, {
-      identity: `candidate-${body.session_id}`,
-      metadata: JSON.stringify({ session_id: body.session_id }),
-      ttl: "2h",
-    });
-    at.addGrant({
-      room: `interview-${body.session_id}`,
-      roomJoin: true,
-      canPublish: true,
-      canSubscribe: true,
-      canPublishData: true,
-    });
-    return c.json({
-      token: await at.toJwt(),
-      room: `interview-${body.session_id}`,
-      livekit_url: opts.livekit.url,
-    });
-  });
+  // Voice WebSocket endpoint. Bun upgrades this in serveApp before the Hono
+  // app sees it; this route only handles non-upgrade requests (documented
+  // in .agents/docs, not openapi.json).
+  api.get("/sessions/:id/voice", (c) =>
+    c.json({ error: "websocket upgrade required" }, 426),
+  );
 
   api.post(
     "/sessions/:id/documents",

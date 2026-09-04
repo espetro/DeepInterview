@@ -25,11 +25,6 @@ embeddings:
   base_url: http://localhost:9000/v1
   model: mock-embed
 
-livekit:
-  url: ws://localhost:7880
-  api_key: devkey
-  api_secret: secret
-
 files:
   db_path: .deepinterview/di.db
   log_path: .deepinterview/di.log

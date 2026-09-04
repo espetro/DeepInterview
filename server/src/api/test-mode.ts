@@ -1,11 +1,9 @@
 import { Hono } from "hono";
 import type { Db } from "../store/db";
 
-/** Voice pipeline stages, in the order the worker emits them. */
+/** Voice pipeline stages, in the order the WS voice loop emits them. */
 const PIPELINE_STAGES = new Set([
   "agent.started",
-  "audio.track_subscribed",
-  "vad.speech_started",
   "vad.speech_ended",
   "stt.request",
   "stt.result",

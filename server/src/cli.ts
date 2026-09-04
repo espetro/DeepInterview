@@ -4,8 +4,6 @@ import { join } from "node:path";
 import { createDatabase, migrate, ping } from "./store/db";
 import { loadConfig, ConfigError } from "./config/load";
 import { probeProviders } from "./check/probe";
-import { Supervisor, type ChildSpec } from "./supervisor/supervisor";
-import { buildChildSpecs } from "./supervisor/specs";
 import { createApp, serveApp } from "./api/app";
 
 export async function main(argv: string[]): Promise<number> {
@@ -14,7 +12,6 @@ export async function main(argv: string[]): Promise<number> {
     options: {
       check: { type: "boolean", default: false },
       config: { type: "string", default: "config.yaml" },
-      "no-supervise": { type: "boolean", default: false },
     },
   });
 
@@ -38,25 +35,19 @@ export async function main(argv: string[]): Promise<number> {
   await migrate(db);
   const testMode = process.env.DI_TEST_MODE === "1";
 
-  const supervisor = values["no-supervise"]
-    ? undefined
-    : new Supervisor(buildChildSpecs(config) as ChildSpec[]);
-  supervisor?.start();
-
   let webAssets;
   const spaDir = releaseAssetDir(join("web", "dist", "client"));
   if (existsSync(join(spaDir, "index.html"))) {
     webAssets = { root: spaDir, path: "" };
   }
 
-  const app = await createApp({ config, db, supervisor, testMode, webAssets });
-  const server = serveApp(app, config.server.port);
+  const app = await createApp({ config, db, testMode, webAssets });
+  const server = serveApp(app, config.server.port, { config, db });
   console.log(`[di] listening on http://localhost:${config.server.port}${testMode ? " (test mode)" : ""}`);
 
   const shutdown = async () => {
     console.log("\n[di] shutting down");
     server.stop(true);
-    await supervisor?.stop();
     process.exit(0);
   };
   process.on("SIGINT", () => void shutdown());
@@ -84,7 +75,7 @@ export async function main(argv: string[]): Promise<number> {
       }),
     );
     server.stop(true);
-    void supervisor?.stop().finally(() => process.exit(1));
+    process.exit(1);
   });
   // Keep the event loop alive while the server runs; shutdown() exits.
   await new Promise<never>(() => {});
@@ -105,15 +96,6 @@ async function check(config: Awaited<ReturnType<typeof loadConfig>>, configPath:
     "web assets",
     spaOk,
     spaOk ? spaDir : `${spaDir}/index.html not found (run: mise run build)`,
-  ]);
-
-  // Worker bundle must exist in the release layout or the repo checkout.
-  const workerJs = join(releaseAssetDir("worker"), "worker.js");
-  const workerOk = existsSync(workerJs);
-  results.push([
-    "worker bundle",
-    workerOk,
-    workerOk ? workerJs : `${workerJs} not found (run: mise run build)`,
   ]);
 
   // SQLite database: create/open and ping it (also proves the directory is writable).

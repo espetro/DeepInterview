@@ -4,15 +4,16 @@ import type { Config } from "@di/shared";
 import type { Db } from "../store/db";
 import { apiRoutes } from "./routes";
 import { embeddingsClientFromConfig } from "../rag/ingest";
-import type { Supervisor } from "../supervisor/supervisor";
+import { tryUpgradeVoice, voiceWebSocketHandler, type VoiceDeps } from "../voice/ws";
 
 export interface AppDeps {
   config: Config;
   db: Db;
-  supervisor?: Supervisor;
   testMode: boolean;
   /** Embedded web UI assets; omitted in dev when web/ is served separately. */
   webAssets?: { root: string; path: string };
+  /** Test injection for the voice WS loop (stub STT/TTS/LLM). */
+  voiceDeps?: Pick<VoiceDeps, "loopFactory">;
 }
 
 export async function createApp(deps: AppDeps): Hono {
@@ -22,18 +23,13 @@ export async function createApp(deps: AppDeps): Hono {
     "/v1",
     apiRoutes(deps.db, {
       testMode: deps.testMode,
-      livekit: deps.config.livekit,
       embeddings: embeddingsClientFromConfig(deps.config.embeddings),
     }),
   );
 
   app.get("/v1/openapi.json", (c) => c.json(openApiSpec(deps.config)));
 
-  app.get("/api/health", async (c) => {
-    const children = deps.supervisor ? await deps.supervisor.health() : {};
-    const children_detail = deps.supervisor ? await deps.supervisor.childrenDetail() : {};
-    return c.json({ ok: true, children, children_detail, testMode: deps.testMode });
-  });
+  app.get("/api/health", (c) => c.json({ ok: true, testMode: deps.testMode }));
 
   if (deps.webAssets) {
     const { serveStatic } = await import("@hono/node-server/serve-static");
@@ -81,13 +77,35 @@ function openApiSpec(config: Config): Record<string, unknown> {
           responses: { "200": { description: "OK" }, "404": { description: "Not found" } },
         },
       },
-      "/v1/token": {
-        post: { summary: "Mint a LiveKit token", responses: { "501": { description: "Not implemented" } } },
-      },
     },
   };
 }
 
-export function serveApp(app: Hono, port: number): ReturnType<Bun.serve> {
-  return Bun.serve({ port, fetch: app.fetch });
+/**
+ * Serve the app on Bun with the voice WebSocket endpoint. Bun does not speak
+ * Hono's upgradeWebSocket adapter, so /v1/sessions/:id/voice is upgraded
+ * directly via server.upgrade() before falling through to app.fetch.
+ */
+export function serveApp(
+  app: Hono,
+  port: number,
+  deps: { config: Config; db: Db; voiceDeps?: Pick<VoiceDeps, "loopFactory"> },
+): ReturnType<typeof Bun.serve> {
+  const ws = voiceWebSocketHandler({
+    config: deps.config,
+    db: deps.db,
+    loopFactory: deps.voiceDeps?.loopFactory,
+  });
+  return Bun.serve({
+    port,
+    websocket: ws as never,
+    fetch: async (req, server) => {
+      const upgraded = await tryUpgradeVoice(req, server as UpgradeServer, deps.db);
+      return upgraded ?? app.fetch(req);
+    },
+  });
+}
+
+interface UpgradeServer {
+  upgrade: (req: Request, opts: { data: unknown }) => boolean;
 }

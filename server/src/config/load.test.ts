@@ -19,10 +19,6 @@ tts:
   base_url: http://localhost:9000/v1
   model: mock-tts
   voice: alloy
-livekit:
-  url: ws://localhost:7880
-  api_key: devkey
-  api_secret: secret
 files:
   db_path: data/di.db
   log_path: data/di.log
