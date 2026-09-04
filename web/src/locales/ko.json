@@ -93,5 +93,11 @@
   "setup.mic.device": "마이크",
   "setup.mic.defaultDevice": "기본 마이크",
   "setup.mic.denied": "마이크 접근이 거부되었습니다 - 브라우저 설정에서 허용해 주세요",
-  "setup.mic.error": "마이크에 접근할 수 없습니다"
+  "setup.mic.error": "마이크에 접근할 수 없습니다",
+  "interview.voiceIdle": "음성 대기 중",
+  "interview.phase.listening": "듣고 있습니다",
+  "interview.phase.userSpeaking": "말하는 중",
+  "interview.phase.thinking": "생각 중",
+  "interview.phase.agentSpeaking": "에이전트가 말하는 중",
+  "interview.phase.interrupted": "중단됨"
 }

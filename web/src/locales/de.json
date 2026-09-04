@@ -93,5 +93,11 @@
   "setup.mic.device": "mikrofon",
   "setup.mic.defaultDevice": "standardmikrofon",
   "setup.mic.denied": "mikrofonzugriff verweigert - in den browser-einstellungen erlauben",
-  "setup.mic.error": "mikrofon konnte nicht zugegriffen werden"
+  "setup.mic.error": "mikrofon konnte nicht zugegriffen werden",
+  "interview.voiceIdle": "stimmverbindung inaktiv",
+  "interview.phase.listening": "hört zu",
+  "interview.phase.userSpeaking": "du sprichst",
+  "interview.phase.thinking": "denkt nach",
+  "interview.phase.agentSpeaking": "agent spricht",
+  "interview.phase.interrupted": "unterbrochen"
 }

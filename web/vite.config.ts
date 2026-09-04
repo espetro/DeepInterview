@@ -20,4 +20,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  // silero onnx + ort wasm for the VAD are vendored in web/public/vad/
+  // (committed, no CDN); the SPA build copies public/ verbatim, so no
+  // vite-plugin-static-copy pass is needed.
 });

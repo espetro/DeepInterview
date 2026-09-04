@@ -93,5 +93,11 @@
   "setup.mic.device": "microfono",
   "setup.mic.defaultDevice": "microfono predefinito",
   "setup.mic.denied": "accesso al microfono negato - consentilo nelle impostazioni del browser",
-  "setup.mic.error": "impossibile accedere al microfono"
+  "setup.mic.error": "impossibile accedere al microfono",
+  "interview.voiceIdle": "voce inattiva",
+  "interview.phase.listening": "in ascolto",
+  "interview.phase.userSpeaking": "stai parlando",
+  "interview.phase.thinking": "sto pensando",
+  "interview.phase.agentSpeaking": "agente che parla",
+  "interview.phase.interrupted": "interrotto"
 }

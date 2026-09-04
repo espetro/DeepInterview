@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@nanostores/react";
 import * as React from "react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { useVoiceRoom } from "../lib/voice-room";
+import { useVoice } from "../lib/voice/use-voice";
 import { FormattedMessage, useIntl } from "react-intl";
 import { getSession, getTurns, postTextTurn, pushToolState } from "../lib/api";
 import { $editorBuffer, $muted, $question, $transcriptOpen } from "../stores/session";
@@ -29,6 +29,14 @@ function useCountdown(durationMin: number) {
   return secsLeft;
 }
 
+const phaseKeys: Record<string, string> = {
+  listening: "interview.phase.listening",
+  user_speaking: "interview.phase.userSpeaking",
+  thinking: "interview.phase.thinking",
+  agent_speaking: "interview.phase.agentSpeaking",
+  interrupted: "interview.phase.interrupted",
+};
+
 function Interview() {
   const intl = useIntl();
   const { id } = Route.useParams();
@@ -44,8 +52,16 @@ function Interview() {
   const [text, setText] = useState("");
   const editor = useStore($editorBuffer);
   const whiteboard = useStore($whiteboard);
-  const voice = useVoiceRoom(id, muted);
+  const voice = useVoice(id, muted);
   const orbLive = voice.agentSpeaking || (voice.status === "connected" && !muted);
+  const statusKey =
+    voice.status === "error"
+      ? "interview.voiceError"
+      : voice.status === "connected"
+        ? phaseKeys[voice.phase] ?? "interview.voiceConnected"
+        : voice.status === "connecting"
+          ? "interview.voiceConnecting"
+          : "interview.voiceIdle";
 
   // Mirror browser-held editor/whiteboard state to di so the voice agent can read it.
   useEffect(() => {
@@ -64,6 +80,17 @@ function Interview() {
   useEffect(() => {
     if (secsLeft === 0) navigate({ to: "/finish/$id", params: { id } });
   }, [secsLeft, id, navigate]);
+
+  // browser-driver fallback: read new agent turns aloud as turns polling finds
+  // them (server driver plays tts chunks off the WS instead)
+  const seenTurns = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const t of turns ?? []) {
+      if (t.speaker !== "agent" || seenTurns.current.has(t.id)) continue;
+      seenTurns.current.add(t.id);
+      voice.speakAgentTurn(t.text);
+    }
+  }, [turns, voice]);
 
   async function sendText() {
     if (!text.trim()) return;
@@ -97,11 +124,7 @@ function Interview() {
                     : "bg-espresso-soft/40 animate-pulse"
               }`}
             />
-            {voice.status === "connected"
-              ? intl.formatMessage({ id: "interview.voiceConnected" })
-              : voice.status === "error"
-                ? intl.formatMessage({ id: "interview.voiceError" }, { message: voice.error ?? "" })
-                : intl.formatMessage({ id: "interview.voiceConnecting" })}
+            {intl.formatMessage({ id: statusKey })}
           </span>
           <div
             className={`h-10 w-10 rounded-full bg-gradient-to-br from-persimmon to-persimmon-deep transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${

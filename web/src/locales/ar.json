@@ -93,5 +93,11 @@
   "setup.mic.device": "الميكروفون",
   "setup.mic.defaultDevice": "الميكروفون الافتراضي",
   "setup.mic.denied": "تم رفض الوصول إلى الميكروفون - اسمح به من إعدادات المتصفح",
-  "setup.mic.error": "تعذر الوصول إلى الميكروفون"
+  "setup.mic.error": "تعذر الوصول إلى الميكروفون",
+  "interview.voiceIdle": "الصوت غير نشط",
+  "interview.phase.listening": "يستمع",
+  "interview.phase.userSpeaking": "أنت تتحدث",
+  "interview.phase.thinking": "يفكر",
+  "interview.phase.agentSpeaking": "الوكيل يتحدث",
+  "interview.phase.interrupted": "تمت المقاطعة"
 }

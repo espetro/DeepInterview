@@ -93,5 +93,11 @@
   "setup.mic.device": "マイク",
   "setup.mic.defaultDevice": "デフォルトのマイク",
   "setup.mic.denied": "マイクへのアクセスが拒否されました - ブラウザ設定で許可してください",
-  "setup.mic.error": "マイクにアクセスできませんでした"
+  "setup.mic.error": "マイクにアクセスできませんでした",
+  "interview.voiceIdle": "音声アイドル",
+  "interview.phase.listening": "聞いています",
+  "interview.phase.userSpeaking": "発話中",
+  "interview.phase.thinking": "考えています",
+  "interview.phase.agentSpeaking": "エージェント発話中",
+  "interview.phase.interrupted": "中断されました"
 }
