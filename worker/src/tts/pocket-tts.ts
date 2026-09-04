@@ -5,6 +5,7 @@ import {
   type APIConnectOptions,
 } from "@livekit/agents";
 import type { AudioFrame } from "@livekit/rtc-node";
+import type { DiApiClient } from "../session.ts";
 
 const SAMPLE_RATE = 24_000;
 const CHANNELS = 1;
@@ -15,6 +16,9 @@ export interface PocketTtsOptions {
   model: string;
   voice: string;
   fetchImpl?: typeof fetch;
+  /** When set, emit tts.request/tts.result pipeline events. */
+  api?: DiApiClient;
+  sessionId?: string;
 }
 
 /**
@@ -58,6 +62,11 @@ async function fetchSpeech(
   if (opts.apiKey) {
     headers.authorization = `Bearer ${opts.apiKey}`;
   }
+  const { api, sessionId } = opts;
+  api
+    ?.postEvent(sessionId!, "tts.request", { text_length: input.length })
+    .catch((err) => console.warn(`[worker] failed to log tts.request: ${err}`));
+  const startedAt = Date.now();
   const res = await (opts.fetchImpl ?? fetch)(
     `${opts.baseUrl.replace(/\/+$/, "")}/v1/audio/speech`,
     {
@@ -72,10 +81,19 @@ async function fetchSpeech(
       signal,
     },
   );
+  const latency_ms = Date.now() - startedAt;
   if (!res.ok) {
-    throw new Error(`pocket tts failed: ${res.status} ${await res.text().catch(() => "")}`);
+    const body = await res.text().catch(() => "");
+    api
+      ?.postEvent(sessionId!, "tts.failed", { status: res.status, body, latency_ms })
+      .catch((err) => console.warn(`[worker] failed to log tts.failed: ${err}`));
+    throw new Error(`pocket tts failed: ${res.status} ${body}`);
   }
-  return res.arrayBuffer();
+  const buffer = await res.arrayBuffer();
+  api
+    ?.postEvent(sessionId!, "tts.result", { bytes: buffer.byteLength, latency_ms })
+    .catch((err) => console.warn(`[worker] failed to log tts.result: ${err}`));
+  return buffer;
 }
 
 

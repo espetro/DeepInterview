@@ -5,6 +5,7 @@ import {
 } from "@livekit/agents";
 import type { AudioBuffer } from "@livekit/agents";
 import { WavBuffer } from "./wav.ts";
+import type { DiApiClient } from "../session.ts";
 
 export interface WhisperSttOptions {
   baseUrl: string;
@@ -12,6 +13,9 @@ export interface WhisperSttOptions {
   model: string;
   language?: string;
   fetchImpl?: typeof fetch;
+  /** When set, emit stt.request/stt.result/stt.failed pipeline events. */
+  api?: DiApiClient;
+  sessionId?: string;
 }
 
 /** The VAD-segmenting wrapper type produced by whisperStreamAdapter. */
@@ -71,6 +75,13 @@ export class WhisperStt extends stt.STT {
 
   /** POST the WAV to the transcriptions endpoint, return the text. */
   async transcribeWav(wav: Buffer, abortSignal?: AbortSignal): Promise<string> {
+    const { api, sessionId } = this.opts;
+    const bytes = wav.byteLength;
+    api
+      ?.postEvent(sessionId!, "stt.request", { bytes })
+      .catch((err) => console.warn(`[worker] failed to log stt.request: ${err}`));
+    const startedAt = Date.now();
+
     const form = new FormData();
     form.append("file", new Blob([new Uint8Array(wav)], { type: "audio/wav" }), "audio.wav");
     form.append("model", this.opts.model);
@@ -85,11 +96,21 @@ export class WhisperStt extends stt.STT {
       `${this.opts.baseUrl.replace(/\/+$/, "")}/v1/audio/transcriptions`,
       { method: "POST", headers, body: form, signal: abortSignal },
     );
+    const latency_ms = Date.now() - startedAt;
     if (!res.ok) {
-      throw new Error(`whisper stt failed: ${res.status} ${await res.text().catch(() => "")}`);
+      const body = await res.text().catch(() => "");
+      console.error(`[worker] whisper stt failed: ${res.status} ${body}`);
+      api
+        ?.postEvent(sessionId!, "stt.failed", { status: res.status, body, latency_ms })
+        .catch((err) => console.warn(`[worker] failed to log stt.failed: ${err}`));
+      throw new Error(`whisper stt failed: ${res.status} ${body}`);
     }
     const json = (await res.json()) as { text?: string };
-    return json.text ?? "";
+    const text = json.text ?? "";
+    api
+      ?.postEvent(sessionId!, "stt.result", { text_length: text.length, latency_ms })
+      .catch((err) => console.warn(`[worker] failed to log stt.result: ${err}`));
+    return text;
   }
 
   stream(): stt.SpeechStream {

@@ -3,6 +3,8 @@ import {
   defineAgent,
   type JobContext,
 } from "@livekit/agents";
+import { RoomEvent } from "@livekit/rtc-node";
+import { AgentSessionEventTypes } from "@livekit/agents";
 import { VAD as SileroVAD } from "@livekit/agents-plugin-silero";
 import { LLM as OpenAILLM } from "@livekit/agents-plugin-openai";
 import { LLM as AnthropicLLM } from "@livekit/agents-plugin-anthropic";
@@ -89,12 +91,16 @@ export async function runJob(ctx: JobContext): Promise<void> {
     apiKey: config.stt.api_key,
     model: config.stt.model,
     language: config.stt.language,
+    api,
+    sessionId,
   });
   const ttsImpl = new PocketTts({
     baseUrl: config.tts.base_url,
     apiKey: config.tts.api_key,
     model: config.tts.model,
     voice: config.tts.voice,
+    api,
+    sessionId,
   });
 
   const session = new AgentSession({
@@ -117,6 +123,30 @@ export async function runJob(ctx: JobContext): Promise<void> {
     // forwarding loop had already latched onto the first one, so STT never
     // received frames. Do not add a second RoomIO.
     inputOptions: { textEnabled: true, audioEnabled: true },
+  });
+
+  room.on(RoomEvent.TrackSubscribed, (_track, publication, participant) => {
+    api
+      .postEvent(sessionId, "audio.track_subscribed", {
+        participant_identity: participant.identity,
+        track_sid: publication.sid,
+      })
+      .catch((err) => console.warn(`[worker] failed to log audio.track_subscribed: ${err}`));
+  });
+
+  let speechStartedAt: number | undefined;
+  session.on("user_state_changed", (ev) => {
+    if (ev.newState === "speaking") {
+      speechStartedAt = ev.createdAt;
+      api
+        .postEvent(sessionId, "vad.speech_started")
+        .catch((err) => console.warn(`[worker] failed to log vad.speech_started: ${err}`));
+    } else if (ev.oldState === "speaking") {
+      const duration_ms = speechStartedAt !== undefined ? ev.createdAt - speechStartedAt : undefined;
+      api
+        .postEvent(sessionId, "vad.speech_ended", { duration_ms })
+        .catch((err) => console.warn(`[worker] failed to log vad.speech_ended: ${err}`));
+    }
   });
 
   // Registered before the greeting: say() emits conversation_item_added during
@@ -142,6 +172,11 @@ export async function runJob(ctx: JobContext): Promise<void> {
         created_at: new Date().toISOString(),
         source: "voice",
       };
+      if (turn.speaker === "agent") {
+        api
+          .postEvent(sessionId, "llm.result", { text_length: turn.text.length })
+          .catch((err) => console.warn(`[worker] failed to log llm.result: ${err}`));
+      }
       return postTurnWithRetry(api, sessionId, turn).catch((err) => {
         console.error(
           `[worker] failed to persist turn after retries: session_id=${sessionId} seq=${turn.seq}: ${err}`,
@@ -225,7 +260,7 @@ async function main(): Promise<void> {
 
   const { AgentServer, ServerOptions } = await import("@livekit/agents");
   const { initializeLogger } = await import("@livekit/agents");
-  initializeLogger({ level: "info" });
+  initializeLogger({ level: process.env.DI_WORKER_LOG ?? "info" });
   const { fileURLToPath } = await import("node:url");
   const server = new AgentServer(
     new ServerOptions({
