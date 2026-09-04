@@ -40,6 +40,7 @@
 - **Transcript panel**: right side, translucent (10-20% alpha, iOS-26 style so background shows through), 10-20% collapsed-to-expanded width range.
   - Collapsed state = slim peek rail showing the last turn. **Minimize never fully hides it.**
   - Bottom of panel: text input box. Text input is a first-class feature (LiveKit chat/data channel -> RoomIO -> same LLM turn path as voice).
+- Voice wiring: the di server mints room tokens (`POST /v1/token`, room name `interview-<session_id>`) and the interview screen joins that room with mic publish on mount. The voice worker derives the session id from the room name (`interview-<sid>`), joins, greets, and persists conversation items as turns. Turn `seq` is assigned server-side on `POST /v1/sessions/:id/turns` (max existing seq + 1), so concurrent writers (voice, text input) never collide.
 - Controls bottom: mute, end-early. Both end paths lead to `/finish/[id]`.
 
 ## URL / state
