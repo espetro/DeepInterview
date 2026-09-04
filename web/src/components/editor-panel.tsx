@@ -110,8 +110,8 @@ export function EditorPanel() {
         doc: latest.current.buffer,
         extensions: [
           EditorView.lineWrapping,
-          languageComp.current.of(languageSupport($editorLanguage.get())),
-          themeComp.current.of($editorTheme.get() === "dark" ? espressoDark : plainLight),
+          languageComp.current.of(languageExtension),
+          themeComp.current.of(themeExtension),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) $editorBuffer.set(update.state.doc.toString());
           }),

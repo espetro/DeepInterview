@@ -45,6 +45,12 @@ export const $muted = atom(false);
 /** UI locale, persisted. Interview language is a separate config field. */
 export const $locale = persistentAtom<string>("di:locale", "en");
 
+/** Editor language for syntax highlighting. Persisted; markdown default for non-technical users. */
+export const $editorLanguage = persistentAtom<string>("di:editor:language", "markdown");
+
+/** Editor theme, independent of the app theme. Persisted. */
+export const $editorTheme = persistentAtom<"light" | "dark">("di:editor:theme", "dark");
+
 /** Locales shipped in web/src/locales. */
 export const LOCALES = ["en", "de", "es", "fr", "ja", "pt-BR", "zh-CN", "ko", "it", "ar"] as const;
 
