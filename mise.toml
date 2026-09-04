@@ -69,6 +69,19 @@ description = "Run evals vitest suite"
 run = "bun run --bun vitest run"
 dir = "evals"
 
+[tasks.logs]
+description = "Tail .di/logs/{worker,sfu}.log with pino pretty printing via jq"
+run = '''
+tail -n 100 -f .di/logs/worker.log .di/logs/sfu.log | jq -rR --unbuffered '
+  fromjson? | "\(.time // .timestamp // "") [\(.level // "")] \(.msg // .)" // .'
+'''
+[tasks.smoke]
+description = "Behavioral smoke probe: create session, post turn, assert persisted"
+run = '''
+curl -sf -m 10 "$DI_URL/v1/test/smoke" | jq -e '.ok == true' >/dev/null \
+  && echo "smoke ok" || { echo "smoke FAILED" >&2; exit 1; }
+'''
+
 # Precondition: a DI server must already be running in test mode:
 #   cd server && DI_TEST_MODE=1 bun run src/cli.ts --config config.example.yaml --no-supervise
 # Override the target with DI_URL (default http://localhost:3000).
