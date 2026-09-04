@@ -33,6 +33,8 @@ DI_TEST_MODE=1 bun run server/src/cli.ts --config config.yaml --no-supervise
 bun run server/src/cli.ts --config config.yaml --check    # validate config + probe providers
 ```
 
+Full-stack app test with real voice (no cloud STT/TTS): `scripts/local-voice-stack.sh` starts parakeet STT (:9003), pocket-tts (:9004) behind an OpenAI-compatible shim (:9005), and livekit (:7880). Then `source scripts/dev-env.sh` (Bifrost LLM via keychain key, never on disk) and run the server supervised. See `scripts/pocket-shim.ts` for why the shim exists.
+
 ## Conventions
 
 - Contracts live in `shared/` as valibot schemas. Server routes validate with `@hono/valibot-validator`; never hand-roll request shapes in `server/` or `web/`.
