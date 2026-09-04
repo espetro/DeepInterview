@@ -6,6 +6,8 @@ import { LOCALES, $locale } from "../stores/session";
 /**
  * Minimal language select for header placement. Persists via $locale
  * (localStorage-backed persistentAtom); active locale applies app-wide.
+ * Used on in-app routes (setup, validate) where switching locale should not
+ * navigate away from the current screen.
  */
 export function LocaleSwitcher() {
   const locale = useStore($locale);
