@@ -1,6 +1,23 @@
 import { Hono } from "hono";
 import type { Db } from "../store/db";
 
+/** Voice pipeline stages, in the order the worker emits them. */
+const PIPELINE_STAGES = new Set([
+  "agent.started",
+  "audio.track_subscribed",
+  "vad.speech_started",
+  "vad.speech_ended",
+  "stt.request",
+  "stt.result",
+  "stt.failed",
+  "llm.request",
+  "llm.result",
+  "tts.request",
+  "tts.result",
+  "tts.failed",
+]);
+const TERMINAL_STAGE = "tts.result";
+
 /**
  * Debug routes, mounted only when DI_TEST_MODE=1.
  * Agents drive the app by URL and assert against these endpoints instead of DOM scraping.
@@ -36,6 +53,34 @@ export function testRoutes(db: Db): Hono {
 
   // Probe that test mode is actually on; inert binary 404s this route.
   t.get("/ping", (c) => c.json({ testMode: true }));
+
+  // Ordered voice pipeline dataflow view for a single session: which stages
+  // fired and where the chain last progressed. One curl instead of grepping
+  // .di/logs/ for the worker's per-stage events.
+  t.get("/pipeline/:sessionId", async (c) => {
+    const sessionId = c.req.param("sessionId");
+    const events = await db
+      .selectFrom("events")
+      .selectAll()
+      .where("session_id", "=", sessionId)
+      .orderBy("id")
+      .execute();
+    const stages = events
+      .filter((e) => PIPELINE_STAGES.has(e.type))
+      .map((e) => ({
+        stage: e.type,
+        payload: e.payload === null ? undefined : JSON.parse(e.payload),
+        at: e.at,
+      }));
+    const lastStage = stages.length > 0 ? stages[stages.length - 1].stage : undefined;
+    return c.json({
+      session_id: sessionId,
+      stages,
+      // null once the chain reached its terminal stage; otherwise the last
+      // stage reached names exactly where the pipeline is stuck.
+      stalled_at: lastStage === undefined || lastStage === TERMINAL_STAGE ? null : lastStage,
+    });
+  });
 
   // End-to-end storage round trip: create session, post a turn, read it back.
   // No DELETE route exists for sessions, so the smoke session is left behind.
