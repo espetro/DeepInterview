@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf8" />
+<title>OPFS two-tab locking experiment</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; max-width: 920px; margin: 2rem auto; padding: 0 1rem; }
+  #log { border: 1px solid gray; min-height: 200px; max-height: 50vh; overflow-y: auto; padding: 8px; margin-top: 1rem; white-space: pre-wrap; word-break: break-all; }
+  button { font: inherit; margin-right: 8px; padding: 6px 12px; cursor: pointer; }
+  #tabid { font-weight: bold; }
+  section { margin-top: 1.5rem; }
+  code { background: rgba(127,127,127,.2); padding: 0 4px; }
+</style>
+</head>
+<body>
+<h1>OPFS two-tab locking experiment</h1>
+<p>Tab id: <span id="tabid"></span></p>
+<ol>
+  <li>Serve this dir: <code>bun spikes/opfs-matrix/serve.ts</code> (http://localhost:8788)</li>
+  <li>Open <b>two</b> tabs/windows of this page side by side.</li>
+  <li>In each tab run a scenario and watch both logs.</li>
+</ol>
+
+<section>
+  <h2>Scenarios</h2>
+  <button data-scenario="plain">1. plain write (no lock)</button>
+  <button data-scenario="locked">2. write under Web Lock</button>
+  <button data-scenario="contend">3. contention burst (no lock)</button>
+  <button data-scenario="lockquery">4. lock query + status</button>
+  <button id="clear">clear log</button>
+</section>
+
+<section>
+  <h2>Log</h2>
+  <div id="log"></div>
+</section>
+
+<script>
+"use strict";
+const TAB_ID = Math.random().toString(36).slice(2, 6);
+document.getElementById("tabid").textContent = TAB_ID;
+const logEl = document.getElementById("log");
+function log(...parts) {
+  const line = `[${new Date().toISOString().slice(11, 23)} tab ${TAB_ID}] ` + parts.join(" ") + "\n";
+  logEl.textContent += line;
+  console.log(...parts);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function errStr(e) { return e && (e.name + ": " + e.message) || String(e); }
+
+const FILE = "two-tabs.log";
+const LOCK = "di-opfs-lock";
+
+async function getHandle() {
+  const root = await navigator.storage.getDirectory();
+  return root.getFileHandle(FILE, { create: true });
+}
+
+// Reads/writes via the async file-handle API (writable stream), which is what
+// the document side would use. Sync access handles are worker-only in most
+// engines; scenario "contend" also tries a worker sync handle to observe the
+// engine's own exclusion.
+async function plainWrite(root) {
+  const fh = await getHandle();
+  const w = await fh.createWritable();
+  const line = `tab ${TAB_ID} @ ${Date.now()}\n`;
+  await w.write(line);
+  await w.close();
+  return line.length;
+}
+
+async function workerSyncWrite(bytes) {
+  const workerSrc = `
+    self.onmessage = async (ev) => {
+      const root = await navigator.storage.getDirectory();
+      const fh = await root.getFileHandle(ev.data.name, { create: true });
+      try {
+        const h = await fh.createSyncAccessHandle();
+        const size = h.getSize();
+        h.write(new TextEncoder().encode(ev.data.text), { at: size });
+        h.flush();
+        h.close();
+        self.postMessage({ ok: true, size: size + ev.data.text.length });
+      } catch (e) {
+        self.postMessage({ ok: false, reason: e.name + ": " + e.message });
+      }
+    };`;
+  const url = URL.createObjectURL(new Blob([workerSrc], { type: "text/javascript" }));
+  const worker = new Worker(url);
+  const res = await new Promise((resolve) => {
+    worker.onmessage = (ev) => resolve(ev.data);
+    worker.onerror = (ev) => resolve({ ok: false, reason: "worker error: " + ev.message });
+    worker.postMessage({ name: FILE, text: bytes });
+  });
+  worker.terminate();
+  URL.revokeObjectURL(url);
+  return res;
+}
+
+const scenarios = {
+  async plain() {
+    log("scenario 1: plain write, no lock");
+    try {
+      const n = await plainWrite();
+      log("  wrote", n, "bytes: OK (async writable does not enforce single writer)");
+    } catch (e) {
+      log("  FAILED:", errStr(e));
+    }
+    const res = await workerSyncWrite(`sync tab ${TAB_ID} @ ${Date.now()}\n`);
+    log("  worker sync write:", res.ok ? `OK size=${res.size}` : "FAILED: " + res.reason,
+        "(if the other tab holds a sync handle you should see NoModificationAllowedError here)");
+  },
+
+  async locked() {
+    log("scenario 2: write under Web Lock", LOCK);
+    try {
+      const out = await navigator.locks.request(LOCK, { ifAvailable: true }, async (lock) => {
+        if (!lock) { log("  lock held elsewhere, skipping"); return "skipped"; }
+        log("  lock acquired, writing...");
+        const res = await workerSyncWrite(`locked tab ${TAB_ID} @ ${Date.now()}\n`);
+        log("  worker sync write:", res.ok ? `OK size=${res.size}` : "FAILED: " + res.reason);
+        await new Promise((r) => setTimeout(r, 1500)); // hold the lock a bit so the other tab sees contention
+        return "done";
+      });
+      log("  scenario 2 result:", out);
+    } catch (e) {
+      log("  FAILED:", errStr(e));
+    }
+  },
+
+  async contend() {
+    log("scenario 3: contention burst (5 rapid sync writes, no lock)");
+    for (let i = 0; i < 5; i++) {
+      const res = await workerSyncWrite(`burst tab ${TAB_ID} #${i} @ ${Date.now()}\n`);
+      log(`  burst ${i}:`, res.ok ? `OK size=${res.size}` : "FAILED: " + res.reason);
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    log("  burst done. Interleave with the other tab's burst to see errors/lost writes.");
+  },
+
+  async lockquery() {
+    log("scenario 4: lock query");
+    if (!navigator.locks?.query) { log("  navigator.locks.query missing"); return; }
+    const snap = await navigator.locks.query();
+    log("  held:", JSON.stringify(snap.held), "pending:", JSON.stringify(snap.pending));
+    if (!navigator.locks) { log("  navigator.locks missing entirely"); return; }
+  },
+};
+
+document.querySelectorAll("button[data-scenario]").forEach((b) => {
+  b.addEventListener("click", () => scenarios[b.dataset.scenario]().catch((e) => log("scenario error:", errStr(e))));
+});
+document.getElementById("clear").addEventListener("click", () => (logEl.textContent = ""));
+
+log("ready. tab", TAB_ID, "on", location.href);
+log("note: sync access handles are opened in a dedicated worker; the page itself uses the async API.");
+</script>
+</body>
+</html>

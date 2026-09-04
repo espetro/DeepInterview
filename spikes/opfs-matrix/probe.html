@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf8" />
+<title>OPFS support matrix probe</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+  th, td { border: 1px solid gray; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: rgba(127,127,127,.2); }
+  .yes { color: #2a2; font-weight: bold; }
+  .no { color: #c33; font-weight: bold; }
+  .partial { color: #b80; font-weight: bold; }
+  #ua { opacity: .8; }
+  details { margin-top: 1rem; }
+  pre { white-space: pre-wrap; word-break: break-all; }
+</style>
+</head>
+<body>
+<h1>OPFS support matrix probe</h1>
+<p id="ua"></p>
+<p>Probing... results appear below. Also logged to the console.</p>
+<table id="matrix">
+  <thead><tr><th>Capability</th><th>Result</th><th>Detail</th></tr></thead>
+  <tbody></tbody>
+</table>
+<details>
+  <summary>Raw JSON</summary>
+  <pre id="json"></pre>
+</details>
+
+<script>
+"use strict";
+const results = [];
+const tbody = document.querySelector("#matrix tbody");
+
+function report(name, status, detail) {
+  const row = { name, status, detail };
+  results.push(row);
+  const tr = document.createElement("tr");
+  const tdName = document.createElement("td"); tdName.textContent = name;
+  const tdStatus = document.createElement("td");
+  tdStatus.textContent = status === true ? "yes" : status === false ? "no" : String(status);
+  tdStatus.className = status === true ? "yes" : status === false ? "no" : "partial";
+  const tdDetail = document.createElement("td"); tdDetail.textContent = detail ?? "";
+  tr.append(tdName, tdStatus, tdDetail);
+  tbody.appendChild(tr);
+  console.log("[probe]", name, status, detail ?? "");
+}
+
+function isSecureContext() {
+  return self.isSecureContext;
+}
+
+async function probeOpfs() {
+  if (!navigator.storage || typeof navigator.storage.getDirectory !== "function") {
+    report("OPFS (navigator.storage.getDirectory)", false, "API missing");
+    return null;
+  }
+  try {
+    const root = await navigator.storage.getDirectory();
+    report("OPFS (navigator.storage.getDirectory)", true, "root handle acquired");
+    return root;
+  } catch (e) {
+    report("OPFS (navigator.storage.getDirectory)", false, `${e.name}: ${e.message}`);
+    return null;
+  }
+}
+
+async function probeSyncAccessHandle(root) {
+  if (!root) { report("createSyncAccessHandle", false, "OPFS unavailable"); return; }
+  // createSyncAccessHandle only exists on handles obtained in a dedicated worker
+  // in some engines; in a document it throws or is undefined (Chrome allows it in
+  // workers only since M121-ish; documents throw NoModificationAllowedError).
+  const name = "probe-sync.bin";
+  try {
+    const fh = await root.getFileHandle(name, { create: true });
+    if (typeof fh.createSyncAccessHandle !== "function") {
+      report("createSyncAccessHandle (this context)", false, "method missing on FileSystemFileHandle (document context expected to lack it)");
+    } else {
+      try {
+        const h = await fh.createSyncAccessHandle();
+        h.write(new TextEncoder().encode("probe"), { at: 0 });
+        h.flush();
+        h.close();
+        report("createSyncAccessHandle (this context)", true, "opened, wrote, flushed, closed");
+      } catch (e) {
+        report("createSyncAccessHandle (this context)", e.name === "NoModificationAllowedError" ? "document-context-rejected" : false, `${e.name}: ${e.message} (sync handles are worker-only in most engines)`);
+      }
+    }
+  } catch (e) {
+    report("createSyncAccessHandle (this context)", false, `${e.name}: ${e.message}`);
+  }
+
+  // Worker-based probe: the real viability test. sqlite-wasm OPFS VFS and
+  // wa-sqlite OPFS backends all run createSyncAccessHandle inside a worker.
+  try {
+    const workerSrc = `
+      self.onmessage = async (ev) => {
+        const root = await navigator.storage.getDirectory();
+        const fh = await root.getFileHandle(ev.data.name, { create: true });
+        try {
+          if (typeof fh.createSyncAccessHandle !== "function") {
+            self.postMessage({ ok: false, reason: "method missing in worker" });
+            return;
+          }
+          const h = await fh.createSyncAccessHandle();
+          const enc = new TextEncoder();
+          h.write(enc.encode("worker-probe"), { at: 0 });
+          h.flush();
+          const size = h.getSize();
+          h.close();
+          self.postMessage({ ok: true, detail: "opened+written in worker, size=" + size });
+        } catch (e) {
+          self.postMessage({ ok: false, reason: e.name + ": " + e.message });
+        }
+      };`;
+    const url = URL.createObjectURL(new Blob([workerSrc], { type: "text/javascript" }));
+    const worker = new Worker(url);
+    const workerResult = await new Promise((resolve) => {
+      worker.onmessage = (ev) => resolve(ev.data);
+      worker.onerror = (ev) => resolve({ ok: false, reason: `worker error: ${ev.message}` });
+      worker.postMessage({ name: "probe-sync-worker.bin" });
+    });
+    worker.terminate();
+    URL.revokeObjectURL(url);
+    report("createSyncAccessHandle (dedicated worker)", workerResult.ok, workerResult.ok ? workerResult.detail : workerResult.reason);
+  } catch (e) {
+    report("createSyncAccessHandle (dedicated worker)", false, `${e.name}: ${e.message}`);
+  }
+}
+
+async function probeWebLocks() {
+  if (!navigator.locks) {
+    report("Web Locks API (navigator.locks)", false, "API missing");
+    return;
+  }
+  const supported = typeof navigator.locks.request === "function";
+  report("Web Locks API (navigator.locks)", supported, supported ? "request() present" : "request() missing");
+  if (!supported) return;
+  try {
+    const out = await navigator.locks.request("di-probe-lock", { ifAvailable: true }, async (lock) => {
+      if (!lock) return "unavailable";
+      await new Promise((r) => setTimeout(r, 50));
+      return "held";
+    });
+    report("Web Locks request() (smoke)", out === "held", `result: ${out}`);
+    try {
+      const { held, pending } = await navigator.locks.query();
+      report("Web Locks query()", true, `held=${held.length} pending=${pending.length}`);
+    } catch (e) {
+      report("Web Locks query()", false, `${e.name}: ${e.message}`);
+    }
+  } catch (e) {
+    report("Web Locks request() (smoke)", false, `${e.name}: ${e.message}`);
+  }
+}
+
+async function probeStorage() {
+  try {
+    const est = await navigator.storage.estimate();
+    report("storage.estimate()", true, `usage=${(est.usage / 1048576).toFixed(1)}MB quota=${(est.quota / 1048576).toFixed(1)}MB`);
+  } catch (e) {
+    report("storage.estimate()", false, `${e.name}: ${e.message}`);
+  }
+  if (typeof navigator.storage?.persist !== "function") {
+    report("storage.persist()", false, "API missing");
+    return;
+  }
+  try {
+    const already = await navigator.storage.persisted?.();
+    const granted = await navigator.storage.persist();
+    report("storage.persist()", granted, `persisted before=${already} after=${granted}`);
+  } catch (e) {
+    report("storage.persist()", false, `${e.name}: ${e.message}`);
+  }
+}
+
+function probeSqliteVfsFlags() {
+  // Heuristic flags an OPFS-backed SQLite WASM VFS (sqlite-wasm opfs-sahpool /
+  // opfs VFS, wa-sqlite OPFS backend) needs. We check the primitive each
+  // backend depends on rather than loading the wasm here.
+  const flags = {
+    "wasm (WebAssembly)": typeof WebAssembly === "object",
+    "Blob/URL.createObjectURL (worker bootstrap)": typeof URL.createObjectURL === "function",
+    "SharedArrayBuffer + Atomics (opfs VFS, not sahpool)": typeof SharedArrayBuffer !== "undefined",
+    "cross-origin isolation (COOP/COEP, needed for SAB)": self.crossOriginIsolated === true,
+    "FileSystemFileHandle transferable postMessage": typeof FileSystemFileHandle !== "undefined",
+  };
+  for (const [name, ok] of Object.entries(flags)) {
+    report(`SQLite WASM VFS flag: ${name}`, ok, ok ? "" : "missing (sahpool backend may still work)");
+  }
+}
+
+function probeMisc() {
+  report("secure context", isSecureContext(), self.location.href);
+  report("serviceWorker (SW can host OPFS sqlite)", "serviceWorker" in navigator, navigator.serviceWorker ? "" : "missing");
+  const u = navigator.userAgent;
+  const browser = /Edg\//.test(u) ? "Edge"
+    : /OPR\//.test(u) ? "Opera"
+    : /Firefox\//.test(u) ? "Firefox"
+    : /Chrome\//.test(u) ? "Chrome"
+    : /Safari\//.test(u) ? "Safari"
+    : "unknown";
+  document.getElementById("ua").textContent = `${browser} — ${u}`;
+}
+
+(async () => {
+  probeMisc();
+  await probeStorage();
+  await probeWebLocks();
+  const root = await probeOpfs();
+  await probeSyncAccessHandle(root);
+  probeSqliteVfsFlags();
+  document.getElementById("json").textContent = JSON.stringify(results, null, 2);
+  document.querySelector("p").textContent = "Done. Copy the table into FINDINGS.md (observed results).";
+})();
+</script>
+</body>
+</html>
