@@ -13,28 +13,18 @@ describe("deriveStalledAt", () => {
     { name: "no stages yet", stages: [], expected: null },
     { name: "only agent.started", stages: ["agent.started"], expected: "agent.started" },
     {
-      name: "stuck after audio.track_subscribed",
-      stages: ["agent.started", "audio.track_subscribed"],
-      expected: "audio.track_subscribed",
-    },
-    {
-      name: "stuck mid vad",
-      stages: ["agent.started", "audio.track_subscribed", "vad.speech_started"],
-      expected: "vad.speech_started",
-    },
-    {
       name: "stuck after vad.speech_ended (stt never fired)",
-      stages: ["agent.started", "audio.track_subscribed", "vad.speech_started", "vad.speech_ended"],
+      stages: ["agent.started", "vad.speech_ended"],
       expected: "vad.speech_ended",
     },
     {
       name: "stuck at stt.request (stt hung)",
-      stages: ["agent.started", "audio.track_subscribed", "vad.speech_started", "vad.speech_ended", "stt.request"],
+      stages: ["agent.started", "vad.speech_ended", "stt.request"],
       expected: "stt.request",
     },
     {
       name: "stt failed: chain ends at stt.failed",
-      stages: ["agent.started", "vad.speech_started", "vad.speech_ended", "stt.request", "stt.failed"],
+      stages: ["agent.started", "vad.speech_ended", "stt.request", "stt.failed"],
       expected: "stt.failed",
     },
     {
@@ -64,7 +54,7 @@ describe("deriveStalledAt", () => {
     },
     {
       name: "reached terminal stage: not stalled",
-      stages: ["agent.started", "audio.track_subscribed", "vad.speech_started", "vad.speech_ended", "stt.request", "stt.result", "llm.request", "llm.result", "tts.request", "tts.result"],
+      stages: ["agent.started", "vad.speech_ended", "stt.request", "stt.result", "llm.request", "llm.result", "tts.request", "tts.result"],
       expected: null,
     },
     {
@@ -79,8 +69,8 @@ describe("deriveStalledAt", () => {
     },
     {
       name: "trailing event after terminal (new turn starting a fresh pass)",
-      stages: ["tts.result", "vad.speech_started"],
-      expected: "vad.speech_started",
+      stages: ["tts.result", "vad.speech_ended"],
+      expected: "vad.speech_ended",
     },
     {
       name: "single terminal stage only",

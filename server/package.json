@@ -18,8 +18,5 @@
     "hono": "^4",
     "valibot": "^1",
     "yaml": "^2"
-  },
-  "devDependencies": {
-    "livekit-server-sdk": "^2"
   }
 }
