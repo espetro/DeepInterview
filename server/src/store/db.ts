@@ -36,11 +36,24 @@ export interface DbSchema {
     data: string;
     generated_at: string;
   };
-  tool_state: {
+  documents: {
     id: string;
-    editor: string;
-    whiteboard: string;
-    updated_at: string;
+    session_id: string;
+    name: string;
+    kind: "pdf" | "md" | "txt" | "docx";
+    size_bytes: number;
+    status: "pending" | "processing" | "ready" | "failed";
+    error: string | null;
+    chunk_count: number | null;
+    created_at: string;
+  };
+  chunks: {
+    id: string;
+    document_id: string;
+    session_id: string;
+    seq: number;
+    text: string;
+    embedding: Uint8Array;
   };
 }
 
@@ -85,6 +98,26 @@ const MIGRATIONS = [
     data TEXT NOT NULL,
     generated_at TEXT NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS documents (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL REFERENCES sessions(id),
+    name TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    size_bytes INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    error TEXT,
+    chunk_count INTEGER,
+    created_at TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS chunks (
+    id TEXT PRIMARY KEY,
+    document_id TEXT NOT NULL REFERENCES documents(id),
+    session_id TEXT NOT NULL REFERENCES sessions(id),
+    seq INTEGER NOT NULL,
+    text TEXT NOT NULL,
+    embedding BLOB NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_chunks_session ON chunks(session_id)`,
 ];
 
 /**
@@ -118,6 +151,10 @@ export async function migrate(db: Db): Promise<void> {
   const tables = await db.introspection.getTables();
   const names = new Set(tables.map((t) => t.name));
   for (const m of MIGRATIONS) {
+    if (/^CREATE INDEX/i.test(m)) {
+      await sql.raw(m).execute(db);
+      continue;
+    }
     const table = m.match(/CREATE TABLE IF NOT EXISTS (\w+)/)![1]!;
     if (names.has(table)) continue;
     await sql.raw(m).execute(db);

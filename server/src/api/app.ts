@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import type { Config } from "@di/shared";
 import type { Db } from "../store/db";
 import { apiRoutes } from "./routes";
+import { embeddingsClientFromConfig } from "../rag/ingest";
 import type { Supervisor } from "../supervisor/supervisor";
 
 export interface AppDeps {
@@ -17,7 +18,13 @@ export interface AppDeps {
 export async function createApp(deps: AppDeps): Hono {
   const app = new Hono();
 
-  app.route("/v1", apiRoutes(deps.db, { testMode: deps.testMode }));
+  app.route(
+    "/v1",
+    apiRoutes(deps.db, {
+      testMode: deps.testMode,
+      embeddings: embeddingsClientFromConfig(deps.config.embeddings),
+    }),
+  );
 
   app.get("/v1/openapi.json", (c) => c.json(openApiSpec(deps.config)));
 

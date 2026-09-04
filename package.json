@@ -9,8 +9,10 @@
     "@types/node": "^24",
     "fast-check": "^4.9.0",
     "kysely": "^0.29.5",
+    "mammoth": "^1.12.2",
     "oxfmt": "^0.14",
     "oxlint": "^1",
+    "pdf-parse": "^2.4.5",
     "typescript": "^7",
     "vitest": "^3"
   }

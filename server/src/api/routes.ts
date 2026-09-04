@@ -11,6 +11,20 @@ import {
 import { vValidator } from "@hono/valibot-validator";
 import type { Db } from "../store/db";
 import { testRoutes } from "./test-mode";
+import {
+  CapError,
+  deleteDocument,
+  ingestDocuments,
+  listDocuments,
+  loadVectors,
+} from "../rag/ingest";
+import { retrieve } from "../rag/embeddings";
+import {
+  DocumentSchema,
+  RetrievedChunkSchema,
+  SessionContextResponseSchema,
+  SessionSchema,
+} from "@di/shared";
 
 const TurnInputSchema = v.omit(TurnSchema, ["session_id"]);
 
@@ -18,7 +32,13 @@ const TurnInputSchema = v.omit(TurnSchema, ["session_id"]);
  * /v1/* REST API. Valibot-validated request/response contracts from @di/shared.
  * In DI_TEST_MODE extra debug routes under /v1/test/* are mounted (see test-mode.ts).
  */
-export function apiRoutes(db: Db, opts: { testMode: boolean }): Hono {
+export function apiRoutes(
+  db: Db,
+  opts: {
+    testMode: boolean;
+    embeddings?: ReturnType<typeof import("../rag/ingest").embeddingsClientFromConfig>;
+  },
+): Hono {
   const api = new Hono();
 
   api.post("/sessions", vValidator("json", CreateSessionRequestSchema), async (c) => {
@@ -154,6 +174,66 @@ export function apiRoutes(db: Db, opts: { testMode: boolean }): Hono {
 
   // LiveKit token minting lives here in M2; stub for now.
   api.post("/token", (c) => c.json({ error: "not implemented" }, 501));
+
+  api.post(
+    "/sessions/:id/documents",
+    async (c) => {
+      const sessionId = c.req.param("id");
+      const session = await db.selectFrom("sessions").select("id").where("id", "=", sessionId).executeTakeFirst();
+      if (!session) return c.json({ error: "session not found" }, 404);
+      const form = await c.req.formData();
+      const files: { name: string; bytes: Uint8Array }[] = [];
+      for (const value of form.getAll("file")) {
+        if (!(value instanceof File)) continue;
+        files.push({ name: value.name, bytes: new Uint8Array(await value.arrayBuffer()) });
+      }
+      if (files.length === 0) return c.json({ error: "no files uploaded (field: file)" }, 400);
+      try {
+        const docs = await ingestDocuments(db, sessionId, files, {
+          embeddings: opts.embeddings,
+        });
+        return c.json(
+          { documents: docs.map((d) => v.parse(DocumentSchema, d)) },
+          201,
+        );
+      } catch (err) {
+        if (err instanceof CapError) return c.json({ error: err.message }, err.status);
+        throw err;
+      }
+    },
+  );
+
+  api.get("/sessions/:id/documents", async (c) => {
+    const docs = await listDocuments(db, c.req.param("id"));
+    return c.json({ documents: docs });
+  });
+
+  api.delete("/sessions/:id/documents/:docId", async (c) => {
+    const ok = await deleteDocument(db, c.req.param("id"), c.req.param("docId"));
+    return ok ? c.body(null, 204) : c.json({ error: "document not found" }, 404);
+  });
+
+  api.get("/sessions/:id/context", async (c) => {
+    const sessionId = c.req.param("id");
+    const session = await db.selectFrom("sessions").select("id").where("id", "=", sessionId).executeTakeFirst();
+    if (!session) return c.json({ error: "session not found" }, 404);
+    const query = c.req.query("query") ?? "";
+    const rows = await loadVectors(db, sessionId);
+    if (!query || rows.length === 0) {
+      const chunks = rows.slice(0, 8).map((r) => ({
+        document_id: r.document_id,
+        document_name: r.document_name,
+        seq: r.seq,
+        text: r.text,
+        score: 0,
+      }));
+      return c.json(v.parse(SessionContextResponseSchema, { chunks }));
+    }
+    if (!opts.embeddings) return c.json({ error: "no embeddings provider configured" }, 503);
+    const [queryVec] = await opts.embeddings.embed([query]);
+    const chunks = retrieve(queryVec!, rows, 8);
+    return c.json(v.parse(SessionContextResponseSchema, { chunks }));
+  });
 
   if (opts.testMode) {
     api.route("/test", testRoutes(db));
