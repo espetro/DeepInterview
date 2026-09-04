@@ -8,7 +8,8 @@
     "./config": "./src/config.ts",
     "./session": "./src/session.ts",
     "./plan": "./src/plan.ts",
-    "./report": "./src/report.ts"
+    "./report": "./src/report.ts",
+    "./voice": "./src/voice.ts"
   },
   "dependencies": {
     "valibot": "^1"
