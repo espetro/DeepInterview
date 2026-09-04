@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { encodeWav, wavHeader, WavBuffer } from "./wav.ts";
+import fc from "fast-check";
+import { encodeWav, wavHeader, WavBuffer, type AudioFrameLike } from "./wav.ts";
 import { WhisperStt } from "./whisper-stt.ts";
 
 describe("wav encoding", () => {
@@ -33,6 +34,62 @@ describe("wav encoding", () => {
     const wav = buf.toWav();
     expect(wav.length).toBe(44 + 6);
     expect(wav.readUInt32LE(24)).toBe(16000);
+  });
+});
+
+/** Minimal WAV reader for round-trip assertions: header fields + raw PCM bytes. */
+function decodeWav(wav: Buffer): { sampleRate: number; channels: number; bitsPerSample: number; data: Buffer } {
+  return {
+    sampleRate: wav.readUInt32LE(24),
+    channels: wav.readUInt16LE(22),
+    bitsPerSample: wav.readUInt16LE(34),
+    data: wav.subarray(44, 44 + wav.readUInt32LE(40)),
+  };
+}
+
+describe("WavBuffer round-trip (property-based)", () => {
+  it("encode-then-decode preserves sample rate, channels, and every pushed sample, for any frame sequence", () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1000, max: 192000 }), // sampleRate
+        fc.integer({ min: 1, max: 8 }), // numChannels (only affects the header field here; frames are raw PCM)
+        fc.array(fc.array(fc.integer({ min: -32768, max: 32767 }), { minLength: 0, maxLength: 64 }), {
+          minLength: 0,
+          maxLength: 20,
+        }), // sequence of frames, each an arbitrary-length run of Int16 samples
+        (sampleRate, numChannels, frames) => {
+          const buf = new WavBuffer(sampleRate, numChannels);
+          expect(buf.isEmpty()).toBe(true);
+
+          const pushed: AudioFrameLike[] = frames.map((samples) => ({
+            data: new Int16Array(samples),
+            sampleRate,
+            numChannels,
+          }));
+          for (const frame of pushed) buf.pushFrame(frame);
+
+          const expectedByteLength = frames.reduce((sum, f) => sum + f.length * 2, 0);
+          expect(buf.byteLength).toBe(expectedByteLength);
+          expect(buf.isEmpty()).toBe(expectedByteLength === 0);
+
+          const decoded = decodeWav(buf.toWav());
+          expect(decoded.sampleRate).toBe(sampleRate);
+          expect(decoded.channels).toBe(numChannels);
+          expect(decoded.bitsPerSample).toBe(16);
+          expect(decoded.data.length).toBe(expectedByteLength);
+
+          // Round-trip every sample, not just byte length: decode the PCM
+          // back to Int16 and compare against the pushed frames in order.
+          const roundTripped = new Int16Array(
+            decoded.data.buffer,
+            decoded.data.byteOffset,
+            decoded.data.byteLength / 2,
+          );
+          const expectedSamples = frames.flat();
+          expect(Array.from(roundTripped)).toEqual(expectedSamples);
+        },
+      ),
+    );
   });
 });
 
