@@ -22,6 +22,8 @@ Bun workspaces. `mise` tasks (see `mise.toml`):
 - `mise run check` - tests + `tsc --noEmit` in web
 - `mise run evals` - evals suite
 - `mise run e2e` - Playwright; precondition: test-mode server running, `DI_URL` to override target
+- `mise run logs` - tail supervisor child logs (`.di/logs/{worker,sfu}.log`) with pino pretty printing via jq
+- `mise run smoke` - behavioral smoke probe against `$DI_URL` (default `http://localhost:3000`); endpoint exists only in test mode
 
 Server runbook for local work:
 

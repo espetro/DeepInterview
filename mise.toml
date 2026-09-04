@@ -78,7 +78,7 @@ tail -n 100 -f .di/logs/worker.log .di/logs/sfu.log | jq -rR --unbuffered '
 [tasks.smoke]
 description = "Behavioral smoke probe: create session, post turn, assert persisted"
 run = '''
-curl -sf -m 10 "$DI_URL/v1/test/smoke" | jq -e '.ok == true' >/dev/null \
+curl -sf -m 10 "${DI_URL:-http://localhost:3000}/v1/test/smoke" | jq -e '.ok == true' >/dev/null \
   && echo "smoke ok" || { echo "smoke FAILED" >&2; exit 1; }
 '''
 
