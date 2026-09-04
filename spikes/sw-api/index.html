@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>sw-api spike</title>
+    <style>
+      body { font: 13px ui-monospace, monospace; margin: 2rem; max-width: 72rem; }
+      button { margin-right: .5rem; margin-bottom: .5rem; }
+      pre { background: #f4f4f4; padding: .5rem; overflow-x: auto; white-space: pre-wrap; }
+      .ok { color: #080; } .bad { color: #c00; }
+    </style>
+  </head>
+  <body>
+    <h1>sw-api spike: /v1 API served by service worker, sqlite-wasm on OPFS</h1>
+    <p>
+      <button id="run">run round-trip</button>
+      <button id="reload">reload page (persistence check)</button>
+      <span id="sw-state">sw: checking…</span>
+    </p>
+    <div id="out"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

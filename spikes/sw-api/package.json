@@ -1,0 +1,20 @@
+{
+  "name": "@di/spike-sw-api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bunx --bun vite --port 5199",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/valibot-validator": "^0.6.1",
+    "@sqlite.org/sqlite-wasm": "3.51.2-build9",
+    "hono": "4",
+    "kysely": "^0.29.5",
+    "valibot": "1"
+  },
+  "devDependencies": {
+    "vite": "^7"
+  }
+}

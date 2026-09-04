@@ -17,7 +17,7 @@ yaml file. Case-insensitive key paths after the prefix.
 | `stt.base_url` | url | required | speech-to-text endpoint (OpenAI transcription shape) |
 | `stt.api_key` | string | optional | bearer key |
 | `stt.model` | string | required | STT model id |
-| `stt.mode` | `buffered` | required | v1 is buffered-only; streaming is an M2+ caveat |
+| `stt.mode` | `buffered` | required | transport is streaming WS; recognition is per-utterance buffered |
 | `tts.base_url` | url | required | text-to-speech endpoint |
 | `tts.api_key` | string | optional | bearer key |
 | `tts.model` | string | required | TTS model id |
@@ -25,9 +25,6 @@ yaml file. Case-insensitive key paths after the prefix.
 | `embeddings.base_url` | url | optional | embeddings endpoint |
 | `embeddings.api_key` | string | optional | bearer key |
 | `embeddings.model` | string | required if embeddings block present | embeddings model id |
-| `livekit.url` | url | required | LiveKit server, e.g. `ws://localhost:7880` |
-| `livekit.api_key` | string | required | LiveKit API key |
-| `livekit.api_secret` | string | required | LiveKit API secret |
 | `phoenix.endpoint` | url | optional | Arize Phoenix tracing endpoint |
 | `phoenix.headers` | map | optional | headers for the Phoenix endpoint |
 | `files.db_path` | string | required | SQLite database path |
@@ -60,4 +57,4 @@ server (OpenAPI 3.1). Summary:
 | `DELETE /v1/sessions/:id/documents/:docId` | remove a document and its chunks |
 | `GET /v1/sessions/:id/context` | retrieved document chunks grounding the agent (optional `?query=`) |
 | `PUT` / `GET /v1/sessions/:id/report` | store / read the scored report |
-| `POST /v1/token` | LiveKit token minting, 501 stub for now |
+| `GET /v1/sessions/:id/voice` | WebSocket upgrade; voice loop (messages: `shared/src/voice.ts`, not in openapi.json) |

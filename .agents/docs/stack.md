@@ -4,9 +4,7 @@
 
 | Service | Port | Notes |
 | --- | --- | --- |
-| web (Next.js) | 3000 | `apps/web` |
-| agent API (FastAPI/uv) | 8000 | `apps/agent` |
-| LiveKit | 7880 | voice room server |
+| web (TanStack Start) | 3000 | served by the di server |
 | lightrag | 9621 | RAG / grounding |
 | whisper / speaches | 8001 | STT |
 | kokoro | 8890 | TTS |
@@ -35,9 +33,9 @@ Copy from teammates / templates if missing; never commit real values.
 
 ## Start order
 
-1. Infra services (LiveKit :7880, lightrag :9621, whisper/speaches :8001,
-   kokoro :8890, Ollama :11434) - start these first; the agent and web
-   depend on them.
+1. Infra services (lightrag :9621, whisper/speaches :8001,
+   kokoro :8890, Ollama :11434) - start these first; the app
+   depends on them.
 2. Agent API:
    ```bash
    uv --directory apps/agent sync

@@ -17,7 +17,7 @@ cd di-<version>-<platform>-<arch>
 ./install.sh   # or just run ./di directly
 ```
 
-The archive bundles the compiled `di` binary, the worker bundle, the built web SPA,
+The archive bundles the compiled `di` binary, the built web SPA,
 and a reference `config.example.yaml`. No `bun install` or build step needed.
 
 ### Option B: build from source
@@ -31,7 +31,7 @@ curl -fsSL https://mise.jdx.dev/install.sh | sh
 git clone https://github.com/espetro/dits.git dits
 cd dits
 bun install
-mise run build   # builds the web SPA into web/dist/client and the worker bundle
+mise run build   # builds the web SPA into web/dist/client
 ```
 
 ## 2. Configure a provider

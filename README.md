@@ -33,18 +33,17 @@ See [docs/setup.md](docs/setup.md) for the full step-by-step guide: download a r
 ## What it does
 
 - Reads a CV/job description and turns it into an interview plan (preset or custom prompt).
-- Runs a real-time voice interview through a LiveKit agent, backed by any OpenAI-compatible LLM, STT, and TTS provider (OpenAI, Ollama, vLLM, ...).
+- Runs a real-time voice interview over WebSocket, backed by any OpenAI-compatible LLM, STT, and TTS provider (OpenAI, Ollama, vLLM, ...).
 - Grounds the agent's questions in your uploaded documents via retrieval.
 - Produces a transcript and a scored report at the end, kept in local history.
-- Self-hosted and local-first: one process serves the API and web app, a supervisor spawns the worker and LiveKit as children, and a SQLite database holds everything.
+- Self-hosted and local-first: one process serves the API, web app, and in-process voice pipeline, and a SQLite database holds everything.
 
 ## Stack
 
 | Path | What it owns |
 | --- | --- |
 | `shared/` | Contracts (`@di/shared`): config, session/turn/report schemas |
-| `server/` | Hono API on Bun, supervises worker + LiveKit children |
-| `worker/` | `@livekit/agents` voice worker (STT/TTS/LLM) |
+| `server/` | Hono API on Bun, in-process WebSocket voice pipeline |
 | `web/` | TanStack Start SPA |
 | `evals/` | vitest suite + offline mock provider |
 
