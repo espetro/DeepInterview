@@ -32,9 +32,22 @@ done
 """
 
 [tasks.check]
-description = "Run tests + web typecheck (tsc --noEmit)"
+description = "Heavy verification lane: full vitest + web typecheck, serialized to avoid stacked memory pressure"
 run = """
 set -e
+LOCK=/tmp/.di-check.lock
+# shlock is stock macOS; stale locks from dead pids are auto-removed by shlock -p
+shlock -f "$LOCK" -p $$ || {
+  echo "another check is running (pid $(cat "$LOCK" 2>/dev/null)); waiting..."
+  i=0
+  while ! shlock -f "$LOCK" -p $$; do
+    i=$((i+1)); [ $i -gt 240 ] && { echo "timed out waiting for lock"; exit 1; }
+    sleep 5
+  done
+}
+trap 'rm -f "$LOCK"' EXIT
+# cap runaway type-checker RSS (tsgo/tsc are the heavy part); skip GOGC tuning
+export GOMEMLIMIT=2GiB
 mise run test
 echo "== web typecheck =="
 cd web && bunx tsc --noEmit
