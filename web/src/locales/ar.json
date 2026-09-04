@@ -47,6 +47,8 @@
   "interview.endEarly": "إنهاء مبكر",
   "interview.typeInstead": "اكتب بدلاً من ذلك…",
   "interview.editorPlaceholder": "اكتب أو الصق حلك هنا…",
+  "editor.language": "اللغة",
+  "editor.theme": "سمة المحرر",
   "interview.voiceMuted": "صوت الوكيل مكتوم",
   "interview.voiceActive": "صوت الوكيل نشط",
   "interview.whiteboardLoading": "جارٍ تحميل whiteboard",

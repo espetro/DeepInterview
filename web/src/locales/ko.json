@@ -47,6 +47,8 @@
   "interview.endEarly": "조기 종료",
   "interview.typeInstead": "입력으로 답하기…",
   "interview.editorPlaceholder": "여기에 풀이를 작성하거나 붙여넣으세요…",
+  "editor.language": "언어",
+  "editor.theme": "에디터 테마",
   "interview.voiceMuted": "에이전트 음소거 중",
   "interview.voiceActive": "에이전트 음성 활성",
   "interview.whiteboardLoading": "whiteboard 불러오는 중",

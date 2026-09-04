@@ -47,6 +47,8 @@
   "interview.endEarly": "早期終了",
   "interview.typeInstead": "入力で回答…",
   "interview.editorPlaceholder": "ここに解答を書いたり貼り付けたり…",
+  "editor.language": "言語",
+  "editor.theme": "エディターテーマ",
   "interview.voiceMuted": "エージェントの音声はミュート中",
   "interview.voiceActive": "エージェントの音声は有効",
   "interview.whiteboardLoading": "whiteboardを読み込み中",

@@ -47,6 +47,8 @@
   "interview.endEarly": "termina prima",
   "interview.typeInstead": "meglio scrivere…",
   "interview.editorPlaceholder": "scrivi o incolla qui la tua soluzione…",
+  "editor.language": "linguaggio",
+  "editor.theme": "tema dell'editor",
   "interview.voiceMuted": "voce dell’agente silenziata",
   "interview.voiceActive": "voce dell’agente attiva",
   "interview.whiteboardLoading": "caricamento whiteboard",

@@ -47,6 +47,8 @@
   "interview.endEarly": "提前结束",
   "interview.typeInstead": "改为输入…",
   "interview.editorPlaceholder": "在这里书写或粘贴你的解答…",
+  "editor.language": "语言",
+  "editor.theme": "编辑器主题",
   "interview.voiceMuted": "智能体语音已静音",
   "interview.voiceActive": "智能体语音进行中",
   "interview.whiteboardLoading": "whiteboard 加载中",
