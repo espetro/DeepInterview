@@ -66,6 +66,16 @@ export async function uploadDocuments(
   return res.json();
 }
 
+export async function mintToken(id: string): Promise<{ token: string; room: string; livekit_url: string }> {
+  const res = await fetch(`${BASE}/v1/token`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ session_id: id }),
+  });
+  if (!res.ok) throw new Error(`token mint failed: ${res.status}`);
+  return res.json();
+}
+
 export async function listSessions(): Promise<SessionDto[]> {
   const res = await fetch(`${BASE}/v1/sessions`);
   if (!res.ok) throw new Error(`list sessions failed: ${res.status}`);

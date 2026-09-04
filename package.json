@@ -5,9 +5,11 @@
   "workspaces": ["shared", "server", "worker", "web", "evals"],
   "type": "module",
   "devDependencies": {
+    "@testing-library/react": "^16.3.3",
     "@types/bun": "^1.4.0",
     "@types/node": "^24",
     "fast-check": "^4.9.0",
+    "jsdom": "^30.0.1",
     "kysely": "^0.29.5",
     "mammoth": "^1.12.2",
     "oxfmt": "^0.14",

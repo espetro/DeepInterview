@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@nanostores/react";
 import * as React from "react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { useVoiceRoom } from "../lib/voice-room";
 import { FormattedMessage, useIntl } from "react-intl";
 import { getSession, getTurns, postTextTurn, pushToolState } from "../lib/api";
 import { $editorBuffer, $muted, $question, $transcriptOpen } from "../stores/session";
@@ -43,6 +44,8 @@ function Interview() {
   const [text, setText] = useState("");
   const editor = useStore($editorBuffer);
   const whiteboard = useStore($whiteboard);
+  const voice = useVoiceRoom(id, muted);
+  const orbLive = voice.agentSpeaking || (voice.status === "connected" && !muted);
 
   // Mirror browser-held editor/whiteboard state to di so the voice agent can read it.
   useEffect(() => {
@@ -77,9 +80,32 @@ function Interview() {
           <span className={`font-mono text-sm tabular-nums ${wrapping ? "text-persimmon" : "text-espresso-soft"}`}>
             {mm}:{ss}
           </span>
+          <span
+            className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-espresso-soft"
+            title={
+              voice.status === "error"
+                ? intl.formatMessage({ id: "interview.voiceError", values: { message: voice.error ?? "" } })
+                : undefined
+            }
+          >
+            <span
+              className={`inline-block h-1.5 w-1.5 rounded-full ${
+                voice.status === "connected"
+                  ? "bg-sage"
+                  : voice.status === "error"
+                    ? "bg-persimmon"
+                    : "bg-espresso-soft/40 animate-pulse"
+              }`}
+            />
+            {voice.status === "connected"
+              ? intl.formatMessage({ id: "interview.voiceConnected" })
+              : voice.status === "error"
+                ? intl.formatMessage({ id: "interview.voiceError", values: { message: voice.error ?? "" } })
+                : intl.formatMessage({ id: "interview.voiceConnecting" })}
+          </span>
           <div
             className={`h-10 w-10 rounded-full bg-gradient-to-br from-persimmon to-persimmon-deep transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-              muted ? "opacity-30 saturate-0" : "orb-live"
+              muted ? "opacity-30 saturate-0" : orbLive ? "orb-live" : "opacity-60"
             }`}
             role="img"
             aria-label={intl.formatMessage({ id: muted ? "interview.voiceMuted" : "interview.voiceActive" })}

@@ -63,7 +63,7 @@
   "editor.theme": "editor theme",
   "interview.voiceMuted": "agent voice muted",
   "interview.voiceActive": "agent voice active",
-        "interview.whiteboardLoading": "whiteboard loading",
+  "interview.whiteboardLoading": "whiteboard loading",
   "finish.complete": "interview complete",
   "finish.fallbackTitle": "session",
   "finish.summary": "{duration} min · {turns} turns",

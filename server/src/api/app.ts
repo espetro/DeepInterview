@@ -22,6 +22,7 @@ export async function createApp(deps: AppDeps): Hono {
     "/v1",
     apiRoutes(deps.db, {
       testMode: deps.testMode,
+      livekit: deps.config.livekit,
       embeddings: embeddingsClientFromConfig(deps.config.embeddings),
     }),
   );

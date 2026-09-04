@@ -10,6 +10,7 @@ import {
 } from "@di/shared";
 import { vValidator } from "@hono/valibot-validator";
 import type { Db } from "../store/db";
+import type { Config } from "@di/shared";
 import { testRoutes } from "./test-mode";
 import {
   CapError,
@@ -36,6 +37,7 @@ export function apiRoutes(
   db: Db,
   opts: {
     testMode: boolean;
+    livekit: Config["livekit"];
     embeddings?: ReturnType<typeof import("../rag/ingest").embeddingsClientFromConfig>;
   },
 ): Hono {
@@ -172,8 +174,36 @@ export function apiRoutes(
     return c.json(JSON.parse(row.data));
   });
 
-  // LiveKit token minting lives here in M2; stub for now.
-  api.post("/token", (c) => c.json({ error: "not implemented" }, 501));
+  // Mint a browser token for the session's interview room. The room carries
+  // JSON metadata {session_id} so the worker job can bind the room to the session.
+  api.post("/token", async (c) => {
+    const BodySchema = v.object({ session_id: SessionIdSchema });
+    const body = v.parse(BodySchema, await c.req.json());
+    const session = await db
+      .selectFrom("sessions")
+      .select("id")
+      .where("id", "=", body.session_id)
+      .executeTakeFirst();
+    if (!session) return c.json({ error: "session not found" }, 404);
+    const { AccessToken } = await import("livekit-server-sdk");
+    const at = new AccessToken(deps.livekit.api_key, deps.livekit.api_secret, {
+      identity: `candidate-${body.session_id}`,
+      metadata: JSON.stringify({ session_id: body.session_id }),
+      ttl: "2h",
+    });
+    at.addGrant({
+      room: `interview-${body.session_id}`,
+      roomJoin: true,
+      canPublish: true,
+      canSubscribe: true,
+      canPublishData: true,
+    });
+    return c.json({
+      token: await at.toJwt(),
+      room: `interview-${body.session_id}`,
+      livekit_url: deps.livekit.url,
+    });
+  });
 
   api.post(
     "/sessions/:id/documents",
