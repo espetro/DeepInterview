@@ -4,6 +4,14 @@ di is a local-first AI mock interview agent. You configure an interview (preset 
 
 For LLM agents: this repo is agent drivable end to end. With `DI_TEST_MODE=1` the server mounts `/v1/test/*` debug routes so you can create sessions, post turns, and assert state over plain HTTP instead of scraping the DOM. See [test mode](#test-mode-driving-di-as-an-agent) and [docs/setup-prompt.md](docs/setup-prompt.md).
 
+Point any coding agent at this one-liner and it will clone, build, and drive a full interview session with no API keys:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/espetro/dits/refs/heads/develop/docs/setup-prompt.md
+```
+
+Paste the output into the agent as its task.
+
 ## Quickstart
 
 Requires [bun](https://bun.sh) and [mise](https://mise.jdx.dev).
