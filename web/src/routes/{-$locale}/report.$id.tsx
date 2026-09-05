@@ -39,9 +39,9 @@ async function loadOrGenerateClientReport(id: string): Promise<ReportDto> {
   if (cached) return cached;
   const profile = $providerProfile.get();
   const session = await getClientSession(id);
-  if (!profile || !session) throw new Error("no provider profile or session");
+  if (!profile?.llm || !session) throw new Error("no provider profile or session");
   const turns = await getClientTurns(id);
-  const report = await generateReport(profile, {
+  const report = await generateReport(profile.llm, {
     sessionId: id,
     title: session.title,
     mode: session.mode,
@@ -56,7 +56,7 @@ function Report() {
   const { id } = Route.useParams();
   const locale = useLocale();
   const effectiveRuntime = useStore($effectiveRuntime);
-  const clientOnly = effectiveRuntime === "client-only";
+  const clientOnly = effectiveRuntime !== "server";
   const { data: serverSession } = useQuery({
     queryKey: ["session", id],
     queryFn: () => getSession(id),

@@ -38,7 +38,7 @@ function Finish() {
   const locale = useLocale();
   const navigate = useNavigate();
   const effectiveRuntime = useStore($effectiveRuntime);
-  const clientOnly = effectiveRuntime === "client-only";
+  const clientOnly = effectiveRuntime !== "server";
   const { data: serverSession } = useQuery({
     queryKey: ["session", id],
     queryFn: () => getSession(id),

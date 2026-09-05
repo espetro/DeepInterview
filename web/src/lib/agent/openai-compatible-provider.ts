@@ -10,7 +10,7 @@ import type {
   LanguageModelV3ToolCall,
   LanguageModelV3Usage,
 } from "@ai-sdk/provider";
-import type { ProviderProfile } from "@di/shared";
+import type { ProviderEndpoint } from "@di/shared";
 
 /**
  * Minimal OpenAI-compatible LanguageModelV3 provider for client-only mode.
@@ -188,25 +188,25 @@ export interface OpenAiCompatibleOptions extends Partial<
 }
 
 export function createOpenAiCompatibleModel(
-  profile: ProviderProfile,
+  endpoint: ProviderEndpoint,
   opts: OpenAiCompatibleOptions = {},
 ): LanguageModelV3 {
   const doFetch = opts.fetchImpl ?? fetch;
   return {
     specificationVersion: "v3",
     provider: "openai-compatible",
-    modelId: profile.llmModel,
+    modelId: endpoint.model,
     supportedUrls: {},
 
     async doStream(options) {
-      const res = await doFetch(chatUrl(profile.baseUrl), {
+      const res = await doFetch(chatUrl(endpoint.baseUrl), {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          authorization: `Bearer ${profile.apiKey}`,
+          authorization: `Bearer ${endpoint.apiKey}`,
         },
         body: JSON.stringify({
-          model: profile.llmModel,
+          model: endpoint.model,
           messages: toOpenAiMessages(options.prompt),
           stream: true,
           ...(toOpenAiTools(options.tools) ? { tools: toOpenAiTools(options.tools) } : {}),
@@ -330,14 +330,14 @@ export function createOpenAiCompatibleModel(
     },
 
     async doGenerate(options) {
-      const res = await doFetch(chatUrl(profile.baseUrl), {
+      const res = await doFetch(chatUrl(endpoint.baseUrl), {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          authorization: `Bearer ${profile.apiKey}`,
+          authorization: `Bearer ${endpoint.apiKey}`,
         },
         body: JSON.stringify({
-          model: profile.llmModel,
+          model: endpoint.model,
           messages: toOpenAiMessages(options.prompt),
           ...(toOpenAiTools(options.tools) ? { tools: toOpenAiTools(options.tools) } : {}),
         }),

@@ -1,5 +1,11 @@
 import { cutSentences } from "@di/shared";
-import type { ProviderProfile, SessionContext, TurnMetrics, TurnPhase } from "@di/shared";
+import type {
+  ProviderEndpoint,
+  ProviderSections,
+  SessionContext,
+  TurnMetrics,
+  TurnPhase,
+} from "@di/shared";
 import type { Turn } from "@di/shared/session";
 import { ClientAgent } from "../agent/client-agent";
 import type { AgentToolExecutors } from "../agent/client-agent";
@@ -53,7 +59,7 @@ export class BrowserVoiceDriver implements SpeechDriver {
   private restarting = false;
   private player: PcmPlayer;
   private agent: ClientAgent | null = null;
-  private profile: ProviderProfile | null = null;
+  private profile: ProviderSections | null = null;
   private pending = "";
   private abort: AbortController | null = null;
 
@@ -64,19 +70,19 @@ export class BrowserVoiceDriver implements SpeechDriver {
     this.player = deps.player ?? createPcmPlayer();
   }
 
-  /** Wire the client-only agent. Called by createDriver when a profile exists. */
+  /** Wire the client-only agent. Called by createDriver when an llm endpoint exists. */
   useClientAgent(
-    profile: ProviderProfile,
+    profile: ProviderSections & { llm: ProviderEndpoint },
     tools: AgentToolExecutors,
     getContext: () => SessionContext,
     fetchImpl?: typeof fetch,
   ): void {
     this.profile = profile;
-    this.agent = new ClientAgent(profile, tools, getContext, fetchImpl);
+    this.agent = new ClientAgent(profile.llm, tools, getContext, fetchImpl);
   }
 
   private get useTtsEndpoint(): boolean {
-    return this.profile !== null && this.profile.ttsModel.trim() !== "";
+    return this.profile?.tts !== undefined;
   }
 
   async start(): Promise<void> {
@@ -172,7 +178,7 @@ export class BrowserVoiceDriver implements SpeechDriver {
         this.events.onAgentStart?.();
       }
       try {
-        const pcm = await tts(this.profile!, sentence, ctrl.signal);
+        const pcm = await tts(this.profile!.tts!, sentence, ctrl.signal);
         if (ctrl.signal.aborted) return;
         this.player.write(pcm);
       } catch (err) {

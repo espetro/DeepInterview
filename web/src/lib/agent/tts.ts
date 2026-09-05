@@ -1,5 +1,5 @@
 import { TTS_SAMPLE_RATE } from "@di/shared";
-import type { ProviderProfile } from "@di/shared";
+import type { TtsEndpoint } from "@di/shared";
 
 /**
  * Client-only TTS: POST ${baseUrl}/v1/audio/speech (OpenAI-compatible) and
@@ -74,21 +74,21 @@ function toMono(pcm: Int16Array, channels: number): Int16Array {
 }
 
 export async function synthesizeSpeech(
-  profile: ProviderProfile,
+  tts: TtsEndpoint,
   text: string,
   signal?: AbortSignal,
   fetchImpl: typeof fetch = fetch,
 ): Promise<Uint8Array> {
-  const base = profile.baseUrl.replace(/\/+$/, "").replace(/\/v1$/, "");
+  const base = tts.baseUrl.replace(/\/+$/, "").replace(/\/v1$/, "");
   const res = await fetchImpl(`${base}/v1/audio/speech`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${profile.apiKey}`,
+      authorization: `Bearer ${tts.apiKey}`,
     },
     body: JSON.stringify({
-      model: profile.ttsModel || "tts-1",
-      ...(profile.ttsVoice ? { voice: profile.ttsVoice } : {}),
+      model: tts.model || "tts-1",
+      ...(tts.voice ? { voice: tts.voice } : {}),
       input: text,
       response_format: "wav",
     }),

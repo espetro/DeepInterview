@@ -4,9 +4,7 @@ import { createOpenAiCompatibleModel } from "./openai-compatible-provider";
 const PROFILE = {
   baseUrl: "http://t.local/v1",
   apiKey: "sk-x",
-  llmModel: "m1",
-  ttsVoice: "",
-  ttsModel: "",
+  model: "m1",
 };
 
 function sseResponse(chunks: unknown[]): Response {

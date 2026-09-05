@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ProviderProfileSchema } from "@di/shared";
+import {
+  decodeProviderProfile,
+  LegacyProviderProfileSchema,
+  ProviderSectionsSchema,
+} from "@di/shared";
 import * as v from "valibot";
+import type { ProviderSections } from "@di/shared";
 import {
   $effectiveRuntime,
   $providerProfile,
@@ -10,54 +15,72 @@ import {
   redactKey,
 } from "./runtime";
 
-const PROFILE = {
-  baseUrl: "http://localhost:8317/v1",
-  apiKey: "sk-test-123456",
-  llmModel: "gpt-4o-mini",
-};
+const LLM = { baseUrl: "http://localhost:8317/v1", apiKey: "sk-test-123456", model: "gpt-4o-mini" };
+const PROFILE = { llm: LLM };
 
 describe("runtime stores", () => {
   beforeEach(() => {
     localStorage.clear();
-    $runtimeMode.set("local-server");
+    $runtimeMode.set("server");
     $providerProfile.set(null);
     $serverReachable.set(null);
   });
 
-  it("defaults to local-server mode and no profile", () => {
-    expect($runtimeMode.get()).toBe("local-server");
+  it("defaults to server mode and no profile", () => {
+    expect($runtimeMode.get()).toBe("server");
     expect($providerProfile.get()).toBeNull();
   });
 
   it("persists mode and profile round-trip", () => {
-    $runtimeMode.set("client-only");
-    $providerProfile.set({ ...PROFILE, ttsVoice: "alloy", ttsModel: "tts-1" });
-    expect(localStorage.getItem("di.runtime-mode")).toBe("client-only");
-    const raw = JSON.parse(localStorage.getItem("di.provider-profile") ?? "");
-    expect(raw.llmModel).toBe(PROFILE.llmModel);
+    $runtimeMode.set("custom");
+    $providerProfile.set({
+      llm: LLM,
+      tts: { ...LLM, model: "tts-1", voice: "alloy" },
+    });
+    expect(localStorage.getItem("di.runtime-mode")).toBe("custom");
+    const raw = JSON.parse(localStorage.getItem("di.provider-profile") ?? "") as ProviderSections;
+    expect(raw.llm?.model).toBe(LLM.model);
 
     // simulate a reload: persistent atoms decode from storage
     $runtimeMode.set($runtimeMode.get());
-    expect($providerProfile.get()?.baseUrl).toBe(PROFILE.baseUrl);
+    expect($providerProfile.get()?.llm?.baseUrl).toBe(LLM.baseUrl);
   });
 
-  it("drops an invalid stored profile", () => {
-    localStorage.setItem("di.provider-profile", JSON.stringify({ baseUrl: "not a url" }));
-    // decode runs on read at construction; emulate by re-reading via a fresh set
+  it("drops a sections-shaped profile without an llm section", () => {
+    localStorage.setItem("di.provider-profile", JSON.stringify({ stt: LLM }));
     const bad = JSON.parse(localStorage.getItem("di.provider-profile") ?? "");
-    expect(v.safeParse(ProviderProfileSchema, bad).success).toBe(false);
+    expect(decodeProviderProfile(JSON.stringify(bad))).toBeNull();
     $providerProfile.set(null);
     expect($providerProfile.get()).toBeNull();
   });
 
-  it("effectiveRuntime stays local-server when not probed", () => {
-    expect($effectiveRuntime.get()).toBe("local-server");
+  it("migrates a legacy flat profile into sections", () => {
+    const legacy = {
+      baseUrl: "http://localhost:8317/v1",
+      apiKey: "sk-legacy",
+      llmModel: "gpt-4o-mini",
+      ttsVoice: "alloy",
+      ttsModel: "tts-1",
+    };
+    localStorage.setItem("di.provider-profile", JSON.stringify(legacy));
+    // the stored decode maps the legacy flat shape:
+    const decoded = decodeProviderProfile(localStorage.getItem("di.provider-profile") ?? "");
+    expect(decoded).toEqual({
+      stt: { baseUrl: legacy.baseUrl, apiKey: legacy.apiKey, model: "whisper-1" },
+      tts: { baseUrl: legacy.baseUrl, apiKey: legacy.apiKey, model: "tts-1", voice: "alloy" },
+      llm: { baseUrl: legacy.baseUrl, apiKey: legacy.apiKey, model: legacy.llmModel },
+    });
+    expect(v.safeParse(LegacyProviderProfileSchema, legacy).success).toBe(true);
   });
 
-  it("effectiveRuntime falls back to client-only when probe fails", () => {
+  it("effectiveRuntime stays server when not probed", () => {
+    expect($effectiveRuntime.get()).toBe("server");
+  });
+
+  it("effectiveRuntime falls back to custom when probe fails", () => {
     $serverReachable.set(false);
-    expect($runtimeMode.get()).toBe("local-server"); // persisted mode untouched
-    expect($effectiveRuntime.get()).toBe("client-only");
+    expect($runtimeMode.get()).toBe("server"); // persisted mode untouched
+    expect($effectiveRuntime.get()).toBe("custom");
   });
 
   it("probeServer with unreachable server reports false", async () => {
@@ -71,7 +94,7 @@ describe("runtime stores", () => {
   it("probeServer with a healthy server reports true", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
     expect(await probeServer()).toBe(true);
-    expect($effectiveRuntime.get()).toBe("local-server");
+    expect($effectiveRuntime.get()).toBe("server");
     vi.unstubAllGlobals();
   });
 });

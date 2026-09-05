@@ -1,34 +1,40 @@
 import { persistentAtom } from "@nanostores/persistent";
 import { computed } from "nanostores";
-import * as v from "valibot";
 import {
   PROVIDER_PROFILE_STORAGE_KEY,
-  ProviderProfileSchema,
   RUNTIME_MODE_STORAGE_KEY,
+  decodeProviderProfile,
 } from "@di/shared";
-import type { ProviderProfile, RuntimeMode } from "@di/shared";
+import type { ProviderSections, RuntimeMode } from "@di/shared";
 
 /**
- * Runtime selection: local server (default) or client-only (BYO provider,
- * static deploy, no di binary). The mode is persisted; an unreachable server
- * never rewrites the persisted choice, it only changes the effective runtime
- * used by driver/route wiring.
+ * Runtime selection: server-managed (default), custom (BYO per-section
+ * provider endpoints, client-side agent loop) or in-browser (Web Speech
+ * STT/TTS + custom LLM). The mode is persisted; an unreachable server never
+ * rewrites the persisted choice, it only changes the effective runtime used
+ * by driver/route wiring.
  */
 
-export const $runtimeMode = persistentAtom<RuntimeMode>(RUNTIME_MODE_STORAGE_KEY, "local-server");
+export const $runtimeMode = persistentAtom<RuntimeMode>(RUNTIME_MODE_STORAGE_KEY, "server", {
+  // migrate pre-rename persisted values ("local-server" / "client-only")
+  decode: (raw) =>
+    raw === "local-server" || raw === "server"
+      ? ("server" as RuntimeMode)
+      : raw === "client-only"
+        ? ("custom" as RuntimeMode)
+        : raw === "custom" || raw === "in-browser"
+          ? (raw as RuntimeMode)
+          : ("server" as RuntimeMode),
+  encode: (value: RuntimeMode) => value,
+});
 
-const StoredProfileSchema = v.union([ProviderProfileSchema, v.null()]);
-
-/** null = no BYO provider configured (client-only mode requires one). */
-export const $providerProfile = persistentAtom<ProviderProfile | null>(
+/** null = no BYO provider configured (custom runtime requires an llm section). */
+export const $providerProfile = persistentAtom<ProviderSections | null>(
   PROVIDER_PROFILE_STORAGE_KEY,
   null,
   {
     encode: (value) => JSON.stringify(value),
-    decode: (raw) => {
-      const parsed = v.safeParse(StoredProfileSchema, JSON.parse(raw));
-      return parsed.success ? parsed.output : null;
-    },
+    decode: (raw) => decodeProviderProfile(raw),
   },
 );
 
@@ -47,7 +53,7 @@ const API_BASE = (import.meta.env.VITE_DI_API_BASE as string | undefined) ?? "";
 
 /**
  * Probe ${API_BASE}/api/health with a 2s timeout; updates $serverReachable
- * (cached in storage so offline reloads stay in client-only without a probe
+ * (cached in storage so offline reloads stay in custom mode without a probe
  * round-trip). Same probe voice driver selection uses.
  */
 export async function probeServer(): Promise<boolean> {
@@ -74,16 +80,13 @@ export async function probeServer(): Promise<boolean> {
 }
 
 /**
- * Effective runtime: client-only when the persisted mode says so, or when the
- * chosen local server cannot be reached (probe result; null = not probed yet,
+ * Effective runtime: custom when the persisted mode says so, or when the
+ * chosen server cannot be reached (probe result; null = not probed yet,
  * trust the persisted mode). Read-only derived, never mutates $runtimeMode.
  */
 export const $effectiveRuntime = computed(
   [$runtimeMode, $serverReachable],
-  (mode, reachable): RuntimeMode =>
-    mode === "client-only" || (mode === "local-server" && reachable === false)
-      ? "client-only"
-      : "local-server",
+  (mode, reachable): RuntimeMode => (mode === "server" && reachable === false ? "custom" : mode),
 );
 
 /** Kick off the probe once per app; safe to call repeatedly. */
@@ -91,7 +94,7 @@ let probeStarted = false;
 export function ensureRuntimeProbe(): void {
   if (probeStarted) return;
   probeStarted = true;
-  if ($runtimeMode.get() === "local-server" && $serverReachable.get() !== true) {
+  if ($runtimeMode.get() === "server" && $serverReachable.get() !== true) {
     void probeServer();
   }
 }
