@@ -18,11 +18,16 @@ export function withLocale(locale: string, path: string): string {
   return `/${locale}${path === "/" ? "" : path}`;
 }
 
-/** Rewrites a pathname so its locale prefix (or lack thereof) becomes `locale`. */
+/** Rewrites a pathname so its locale prefix (or lack thereof) becomes `locale`.
+ *  Works for both prefixed (`/es/setup`) and unprefixed en (`/setup`) paths,
+ *  preserving the trailing path. Trailing slash is normalized away. */
 export function replaceLocale(pathname: string, locale: string): string {
-  const rest = pathname.split("/").slice(2).join("/");
-  const suffix = rest ? `/${rest}` : "";
-  return withLocale(locale, `/${suffix}` || "/");
+  const first = pathname.split("/")[1] ?? "";
+  const hasPrefix = (LOCALES as readonly string[]).includes(first);
+  const rest = (hasPrefix ? pathname.split("/").slice(2) : pathname.split("/").slice(1))
+    .join("/")
+    .replace(/\/+$/, "");
+  return withLocale(locale, `/${rest}`);
 }
 
 /** Current URL-derived locale plus locale-aware navigation helpers. */
