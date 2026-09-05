@@ -126,5 +126,12 @@
   "error.home": "volver al inicio",
   "notfound.title": "404",
   "notfound.message": "esta página no existe — puede que el enlace esté caducado o la dirección mal escrita.",
-  "notfound.home": "volver al inicio"
+  "notfound.home": "volver al inicio",
+  "account.language": "idioma",
+  "account.history": "historial",
+  "account.settings": "ajustes",
+  "account.guest": "Invitado",
+  "account.guestEmail": "sesión local · sin cuenta",
+  "settings.title": "ajustes",
+  "settings.comingSoon": "configuración del proveedor de IA próximamente"
 }

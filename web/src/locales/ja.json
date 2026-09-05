@@ -126,5 +126,12 @@
   "error.home": "ホームに戻る",
   "notfound.title": "404",
   "notfound.message": "このページは存在しません。リンクが古いか、アドレスが間違っている可能性があります。",
-  "notfound.home": "ホームに戻る"
+  "notfound.home": "ホームに戻る",
+  "account.language": "言語",
+  "account.history": "履歴",
+  "account.settings": "設定",
+  "account.guest": "ゲスト",
+  "account.guestEmail": "ローカルセッション · アカウントなし",
+  "settings.title": "設定",
+  "settings.comingSoon": "AIプロバイダーの設定は近日公開"
 }

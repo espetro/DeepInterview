@@ -4,12 +4,12 @@ import type { ReactNode } from "react";
 
 import { useLocale, withLocale } from "../lib/locale-href";
 import { LocaleSwitcher } from "./locale-switcher";
+import { UserDropdown } from "./user-dropdown";
 
 /**
  * Shared app header mounted in __root for every route. Logo links home (en is
  * canonical for the bare root); center slot carries a localized page title;
- * right slot has the GitHub link and a placeholder account button (B3 wires
- * the dropdown).
+ * right slot has the GitHub link and the account dropdown (B3).
  */
 export function AppHeader({ title }: { title?: ReactNode }) {
   const locale = useLocale();
@@ -33,11 +33,7 @@ export function AppHeader({ title }: { title?: ReactNode }) {
         >
           <Github className="h-4 w-4" aria-hidden="true" />
         </a>
-        <button
-          type="button"
-          aria-label="account"
-          className="h-8 w-8 rounded-full bg-gradient-to-br from-persimmon to-persimmon-deep ring-1 ring-hairline transition-fluid hover:ring-persimmon/50"
-        />
+        <UserDropdown />
       </div>
     </header>
   );

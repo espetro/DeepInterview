@@ -126,5 +126,12 @@
   "error.home": "torna alla home",
   "notfound.title": "404",
   "notfound.message": "questa pagina non esiste — il link potrebbe essere scaduto o l'indirizzo errato.",
-  "notfound.home": "torna alla home"
+  "notfound.home": "torna alla home",
+  "account.language": "lingua",
+  "account.history": "cronologia",
+  "account.settings": "impostazioni",
+  "account.guest": "Ospite",
+  "account.guestEmail": "sessione locale · nessun account",
+  "settings.title": "impostazioni",
+  "settings.comingSoon": "configurazione del provider AI in arrivo"
 }
