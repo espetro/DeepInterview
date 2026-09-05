@@ -172,9 +172,9 @@ function Report() {
                   />
                 </div>
                 <ul className="mt-4 space-y-2">
-                  {c.evidence.map((e, i) => (
+                  {c.evidence.map((e, ei) => (
                     <li
-                      key={i}
+                      key={ei}
                       className="flex flex-wrap items-baseline gap-2 text-sm"
                     >
                       <span

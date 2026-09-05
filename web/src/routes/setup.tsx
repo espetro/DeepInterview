@@ -1,12 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { FormattedMessage, useIntl } from "react-intl";
-import { LocaleSwitcher } from "../components/locale-switcher";
 import * as React from "react";
 import { useStore } from "@nanostores/react";
 import { $draft } from "../stores/session";
 import { createSession, uploadDocuments } from "../lib/api";
 import * as v from "valibot";
-import { ProviderProfileSchema, type RuntimeMode } from "@di/shared";
+import { ProviderProfileSchema } from "@di/shared";
+import type { RuntimeMode } from "@di/shared";
 import { MicCheck } from "../components/mic-check";
 import {
   $effectiveRuntime,

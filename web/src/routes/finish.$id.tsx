@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { FormattedMessage } from "react-intl";
-import { getSession, getTurns, type TurnDto } from "../lib/api";
+import { getSession, getTurns } from "../lib/api";
+import type { TurnDto } from "../lib/api";
 
 function formatTimestamp(createdAt: string) {
   const d = new Date(createdAt);

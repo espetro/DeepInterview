@@ -42,7 +42,7 @@ function fakeCapture() {
   };
   return {
     cap,
-    emit: (pcm: Uint8Array) => frameCb?.(pcm),
+    emit: (frame: Uint8Array) => frameCb?.(frame),
   };
 }
 
@@ -50,7 +50,7 @@ function fakePlayer(): PcmPlayer & { written: Uint8Array[] } {
   const written: Uint8Array[] = [];
   return {
     written,
-    write: (pcm) => written.push(pcm),
+    write: (frame) => written.push(frame),
     stop: vi.fn(),
     onDrained: () => undefined,
     get playing() {

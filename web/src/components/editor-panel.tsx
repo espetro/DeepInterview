@@ -11,7 +11,6 @@ import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
 import { json } from "@codemirror/lang-json";
 import { sql } from "@codemirror/lang-sql";
-import { oneDark } from "@codemirror/theme-one-dark";
 import {
   $editorBuffer,
   $editorLanguage,

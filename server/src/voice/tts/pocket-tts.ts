@@ -1,4 +1,6 @@
 import type { EventSink } from "../stt/whisper-stt.ts";
+import { decodeWav, resamplePcm16 } from "../stt/wav.ts";
+import { providerUrl } from "../provider-url.ts";
 
 const SAMPLE_RATE = 24_000;
 
@@ -29,9 +31,7 @@ export interface PocketTtsOptions {
 export class PocketTts {
   readonly label = "di_pocket_tts";
 
-  constructor(private opts: PocketTtsOptions) {
-    this.opts = opts;
-  }
+  constructor(private opts: PocketTtsOptions) {}
 
   get model(): string {
     return this.opts.model;
@@ -110,9 +110,6 @@ export class PocketTts {
     return buffer;
   }
 }
-
-import { decodeWav, resamplePcm16 } from "../stt/wav.ts";
-import { providerUrl } from "../provider-url.ts";
 
 /** Average interleaved multi-channel PCM16 down to mono. */
 function downmixToMono(pcm: Uint8Array, channels: number): Uint8Array {

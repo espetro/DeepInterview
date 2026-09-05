@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { createDatabase, migrate } from "../store/db";
-import { VoiceLoop, type VoiceLlm, type VoiceStt, type VoiceTts } from "./loop";
+import { VoiceLoop } from "./loop";
+import type { VoiceLlm, VoiceStt, VoiceTts } from "./loop";
 import type { Config, VoiceServerMessage } from "@di/shared";
 import { AUDIO_HEADER_BYTES, TTS_SAMPLE_RATE } from "@di/shared/voice";
 
@@ -399,7 +400,6 @@ describe("VoiceLoop", () => {
 
   it("streaming llm: abort mid-stream stops further tts synthesis", async () => {
     const ttsCalls: string[] = [];
-    let releaseStt: (() => void) | undefined;
     let seenSignal: AbortSignal | undefined;
     const { loop, messages } = await makeLoop({
       stt: stubStt("go"),
@@ -420,7 +420,6 @@ describe("VoiceLoop", () => {
           }),
       },
     });
-    void releaseStt;
     await loop.handleMessage(frame(0, pcmBytes([1])));
     const pending = loop.handleMessage({ t: "utterance_end" });
     await vi.waitFor(() => expect(seenSignal).toBeDefined());

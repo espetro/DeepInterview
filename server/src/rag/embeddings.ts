@@ -1,4 +1,5 @@
-import { EmbeddingResponseSchema, type RetrievedChunk } from "@di/shared";
+import { EmbeddingResponseSchema } from "@di/shared";
+import type { RetrievedChunk } from "@di/shared";
 import * as v from "valibot";
 import { cosineSimilarity } from "./cosine";
 

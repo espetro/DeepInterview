@@ -5,9 +5,8 @@ import {
   PROVIDER_PROFILE_STORAGE_KEY,
   ProviderProfileSchema,
   RUNTIME_MODE_STORAGE_KEY,
-  type ProviderProfile,
-  type RuntimeMode,
 } from "@di/shared";
+import type { ProviderProfile, RuntimeMode } from "@di/shared";
 
 /**
  * Runtime selection: local server (default) or client-only (BYO provider,

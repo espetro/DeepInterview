@@ -138,10 +138,10 @@ function bunSqliteForKysely(path: string): Database {
   sqlite.exec("pragma journal_mode = WAL;");
   const rawPrepare = sqlite.prepare.bind(sqlite);
   // @ts-expect-error augmenting statements with the `reader` flag kysely needs
-  sqlite.prepare = (sql: string) => {
-    const stmt = rawPrepare(sql);
+  sqlite.prepare = (query: string) => {
+    const stmt = rawPrepare(query);
     return Object.defineProperty(stmt, "reader", {
-      value: /^\s*(select|with|returning|pragma)/i.test(sql),
+      value: /^\s*(select|with|returning|pragma)/i.test(query),
     });
   };
   return sqlite;

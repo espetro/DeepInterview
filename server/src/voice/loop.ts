@@ -1,5 +1,18 @@
 import * as v from "valibot";
-import type { Config, Turn, TurnMetrics, VoiceServerMessage } from "@di/shared";
+import {
+  VOICE_TOOLS,
+  buildPrompt,
+  cutSentences,
+  describeWhiteboardSnapshot,
+} from "@di/shared";
+import type {
+  Config,
+  SessionContext,
+  Turn,
+  TurnMetrics,
+  UpdateQuestionArgs,
+  VoiceServerMessage,
+} from "@di/shared";
 import {
   AUDIO_HEADER_BYTES,
   CAPTURE_SAMPLE_RATE,
@@ -9,21 +22,11 @@ import {
 import type { Db } from "../store/db";
 import { WavBuffer } from "./stt/wav.ts";
 import { WhisperStt } from "./stt/whisper-stt.ts";
-import {
-  StreamingWhisperStt,
-  type StreamingSttPort,
-} from "./stt/streaming-stt.ts";
+import { StreamingWhisperStt } from "./stt/streaming-stt.ts";
+import type { StreamingSttPort } from "./stt/streaming-stt.ts";
 import { PocketTts } from "./tts/pocket-tts.ts";
 import { OpenAiChatClient } from "./llm.ts";
 import type { LlmMessage, LlmResult, ToolDef } from "./llm.ts";
-import {
-  VOICE_TOOLS,
-  buildPrompt,
-  cutSentences,
-  describeWhiteboardSnapshot,
-  type SessionContext,
-  type UpdateQuestionArgs,
-} from "@di/shared";
 
 /** Injectable voice pipeline pieces (tests stub these). */
 export interface VoiceStt {

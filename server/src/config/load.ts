@@ -6,8 +6,8 @@ import {
   CONFIG_ENV_PREFIX,
   CONFIG_ENV_SEPARATOR,
   describeConfigError,
-  type Config,
 } from "@di/shared";
+import type { Config } from "@di/shared";
 
 export class ConfigError extends Error {}
 
