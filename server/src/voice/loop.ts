@@ -1,4 +1,4 @@
-import { v } from "valibot";
+import * as v from "valibot";
 import type { Config, Turn, TurnMetrics, VoiceServerMessage } from "@di/shared";
 import {
   AUDIO_HEADER_BYTES,
@@ -14,7 +14,8 @@ import {
   type StreamingSttPort,
 } from "./stt/streaming-stt.ts";
 import { PocketTts } from "./tts/pocket-tts.ts";
-import { OpenAiChatClient, type LlmMessage, type ToolDef } from "./llm.ts";
+import { OpenAiChatClient } from "./llm.ts";
+import type { LlmMessage, LlmResult, ToolDef } from "./llm.ts";
 import {
   VOICE_TOOLS,
   buildPrompt,
@@ -40,12 +41,19 @@ export interface VoiceTts {
 export interface VoiceLlm {
   chat(
     messages: LlmMessage[],
-    tools?: ToolDef[],
+    tools?: readonly ToolDef[],
     opts?: { signal?: AbortSignal },
-  ): Promise<{
-    content: string;
-    toolCalls: { name: string; args: Record<string, unknown> }[];
-  }>;
+  ): Promise<LlmResult>;
+  /** Streaming variant for pipelined sentence TTS; falls back to chat() if absent. */
+  streamChat?(
+    messages: LlmMessage[],
+    tools?: readonly ToolDef[],
+    opts?: {
+      signal?: AbortSignal;
+      onFirstToken?: () => void;
+      onText?: (delta: string) => void;
+    },
+  ): Promise<LlmResult>;
 }
 
 export interface VoiceLoopDeps {
@@ -88,7 +96,7 @@ export class VoiceLoop {
   private firstFrameAt: number | undefined;
   private muted = false;
   private abort: AbortController | undefined;
-  private ctx: SessionContext = {};
+  private ctx: SessionContext = { mode: "interview" };
   private history: LlmMessage[] = [];
   /** Serializes turns so concurrent utterances keep monotonically increasing seqs. */
   private turnLock = Promise.resolve();
@@ -481,13 +489,13 @@ export class VoiceLoop {
     speaker: "user" | "agent",
     text: string,
   ): Promise<Turn> {
-    const [{ max_seq }] = await this.db
+    const { max_seq } = await this.db
       .selectFrom("turns")
       .select((eb) =>
         eb.fn.coalesce(eb.fn.max("seq"), eb.lit(-1)).as("max_seq"),
       )
       .where("session_id", "=", this.sessionId)
-      .execute();
+      .executeTakeFirstOrThrow();
     const turn: Turn = {
       id: crypto.randomUUID(),
       session_id: this.sessionId,

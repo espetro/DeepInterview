@@ -42,7 +42,7 @@ export class OpenAiChatClient {
 
   async chat(
     messages: LlmMessage[],
-    tools?: ToolDef[],
+    tools?: readonly ToolDef[],
     opts?: { signal?: AbortSignal },
   ): Promise<LlmResult> {
     const { events, sessionId } = this.opts;
@@ -122,7 +122,7 @@ export class OpenAiChatClient {
    */
   async streamChat(
     messages: LlmMessage[],
-    tools?: ToolDef[],
+    tools?: readonly ToolDef[],
     opts?: {
       signal?: AbortSignal;
       onFirstToken?: () => void;
