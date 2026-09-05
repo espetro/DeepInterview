@@ -1,19 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useLocale, withLocale } from "../../lib/locale-href";
 import { FormattedMessage, useIntl } from "react-intl";
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@nanostores/react";
-import { getReport, getSession } from "../lib/api";
-import { $effectiveRuntime, $providerProfile } from "../lib/runtime";
+import { getReport, getSession } from "../../lib/api";
+import { $effectiveRuntime, $providerProfile } from "../../lib/runtime";
 import {
   getClientReport,
   getClientSession,
   getClientTurns,
   saveClientReport,
-} from "../lib/opfs-store";
-import { generateReport } from "../lib/agent/report-generator";
+} from "../../lib/opfs-store";
+import { generateReport } from "../../lib/agent/report-generator";
 
-export const Route = createFileRoute("/report/$id")({
+export const Route = createFileRoute("/{-$locale}/report/$id")({
   component: Report,
 });
 
@@ -53,6 +54,7 @@ async function loadOrGenerateClientReport(id: string): Promise<ReportDto> {
 function Report() {
   const intl = useIntl();
   const { id } = Route.useParams();
+  const locale = useLocale();
   const effectiveRuntime = useStore($effectiveRuntime);
   const clientOnly = effectiveRuntime === "client-only";
   const { data: serverSession } = useQuery({
@@ -116,8 +118,7 @@ function Report() {
               <FormattedMessage id="report.tryAgain" />
             </button>
             <Link
-              to="/finish/$id"
-              params={{ id }}
+              to={withLocale(locale, `/finish/${id}`)}
               className="text-sm text-espresso-soft underline decoration-hairline underline-offset-4 transition-fluid hover:text-persimmon"
             >
               <FormattedMessage id="report.backToTranscript" />
@@ -131,9 +132,12 @@ function Report() {
   return (
     <div className="ambient grain min-h-[100dvh] bg-cream">
       <header className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 pt-8 md:px-8">
-        <a href="/" className="font-display text-xl font-bold tracking-tight">
+        <Link
+          to={withLocale(locale, "/")}
+          className="font-display text-xl font-bold tracking-tight"
+        >
           di<span className="text-persimmon">.</span>
-        </a>
+        </Link>
         <span className="text-sm text-espresso-soft">
           <FormattedMessage id="report.header" values={{ title: session?.title ?? "" }} />
         </span>

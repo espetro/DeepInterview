@@ -15,7 +15,13 @@ export default defineConfig({
       prerender: { enabled: true, crawlLinks: true },
       // belt-and-suspenders: explicit locale landing pages, in case crawl
       // discovery via LandingLocaleSwitcher links ever misses one.
-      pages: ["/", ...LOCALES.filter((l) => l !== "en").map((l) => `/${l}`)].map((path) => ({
+      pages: [
+        "/",
+        ...LOCALES.filter((l) => l !== "en").map((l) => `/${l}`),
+        // belt-and-suspenders: prefixed in-app pages (crawlLinks should find these
+        // from the landing nav, but they are cheap to list explicitly).
+        ...LOCALES.filter((l) => l !== "en").flatMap((l) => [`/${l}/setup`, `/${l}/history`]),
+      ].map((path) => ({
         path,
       })),
     }),

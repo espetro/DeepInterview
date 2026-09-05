@@ -1,15 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useLocale, withLocale } from "../../lib/locale-href";
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FormattedMessage } from "react-intl";
-import { getSession } from "../lib/api";
+import { getSession } from "../../lib/api";
 
-export const Route = createFileRoute("/validate/$id")({
+export const Route = createFileRoute("/{-$locale}/validate/$id")({
   component: Validate,
 });
 
 function Validate() {
   const { id } = Route.useParams();
+  const locale = useLocale();
   const { data: session } = useQuery({
     queryKey: ["session", id],
     queryFn: () => getSession(id),
@@ -18,9 +20,12 @@ function Validate() {
   return (
     <div className="ambient grain min-h-[100dvh] bg-cream">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 pt-8 md:px-8">
-        <a href="/" className="font-display text-xl font-bold tracking-tight">
+        <Link
+          to={withLocale(locale, "/")}
+          className="font-display text-xl font-bold tracking-tight"
+        >
           di<span className="text-persimmon">.</span>
-        </a>
+        </Link>
         <span className="text-sm text-espresso-soft">
           <FormattedMessage id="validate.header" values={{ title: session?.title ?? "…" }} />
         </span>
@@ -72,8 +77,7 @@ function Validate() {
 
       <div className="mx-auto flex w-full max-w-6xl justify-end px-4 pb-16 md:px-8">
         <Link
-          to="/interview/$id"
-          params={{ id }}
+          to={withLocale(locale, `/interview/${id}`)}
           className="group inline-flex items-center gap-3 rounded-full bg-espresso px-7 py-3.5 font-display font-semibold text-cream transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-persimmon active:scale-[0.98]"
         >
           <FormattedMessage id="validate.start" />

@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useLocaleNav, withLocale } from "../../lib/locale-href";
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FormattedMessage, useIntl } from "react-intl";
-import { listSessions } from "../lib/api";
+import { listSessions } from "../../lib/api";
 
-export const Route = createFileRoute("/history")({
+export const Route = createFileRoute("/{-$locale}/history")({
   head: () => ({ meta: [{ title: "history — di" }] }),
   component: History,
 });
@@ -22,23 +23,27 @@ function useRelative() {
 
 function History() {
   const relative = useRelative();
+  const { locale } = useLocaleNav();
   const { data: sessions, isLoading } = useQuery({
     queryKey: ["sessions"],
     queryFn: listSessions,
   });
 
   function target(status: string, id: string) {
-    if (status === "reported") return `/report/${id}`;
-    if (status === "finished") return `/finish/${id}`;
-    return `/interview/${id}`;
+    if (status === "reported") return withLocale(locale, `/report/${id}`);
+    if (status === "finished") return withLocale(locale, `/finish/${id}`);
+    return withLocale(locale, `/interview/${id}`);
   }
 
   return (
     <div className="ambient grain min-h-[100dvh] bg-cream">
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 pt-8 md:px-8">
-        <a href="/" className="font-display text-xl font-bold tracking-tight">
+        <Link
+          to={withLocale(locale, "/")}
+          className="font-display text-xl font-bold tracking-tight"
+        >
           di<span className="text-persimmon">.</span>
-        </a>
+        </Link>
         <h1 className="text-sm font-normal text-espresso-soft">
           <FormattedMessage id="history.title" />
         </h1>

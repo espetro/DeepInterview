@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { FormattedMessage } from "react-intl";
 import { Reveal } from "./reveal";
 import { LandingLocaleSwitcher } from "./landing-locale-switcher";
+import { useLocaleNav, withLocale } from "../lib/locale-href";
 
 const IS_PUBLIC_SITE = import.meta.env.VITE_PUBLIC_SITE === "1";
 
@@ -45,17 +46,21 @@ const STICKERS = [
 ];
 
 export function LandingPage() {
+  const { locale } = useLocaleNav();
   return (
     <div className="ambient grain min-h-[100dvh] bg-cream">
       <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-4 pt-8 md:px-8">
         <Link
-          to="/"
+          to={withLocale(locale, "/")}
           className="font-display text-xl font-bold tracking-tight transition-fluid active:scale-[0.98]"
         >
           di<span className="text-persimmon">.</span>
         </Link>
         <nav className="flex items-center gap-6 text-sm text-espresso-soft">
-          <Link to="/history" className="transition-fluid hover:text-espresso">
+          <Link
+            to={withLocale(locale, "/history")}
+            className="transition-fluid hover:text-espresso"
+          >
             <FormattedMessage id="nav.history" />
           </Link>
           <a
@@ -110,7 +115,7 @@ export function LandingPage() {
               </a>
             ) : (
               <Link
-                to="/setup"
+                to={withLocale(locale, "/setup")}
                 className="group inline-flex items-center gap-3 rounded-full bg-espresso px-7 py-4 font-display text-lg font-semibold text-cream transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-persimmon active:scale-[0.98]"
               >
                 <FormattedMessage id="landing.cta" />

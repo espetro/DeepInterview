@@ -1,10 +1,9 @@
-import { useStore } from "@nanostores/react";
 import { useLocation } from "@tanstack/react-router";
 import { IntlProvider } from "react-intl";
 import type { ReactNode } from "react";
-import * as React from "react";
 
-import { $locale, LOCALES, RTL_LOCALES } from "../stores/session";
+import { LOCALES, RTL_LOCALES } from "../stores/session";
+import { localeFromPathname } from "../lib/locale-href";
 import de from "./de.json";
 import ar from "./ar.json";
 import en from "./en.json";
@@ -29,51 +28,31 @@ const MESSAGES: Record<string, Record<string, string>> = {
   ar,
 };
 
-/** Locale-prefixed landing paths (`/`, `/es`, `/fr`, ...) carry the locale in the URL
- *  itself, known at prerender and hydration time alike — no store/localStorage read,
- *  so no hydration-mismatch risk. Returns null for in-app paths, which stay
- *  store-driven. */
-function landingLocaleFromPath(pathname: string): string | null {
-  if (pathname === "/") return "en";
-  const match = pathname.match(/^\/([^/]+)\/?$/);
-  const segment = match?.[1];
-  if (segment && (LOCALES as readonly string[]).includes(segment)) return segment;
-  return null;
-}
+export { localeFromPathname };
 
 /** Returns true when the active locale is written right-to-left (drives html dir). */
 export function useIsRtl(): boolean {
-  return RTL_LOCALES.includes(useResolvedLocale());
+  return useUrlLocale() in RTL_LOCALE_SET;
 }
 
-/** Locale for the <html lang> attribute: URL-derived on landing paths (known at
- *  prerender time), store-derived (post-mount) elsewhere. */
+const RTL_LOCALE_SET: ReadonlySet<string> = new Set(RTL_LOCALES);
+
+/** Locale for the <html lang> attribute: always derived from the URL. */
 export function useHtmlLang(): string {
-  return useResolvedLocale();
+  return useUrlLocale();
 }
 
-function useResolvedLocale(): string {
+/** Locale comes from the optional `{-$locale}` URL prefix present on every
+ *  route, so it is known at prerender and hydration time alike — no
+ *  store/localStorage read, no hydration-mismatch risk. */
+function useUrlLocale(): string {
   const pathname = useLocation({ select: (l) => l.pathname });
-  const landingLocale = landingLocaleFromPath(pathname);
-  const storeLocale = useStore($locale);
-  return landingLocale ?? storeLocale;
+  return localeFromPathname(pathname);
 }
 
-/** IntlProvider bound to the persisted $locale nanostore, falling back to en.
- *  For locale-prefixed landing paths (`/`, `/$locale`), the locale is derived
- *  directly from the URL so prerendered HTML is correctly localized. For all
- *  other (in-app) paths, it always renders "en" first (SSR + first client
- *  render) then swaps to the persisted $locale store post-mount, to dodge a
- *  hydration mismatch. */
+/** IntlProvider bound to the URL-derived locale, falling back to en. */
 export function AppIntlProvider({ children }: { children: ReactNode }) {
-  const pathname = useLocation({ select: (l) => l.pathname });
-  const landingLocale = landingLocaleFromPath(pathname);
-  const storeLocale = useStore($locale);
-  const [deferredLocale, setDeferredLocale] = React.useState("en");
-  React.useEffect(() => {
-    setDeferredLocale(storeLocale);
-  }, [storeLocale]);
-  const locale = landingLocale ?? deferredLocale;
+  const locale = useUrlLocale();
   return (
     <IntlProvider
       locale={locale}
