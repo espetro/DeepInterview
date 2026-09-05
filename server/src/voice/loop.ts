@@ -66,6 +66,8 @@ export class VoiceLoop {
   private readonly llm: VoiceLlm;
 
   private buffer = new WavBuffer(CAPTURE_SAMPLE_RATE, 1);
+  /** When the current utterance's first audio frame arrived (VAD start proxy). */
+  private firstFrameAt: number | undefined;
   private muted = false;
   private abort: AbortController | undefined;
   private ctx: SessionContext = {};
@@ -129,12 +131,15 @@ export class VoiceLoop {
       if (this.muted) return;
       // Strip the 4-byte BE seq header; payload is PCM16LE mono 16k.
       const pcm = msg.data.byteLength > AUDIO_HEADER_BYTES ? msg.data.subarray(AUDIO_HEADER_BYTES) : new Uint8Array(0);
+      this.trackFrame(pcm);
       this.buffer.pushBytes(pcm);
       return;
     }
     if (msg.t === "audio") {
       if (this.muted) return;
-      this.buffer.pushBytes(new Uint8Array(Buffer.from(msg.pcm, "base64")));
+      const pcm = new Uint8Array(Buffer.from(msg.pcm, "base64"));
+      this.trackFrame(pcm);
+      this.buffer.pushBytes(pcm);
       return;
     }
     if (msg.t === "mute") {
@@ -150,11 +155,14 @@ export class VoiceLoop {
     }
     if (msg.t === "utterance_end") {
       await this.postEvent(this.sessionId, "vad.speech_ended").catch(() => undefined);
+      const t0 = Date.now();
+      const vadMs = this.firstFrameAt === undefined ? 0 : t0 - this.firstFrameAt;
+      this.firstFrameAt = undefined;
       const pcm = this.buffer.toPcm();
       this.buffer.clear();
       if (pcm.byteLength === 0) return;
       // Serialize: seq assignment and history mutation must not interleave.
-      this.turnLock = this.turnLock.then(() => this.runTurn(pcm)).catch((err) => {
+      this.turnLock = this.turnLock.then(() => this.runTurn(pcm, t0, vadMs)).catch((err) => {
         console.error(`[voice] turn failed: ${err}`);
         this.send({ t: "error", message: err instanceof Error ? err.message : String(err) });
       });
@@ -170,42 +178,57 @@ export class VoiceLoop {
     this.buffer.clear();
   }
 
-  private async runTurn(pcm: Uint8Array): Promise<void> {
+  private async runTurn(pcm: Uint8Array, t0: number, vadMs: number): Promise<void> {
     if (this.closed) return;
     this.abort = new AbortController();
     const { signal } = this.abort;
+    const metrics: TurnMetrics = { vad_ms: vadMs, total_ms: 0 };
     try {
+      const sttStart = Date.now();
       const text = (await this.stt.transcribePcm(pcm, { signal })).trim();
       if (text === "") return;
+      metrics.stt_ms = Date.now() - sttStart;
 
       const userTurn = await this.persistTurn("user", text);
       this.send({ t: "user_transcript", turn: userTurn });
       this.history.push({ role: "user", content: text });
 
-      const reply = await this.runLlmTurn(signal);
+      const reply = await this.runLlmTurn(signal, metrics);
 
       const agentTurn = await this.persistTurn("agent", reply.content);
       this.history.push({ role: "assistant", content: reply.content });
       this.send({ t: "agent_transcript", turn: agentTurn });
 
       if (reply.content.trim() === "") return;
-      await this.streamSpeech(reply.content, signal);
+      await this.streamSpeech(reply.content, signal, metrics);
     } catch (err) {
       if (err instanceof Error && (err.name === "AbortError" || String(err).includes("abort"))) return;
       throw err;
     } finally {
+      metrics.total_ms = Date.now() - t0;
+      if (!signal.aborted) {
+        this.send({ t: "metrics", metrics });
+        this.postEvent(this.sessionId, "turn.metrics", metrics).catch(() => undefined);
+      }
       if (this.abort?.signal === signal) this.abort = undefined;
     }
   }
 
+  /** First frame of a fresh buffer marks the utterance's VAD start. */
+  private trackFrame(pcm: Uint8Array): void {
+    if (this.firstFrameAt === undefined && pcm.byteLength > 0) this.firstFrameAt = Date.now();
+  }
+
   /** One LLM round-trip, executing tool calls until a plain reply comes back. */
-  private async runLlmTurn(signal: AbortSignal): Promise<{ content: string }> {
+  private async runLlmTurn(signal: AbortSignal, metrics?: TurnMetrics): Promise<{ content: string }> {
     const messages: LlmMessage[] = [
       { role: "system", content: buildPrompt(this.ctx) },
       ...this.history,
     ];
+    const llmStart = Date.now();
     for (let hop = 0; hop < 4; hop++) {
       const result = await this.llm.chat(messages, VOICE_TOOLS, { signal });
+      if (metrics && metrics.llm_ttft_ms === undefined) metrics.llm_ttft_ms = Date.now() - llmStart;
       if (result.toolCalls.length === 0) return { content: result.content };
       const toolResults: { name: string; output: string }[] = [];
       for (const call of result.toolCalls) {
@@ -254,11 +277,12 @@ export class VoiceLoop {
     return JSON.stringify({ error: `unknown tool: ${name}` });
   }
 
-  private async streamSpeech(text: string, signal: AbortSignal): Promise<void> {
+  private async streamSpeech(text: string, signal: AbortSignal, metrics?: TurnMetrics): Promise<void> {
     this.send({ t: "agent_speaking", on: true });
     try {
       const pcm = await this.tts.synthesizeToPcm(text, { signal });
       for (let off = 0, seq = 0; off < pcm.length; off += TTS_CHUNK_BYTES, seq++) {
+        if (off === 0 && metrics && metrics.first_audio_ms === undefined) metrics.first_audio_ms = Date.now();
         const chunk = pcm.subarray(off, off + TTS_CHUNK_BYTES);
         const final = off + TTS_CHUNK_BYTES >= pcm.length;
         const frame = new Uint8Array(AUDIO_HEADER_BYTES + chunk.length);
