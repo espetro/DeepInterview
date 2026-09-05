@@ -17,7 +17,11 @@ export interface VoiceDeps {
   config: Config;
   db: Db;
   /** Test injection point for stub STT/TTS/LLM. */
-  loopFactory?: (sessionId: string, send: (msg: unknown) => void, sendBinary: (d: Uint8Array) => void) => VoiceLoopLike;
+  loopFactory?: (
+    sessionId: string,
+    send: (msg: unknown) => void,
+    sendBinary: (d: Uint8Array) => void,
+  ) => VoiceLoopLike;
 }
 
 /**
@@ -32,7 +36,9 @@ export function voiceWebSocketHandler(deps: VoiceDeps) {
       const { sessionId } = ws.data as { sessionId: string };
       const send = (msg: unknown) => ws.send(JSON.stringify(msg));
       const sendBinary = (d: Uint8Array) =>
-        "sendBinary" in ws ? (ws as { sendBinary: (d: Uint8Array) => void }).sendBinary(d) : undefined;
+        "sendBinary" in ws
+          ? (ws as { sendBinary: (d: Uint8Array) => void }).sendBinary(d)
+          : undefined;
       const loop =
         deps.loopFactory?.(sessionId, send, sendBinary) ??
         new VoiceLoop({
@@ -47,7 +53,10 @@ export function voiceWebSocketHandler(deps: VoiceDeps) {
         await loop.start();
       } catch (err) {
         console.error(`[voice] loop start failed: ${err}`);
-        send({ t: "error", message: err instanceof Error ? err.message : String(err) });
+        send({
+          t: "error",
+          message: err instanceof Error ? err.message : String(err),
+        });
       }
     },
     async message(
@@ -58,13 +67,18 @@ export function voiceWebSocketHandler(deps: VoiceDeps) {
       if (!loop) return;
       try {
         if (typeof message !== "string") {
-          await loop.handleMessage({ t: "binary", data: new Uint8Array(message) });
+          await loop.handleMessage({
+            t: "binary",
+            data: new Uint8Array(message),
+          });
           return;
         }
         const parsed = v.parse(VoiceClientMessageSchema, JSON.parse(message));
         await loop.handleMessage(parsed);
       } catch (err) {
-        console.warn(`[voice] bad message on ${(ws.data as { sessionId: string }).sessionId}: ${err}`);
+        console.warn(
+          `[voice] bad message on ${(ws.data as { sessionId: string }).sessionId}: ${err}`,
+        );
       }
     },
     close(ws: Bun.WebSocketFileType & { loop?: VoiceLoopLike }) {
@@ -90,8 +104,13 @@ export async function tryUpgradeVoice(
   const match = VOICE_WS_PATH_RE.exec(url.pathname);
   if (!match) return null;
   const sessionId = match[1]!;
-  const session = await db.selectFrom("sessions").select("id").where("id", "=", sessionId).executeTakeFirst();
-  if (!session) return Response.json({ error: "session not found" }, { status: 404 });
+  const session = await db
+    .selectFrom("sessions")
+    .select("id")
+    .where("id", "=", sessionId)
+    .executeTakeFirst();
+  if (!session)
+    return Response.json({ error: "session not found" }, { status: 404 });
   if (server.upgrade(req, { data: { sessionId } })) return null;
   return new Response("websocket upgrade failed", { status: 400 });
 }

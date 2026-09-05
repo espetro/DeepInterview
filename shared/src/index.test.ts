@@ -7,9 +7,21 @@ import { ReportSchema } from "./report";
 
 const validConfig = {
   server: { port: 8080 },
-  llm: { provider: "mock", base_url: "http://localhost:9000/v1", model: "mock-chat" },
-  stt: { base_url: "http://localhost:9000/v1", model: "mock-stt", mode: "buffered" },
-  tts: { base_url: "http://localhost:9000/v1", model: "mock-tts", voice: "alloy" },
+  llm: {
+    provider: "mock",
+    base_url: "http://localhost:9000/v1",
+    model: "mock-chat",
+  },
+  stt: {
+    base_url: "http://localhost:9000/v1",
+    model: "mock-stt",
+    mode: "buffered",
+  },
+  tts: {
+    base_url: "http://localhost:9000/v1",
+    model: "mock-tts",
+    voice: "alloy",
+  },
   files: { db_path: "data/di.db", log_path: "data/di.log", data_dir: "data" },
 };
 
@@ -19,9 +31,14 @@ describe("ConfigSchema", () => {
   });
 
   it("rejects a bad port with a named key path", () => {
-    const r = v.safeParse(ConfigSchema, { ...validConfig, server: { port: 0 } });
+    const r = v.safeParse(ConfigSchema, {
+      ...validConfig,
+      server: { port: 0 },
+    });
     expect(r.success).toBe(false);
-    expect(describeConfigError((r as v.FailureOutput).issues)).toContain("server.port");
+    expect(describeConfigError((r as v.FailureOutput).issues)).toContain(
+      "server.port",
+    );
   });
 
   it("rejects an invalid stt mode", () => {
@@ -103,7 +120,11 @@ describe("ReportSchema", () => {
           name: "system design",
           score: 7,
           evidence: [
-            { quote: "I would shard by user id", turn_seq: 3, verdict: "worked" },
+            {
+              quote: "I would shard by user id",
+              turn_seq: 3,
+              verdict: "worked",
+            },
           ],
         },
       ],

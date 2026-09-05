@@ -37,23 +37,35 @@ export class WhisperStt {
   }
 
   /** Wrap PCM16LE mono 16k in a WAV (16k mono) and transcribe it. */
-  async transcribePcm(pcm16le: Uint8Array, opts?: { signal?: AbortSignal }): Promise<string> {
+  async transcribePcm(
+    pcm16le: Uint8Array,
+    opts?: { signal?: AbortSignal },
+  ): Promise<string> {
     if (pcm16le.byteLength === 0) return "";
     const wav = encodePcmWav(pcm16le);
     return this.transcribeWav(wav, opts?.signal);
   }
 
   /** POST the WAV to the transcriptions endpoint, return the text. */
-  async transcribeWav(wav: Uint8Array, abortSignal?: AbortSignal): Promise<string> {
+  async transcribeWav(
+    wav: Uint8Array,
+    abortSignal?: AbortSignal,
+  ): Promise<string> {
     const { events, sessionId } = this.opts;
     const bytes = wav.byteLength;
     events
       ?.postEvent(sessionId!, "stt.request", { bytes })
-      .catch((err) => console.warn(`[voice] failed to log stt.request: ${err}`));
+      .catch((err) =>
+        console.warn(`[voice] failed to log stt.request: ${err}`),
+      );
     const startedAt = Date.now();
 
     const form = new FormData();
-    form.append("file", new Blob([new Uint8Array(wav)], { type: "audio/wav" }), "audio.wav");
+    form.append(
+      "file",
+      new Blob([new Uint8Array(wav)], { type: "audio/wav" }),
+      "audio.wav",
+    );
     form.append("model", this.opts.model);
     if (this.opts.language) {
       form.append("language", this.opts.language);
@@ -71,14 +83,23 @@ export class WhisperStt {
       const body = await res.text().catch(() => "");
       console.error(`[voice] whisper stt failed: ${res.status} ${body}`);
       events
-        ?.postEvent(sessionId!, "stt.failed", { status: res.status, body, latency_ms })
-        .catch((err) => console.warn(`[voice] failed to log stt.failed: ${err}`));
+        ?.postEvent(sessionId!, "stt.failed", {
+          status: res.status,
+          body,
+          latency_ms,
+        })
+        .catch((err) =>
+          console.warn(`[voice] failed to log stt.failed: ${err}`),
+        );
       throw new Error(`whisper stt failed: ${res.status} ${body}`);
     }
     const json = (await res.json()) as { text?: string };
     const text = json.text ?? "";
     events
-      ?.postEvent(sessionId!, "stt.result", { text_length: text.length, latency_ms })
+      ?.postEvent(sessionId!, "stt.result", {
+        text_length: text.length,
+        latency_ms,
+      })
       .catch((err) => console.warn(`[voice] failed to log stt.result: ${err}`));
     return text;
   }

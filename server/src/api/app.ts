@@ -4,7 +4,11 @@ import type { Config } from "@di/shared";
 import type { Db } from "../store/db";
 import { apiRoutes } from "./routes";
 import { embeddingsClientFromConfig } from "../rag/ingest";
-import { tryUpgradeVoice, voiceWebSocketHandler, type VoiceDeps } from "../voice/ws";
+import {
+  tryUpgradeVoice,
+  voiceWebSocketHandler,
+  type VoiceDeps,
+} from "../voice/ws";
 
 export interface AppDeps {
   config: Config;
@@ -33,11 +37,18 @@ export async function createApp(deps: AppDeps): Hono {
 
   if (deps.webAssets) {
     const { serveStatic } = await import("@hono/node-server/serve-static");
-    app.use("*", serveStatic({ root: deps.webAssets.root, rewriteRequestPath: (p) => (p === "/" ? "/index.html" : p) }));
+    app.use(
+      "*",
+      serveStatic({
+        root: deps.webAssets.root,
+        rewriteRequestPath: (p) => (p === "/" ? "/index.html" : p),
+      }),
+    );
     // SPA fallback: any non-API GET serves the shell so deep links work.
     app.get("*", (c) => {
       const url = new URL(c.req.url);
-      if (url.pathname.startsWith("/v1") || url.pathname.startsWith("/api")) return c.next();
+      if (url.pathname.startsWith("/v1") || url.pathname.startsWith("/api"))
+        return c.next();
       return c.html(readFileSync(`${deps.webAssets!.root}/index.html`, "utf8"));
     });
   }
@@ -54,27 +65,51 @@ function openApiSpec(config: Config): Record<string, unknown> {
     servers: [{ url: `http://localhost:${config.server.port}` }],
     paths: {
       "/v1/sessions": {
-        post: { summary: "Create an interview session", responses: { "201": { description: "Created" } } },
-        get: { summary: "List sessions", responses: { "200": { description: "OK" } } },
+        post: {
+          summary: "Create an interview session",
+          responses: { "201": { description: "Created" } },
+        },
+        get: {
+          summary: "List sessions",
+          responses: { "200": { description: "OK" } },
+        },
       },
       "/v1/sessions/{id}": {
         get: {
           summary: "Get a session",
-          responses: { "200": { description: "OK" }, "404": { description: "Not found" } },
+          responses: {
+            "200": { description: "OK" },
+            "404": { description: "Not found" },
+          },
         },
       },
       "/v1/sessions/{id}/turns": {
-        post: { summary: "Append a transcript turn", responses: { "201": { description: "Created" } } },
-        get: { summary: "List turns", responses: { "200": { description: "OK" } } },
+        post: {
+          summary: "Append a transcript turn",
+          responses: { "201": { description: "Created" } },
+        },
+        get: {
+          summary: "List turns",
+          responses: { "200": { description: "OK" } },
+        },
       },
       "/v1/sessions/{id}/events": {
-        post: { summary: "Append a session event", responses: { "201": { description: "Created" } } },
+        post: {
+          summary: "Append a session event",
+          responses: { "201": { description: "Created" } },
+        },
       },
       "/v1/sessions/{id}/report": {
-        put: { summary: "Store the report", responses: { "200": { description: "OK" } } },
+        put: {
+          summary: "Store the report",
+          responses: { "200": { description: "OK" } },
+        },
         get: {
           summary: "Get the report",
-          responses: { "200": { description: "OK" }, "404": { description: "Not found" } },
+          responses: {
+            "200": { description: "OK" },
+            "404": { description: "Not found" },
+          },
         },
       },
     },
@@ -100,7 +135,11 @@ export function serveApp(
     port,
     websocket: ws as never,
     fetch: async (req, server) => {
-      const upgraded = await tryUpgradeVoice(req, server as UpgradeServer, deps.db);
+      const upgraded = await tryUpgradeVoice(
+        req,
+        server as UpgradeServer,
+        deps.db,
+      );
       return upgraded ?? app.fetch(req);
     },
   });

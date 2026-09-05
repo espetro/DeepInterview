@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { OpenAiChatClient, type ToolDef } from "./llm.ts";
 
-function fetchStub(handler: (url: string, init?: RequestInit) => Response): typeof fetch {
+function fetchStub(
+  handler: (url: string, init?: RequestInit) => Response,
+): typeof fetch {
   return handler as unknown as typeof fetch;
 }
 
@@ -9,21 +11,35 @@ const tools: ToolDef[] = [
   {
     name: "update_question",
     description: "Rewrite the current question",
-    parameters: { type: "object", properties: { question: { type: "string" } } },
+    parameters: {
+      type: "object",
+      properties: { question: { type: "string" } },
+    },
   },
 ];
 
 describe("OpenAiChatClient.chat", () => {
   it("posts the OpenAI request shape and parses content", async () => {
-    let captured: { url: string; body: any; headers: Record<string, string> } | undefined;
+    let captured:
+      | { url: string; body: any; headers: Record<string, string> }
+      | undefined;
     const llm = new OpenAiChatClient({
       baseUrl: "http://fake.local/",
       model: "mock-llm",
       apiKey: "sk-test",
       fetchImpl: fetchStub((url, init) => {
-        captured = { url, body: JSON.parse(String(init!.body)), headers: init!.headers as Record<string, string> };
+        captured = {
+          url,
+          body: JSON.parse(String(init!.body)),
+          headers: init!.headers as Record<string, string>,
+        };
         return Response.json({
-          choices: [{ message: { role: "assistant", content: "Tell me about maps." }, finish_reason: "stop" }],
+          choices: [
+            {
+              message: { role: "assistant", content: "Tell me about maps." },
+              finish_reason: "stop",
+            },
+          ],
         });
       }),
     });
@@ -61,7 +77,10 @@ describe("OpenAiChatClient.chat", () => {
                   {
                     id: "call_1",
                     type: "function",
-                    function: { name: "update_question", arguments: '{"question":"Q2?"}' },
+                    function: {
+                      name: "update_question",
+                      arguments: '{"question":"Q2?"}',
+                    },
                   },
                 ],
               },
@@ -77,11 +96,16 @@ describe("OpenAiChatClient.chat", () => {
         function: {
           name: "update_question",
           description: "Rewrite the current question",
-          parameters: { type: "object", properties: { question: { type: "string" } } },
+          parameters: {
+            type: "object",
+            properties: { question: { type: "string" } },
+          },
         },
       },
     ]);
-    expect(result.toolCalls).toEqual([{ name: "update_question", args: { question: "Q2?" } }]);
+    expect(result.toolCalls).toEqual([
+      { name: "update_question", args: { question: "Q2?" } },
+    ]);
   });
 
   it("omits the tools key when no tools are given, tolerates unparseable args", async () => {
@@ -96,7 +120,13 @@ describe("OpenAiChatClient.chat", () => {
             {
               message: {
                 content: "",
-                tool_calls: [{ id: "c", type: "function", function: { name: "x", arguments: "not-json{" } }],
+                tool_calls: [
+                  {
+                    id: "c",
+                    type: "function",
+                    function: { name: "x", arguments: "not-json{" },
+                  },
+                ],
               },
             },
           ],
@@ -108,12 +138,18 @@ describe("OpenAiChatClient.chat", () => {
     expect(result.toolCalls[0]!.args).toEqual({ _raw: "not-json{" });
   });
 
-  it("emits llm.request/llm.result events and throws on error status", async () => {    const events: { type: string; payload?: unknown }[] = [];
-    const sink = { postEvent: async (_s: string, type: string, payload?: unknown) => void events.push({ type, payload }) };
+  it("emits llm.request/llm.result events and throws on error status", async () => {
+    const events: { type: string; payload?: unknown }[] = [];
+    const sink = {
+      postEvent: async (_s: string, type: string, payload?: unknown) =>
+        void events.push({ type, payload }),
+    };
     const ok = new OpenAiChatClient({
       baseUrl: "http://fake.local",
       model: "m",
-      fetchImpl: fetchStub(() => Response.json({ choices: [{ message: { content: "hey" } }] })),
+      fetchImpl: fetchStub(() =>
+        Response.json({ choices: [{ message: { content: "hey" } }] }),
+      ),
       events: sink,
       sessionId: "s1",
     });
@@ -130,7 +166,9 @@ describe("OpenAiChatClient.chat", () => {
       events: sink,
       sessionId: "s1",
     });
-    await expect(failing.chat([{ role: "user", content: "x" }])).rejects.toThrow(/429/);
+    await expect(
+      failing.chat([{ role: "user", content: "x" }]),
+    ).rejects.toThrow(/429/);
     expect(events.map((e) => e.type)).toEqual(["llm.request", "llm.failed"]);
   });
 });
@@ -144,7 +182,9 @@ function sseResponse(chunks: string[]): Response {
       controller.close();
     },
   });
-  return new Response(body, { headers: { "content-type": "text/event-stream" } });
+  return new Response(body, {
+    headers: { "content-type": "text/event-stream" },
+  });
 }
 
 describe("OpenAiChatClient.streamChat", () => {
@@ -164,10 +204,14 @@ describe("OpenAiChatClient.streamChat", () => {
     });
     const firstTokens: number[] = [];
     const deltas: string[] = [];
-    const result = await llm.streamChat([{ role: "user", content: "hi" }], undefined, {
-      onFirstToken: () => firstTokens.push(1),
-      onText: (d) => deltas.push(d),
-    });
+    const result = await llm.streamChat(
+      [{ role: "user", content: "hi" }],
+      undefined,
+      {
+        onFirstToken: () => firstTokens.push(1),
+        onText: (d) => deltas.push(d),
+      },
+    );
     expect(captured.stream).toBe(true);
     expect(result.content).toBe("Hello there.");
     expect(result.toolCalls).toEqual([]);
@@ -188,7 +232,10 @@ describe("OpenAiChatClient.streamChat", () => {
         ]),
       ),
     });
-    const result = await llm.streamChat([{ role: "user", content: "next" }], tools);
+    const result = await llm.streamChat(
+      [{ role: "user", content: "next" }],
+      tools,
+    );
     expect(result.toolCalls).toEqual([
       { name: "update_question", args: { question: "Q2?" } },
       { name: "read_editor", args: {} },
@@ -202,29 +249,46 @@ describe("OpenAiChatClient.streamChat", () => {
       model: "m",
       fetchImpl: fetchStub(() =>
         Response.json({
-          choices: [{ message: { role: "assistant", content: "buffered reply." } }],
+          choices: [
+            { message: { role: "assistant", content: "buffered reply." } },
+          ],
         }),
       ),
     });
-    const result = await llm.streamChat([{ role: "user", content: "hi" }], undefined, {
-      onText: (d) => deltas.push(d),
-    });
+    const result = await llm.streamChat(
+      [{ role: "user", content: "hi" }],
+      undefined,
+      {
+        onText: (d) => deltas.push(d),
+      },
+    );
     expect(result.content).toBe("buffered reply.");
     expect(deltas).toEqual(["buffered reply."]);
   });
 
   it("emits llm.ttft_ms in the llm.result event payload", async () => {
     const events: { type: string; payload?: unknown }[] = [];
-    const sink = { postEvent: async (_s: string, type: string, payload?: unknown) => void events.push({ type, payload }) };
+    const sink = {
+      postEvent: async (_s: string, type: string, payload?: unknown) =>
+        void events.push({ type, payload }),
+    };
     const llm = new OpenAiChatClient({
       baseUrl: "http://fake.local",
       model: "m",
-      fetchImpl: fetchStub(() => sseResponse(['data: {"choices":[{"delta":{"content":"x"}}]}\n\n', "data: [DONE]\n\n"])),
+      fetchImpl: fetchStub(() =>
+        sseResponse([
+          'data: {"choices":[{"delta":{"content":"x"}}]}\n\n',
+          "data: [DONE]\n\n",
+        ]),
+      ),
       events: sink,
       sessionId: "s1",
     });
     await llm.streamChat([{ role: "user", content: "hi" }]);
     const result = events.find((e) => e.type === "llm.result")!;
-    expect(result.payload).toMatchObject({ stream: true, ttft_ms: expect.any(Number) });
+    expect(result.payload).toMatchObject({
+      stream: true,
+      ttft_ms: expect.any(Number),
+    });
   });
 });

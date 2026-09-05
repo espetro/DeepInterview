@@ -23,7 +23,9 @@ function sseResponse(
       }
     },
   });
-  return new Response(body, { headers: { "content-type": "text/event-stream" } });
+  return new Response(body, {
+    headers: { "content-type": "text/event-stream" },
+  });
 }
 
 describe("StreamingWhisperStt", () => {
@@ -36,7 +38,11 @@ describe("StreamingWhisperStt", () => {
       fetchImpl: ((url: string, init: RequestInit) => {
         requests.push({ url, init });
         return Promise.resolve(
-          sseResponse(['data: {"text":"hello "}\n\n', 'data: {"text":"world"}\n\n', "data: [DONE]\n\n"]),
+          sseResponse([
+            'data: {"text":"hello "}\n\n',
+            'data: {"text":"world"}\n\n',
+            "data: [DONE]\n\n",
+          ]),
         );
       }) as unknown as typeof fetch,
     });
@@ -47,7 +53,9 @@ describe("StreamingWhisperStt", () => {
     expect(requests).toHaveLength(1); // single duplex streaming request
     expect(requests[0]!.url).toContain("/v1/audio/transcriptions?stream=true");
     expect(requests[0]!.url).toContain("model=whisper-1");
-    expect((requests[0]!.init.headers as Record<string, string>).authorization).toBe("Bearer sk-test");
+    expect(
+      (requests[0]!.init.headers as Record<string, string>).authorization,
+    ).toBe("Bearer sk-test");
     // next utterance opens a fresh session
     const text2 = await stt.finish();
     expect(text2).toBe(""); // nothing fed: buffered fallback returns empty

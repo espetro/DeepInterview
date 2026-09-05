@@ -63,7 +63,13 @@ describe("voiceMachine", () => {
         { type: "SPEECH_START" },
         { type: "SPEECH_END", text: "   " },
       ]),
-    ).toEqual(["idle", "connecting", "listening", "user_speaking", "listening"]);
+    ).toEqual([
+      "idle",
+      "connecting",
+      "listening",
+      "user_speaking",
+      "listening",
+    ]);
   });
 
   it("thinking with no agent speech returns to listening", () => {
@@ -115,7 +121,10 @@ describe("voiceMachine", () => {
     actor.send({ type: "ERROR", message: "boom" });
     expect(actor.getSnapshot().context.error).toBe("boom");
     actor.send({ type: "RESET" });
-    expect(actor.getSnapshot().context).toEqual({ error: null, lastUserText: null });
+    expect(actor.getSnapshot().context).toEqual({
+      error: null,
+      lastUserText: null,
+    });
   });
 
   it("ignores unrelated events (e.g. SPEECH_START in idle)", () => {

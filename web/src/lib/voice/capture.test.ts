@@ -9,7 +9,10 @@ function fakeDeps() {
   const ctx: AudioContextLike = {
     sampleRate: 16_000,
     audioWorklet: { addModule: async () => undefined },
-    createMediaStreamSource: () => ({ connect: () => undefined, disconnect: () => undefined }),
+    createMediaStreamSource: () => ({
+      connect: () => undefined,
+      disconnect: () => undefined,
+    }),
     createAudioWorkletNode: () => ({
       port: {
         get onmessage() {

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createPcmPlayer, pcm16ToFloat } from "./pcm-player";
-import type { AudioBufferLike, AudioBufferSourceNodeLike, AudioContextLike } from "./pcm-player";
+import type {
+  AudioBufferLike,
+  AudioBufferSourceNodeLike,
+  AudioContextLike,
+} from "./pcm-player";
 
 function fakeCtx() {
   let now = 0;
@@ -24,7 +28,11 @@ function fakeCtx() {
         onended: null,
         connect: () => node,
         start(when = 0) {
-          started.push({ at: when, samples: node.buffer!.getChannelData(0).length, rate: ctx.sampleRate });
+          started.push({
+            at: when,
+            samples: node.buffer!.getChannelData(0).length,
+            rate: ctx.sampleRate,
+          });
         },
         stop: () => undefined,
         disconnect: () => undefined,
@@ -59,7 +67,11 @@ describe("createPcmPlayer", () => {
     player.write(frame(100));
     player.write(frame(200));
     player.write(frame(50));
-    expect(started.map((s) => s.at.toFixed(2))).toEqual(["0.00", "0.10", "0.30"]);
+    expect(started.map((s) => s.at.toFixed(2))).toEqual([
+      "0.00",
+      "0.10",
+      "0.30",
+    ]);
     expect(player.playing).toBe(true);
   });
 

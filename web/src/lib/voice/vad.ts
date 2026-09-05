@@ -32,18 +32,23 @@ export interface VadImpl {
   destroy(): Promise<void>;
 }
 
-const BASE = (import.meta.env.VITE_VAD_ASSETS_BASE as string | undefined) ?? "/vad/";
+const BASE =
+  (import.meta.env.VITE_VAD_ASSETS_BASE as string | undefined) ?? "/vad/";
 
 /** silero legacy frame size at 16k: 1536 samples (~96ms) */
 const FRAME_SAMPLES = 1536;
 
 /** Convert PCM16LE bytes to normalized floats appended after a carry buffer. */
-export function mergeIntoCarry(carry: Float32Array, pcm16: Uint8Array): Float32Array {
+export function mergeIntoCarry(
+  carry: Float32Array,
+  pcm16: Uint8Array,
+): Float32Array {
   const n = pcm16.byteLength >> 1;
   const out = new Float32Array(carry.length + n);
   out.set(carry);
   const view = new DataView(pcm16.buffer, pcm16.byteOffset, pcm16.byteLength);
-  for (let i = 0; i < n; i++) out[carry.length + i] = view.getInt16(i * 2, true) / 32768;
+  for (let i = 0; i < n; i++)
+    out[carry.length + i] = view.getInt16(i * 2, true) / 32768;
   return out;
 }
 
@@ -52,7 +57,9 @@ export function mergeIntoCarry(carry: Float32Array, pcm16: Uint8Array): Float32A
  * byte-to-frame re-chunking and start/end callbacks. processFrame never
  * awaits: model runs are fire-and-forget, matching real-time capture.
  */
-export async function createVadGate(opts: VadGateOptions = {}): Promise<VadGate> {
+export async function createVadGate(
+  opts: VadGateOptions = {},
+): Promise<VadGate> {
   const assetsBase = (opts.modelAssetsBase ?? BASE).replace(/\/?$/, "/");
   const impl = opts.impl ?? (await createDefaultImpl(assetsBase, opts));
 
@@ -64,7 +71,9 @@ export async function createVadGate(opts: VadGateOptions = {}): Promise<VadGate>
       const frames = Math.floor(samples.length / FRAME_SAMPLES);
       carry = samples.slice(frames * FRAME_SAMPLES);
       for (let f = 0; f < frames; f++) {
-        void impl.processFrame(samples.slice(f * FRAME_SAMPLES, (f + 1) * FRAME_SAMPLES));
+        void impl.processFrame(
+          samples.slice(f * FRAME_SAMPLES, (f + 1) * FRAME_SAMPLES),
+        );
       }
     },
     async destroy() {
@@ -79,7 +88,10 @@ export async function createVadGate(opts: VadGateOptions = {}): Promise<VadGate>
  * used). ort wasm paths point at the vendored assets. Lazy dynamic import so
  * tests and non-voice routes never load onnxruntime.
  */
-async function createDefaultImpl(assetsBase: string, opts: VadGateOptions): Promise<VadImpl> {
+async function createDefaultImpl(
+  assetsBase: string,
+  opts: VadGateOptions,
+): Promise<VadImpl> {
   const { MicVAD } = await import("@ricky0123/vad-web");
   const mic = await MicVAD.new({
     model: "legacy",

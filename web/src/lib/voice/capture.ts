@@ -46,8 +46,14 @@ export function floatToPcm16(samples: Float32Array): Uint8Array {
 export interface AudioContextLike {
   readonly sampleRate: number;
   readonly audioWorklet: { addModule(url: string): Promise<void> };
-  createMediaStreamSource(stream: unknown): { connect(node: unknown): void; disconnect(): void };
-  createAudioWorkletNode(name: string, opts?: unknown): {
+  createMediaStreamSource(stream: unknown): {
+    connect(node: unknown): void;
+    disconnect(): void;
+  };
+  createAudioWorkletNode(
+    name: string,
+    opts?: unknown,
+  ): {
     port: { onmessage: ((ev: { data: unknown }) => void) | null };
     connect(dest?: unknown): void;
     disconnect(): void;
@@ -86,30 +92,51 @@ export class MicCaptureImpl implements MicCapture {
   private muted = false;
   private ctx: AudioContextLike | null = null;
   private source: { disconnect(): void } | null = null;
-  private node: { port: { onmessage: ((ev: { data: unknown }) => void) | null }; disconnect(): void } | null = null;
+  private node: {
+    port: { onmessage: ((ev: { data: unknown }) => void) | null };
+    disconnect(): void;
+  } | null = null;
   private stream: { getTracks(): { stop(): void }[] } | null = null;
 
   async start(deps: CaptureDeps = {}): Promise<void> {
-    const gum = deps.getUserMedia ?? ((c: MediaStreamConstraints) => navigator.mediaDevices.getUserMedia(c));
+    const gum =
+      deps.getUserMedia ??
+      ((c: MediaStreamConstraints) => navigator.mediaDevices.getUserMedia(c));
     const stream = (await gum({
-      audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      audio: {
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
     })) as { getTracks(): { stop(): void }[] };
     this.stream = stream;
 
-    const ACtor = deps.audioContextFactory as (() => AudioContextLike) | undefined;
+    const ACtor = deps.audioContextFactory as
+      | (() => AudioContextLike)
+      | undefined;
     const ctx =
       ACtor?.() ??
-      (new (globalThis.AudioContext as unknown as new (o?: { sampleRate: number }) => AudioContextLike)({
+      new (
+        globalThis.AudioContext as unknown as new (o?: {
+          sampleRate: number;
+        }) => AudioContextLike
+      )({
         sampleRate: CAPTURE_SAMPLE_RATE,
-      }));
+      });
     if (ctx.sampleRate !== CAPTURE_SAMPLE_RATE) {
       stream.getTracks().forEach((t) => t.stop());
-      throw new Error(`capture context rate ${ctx.sampleRate} != ${CAPTURE_SAMPLE_RATE}`);
+      throw new Error(
+        `capture context rate ${ctx.sampleRate} != ${CAPTURE_SAMPLE_RATE}`,
+      );
     }
     this.ctx = ctx;
 
-    const createObjectURL = deps.createObjectURL ?? ((b: unknown) => URL.createObjectURL(b as Blob));
-    const url = createObjectURL(new Blob([CAPTURE_WORKLET_CODE], { type: "application/javascript" }));
+    const createObjectURL =
+      deps.createObjectURL ?? ((b: unknown) => URL.createObjectURL(b as Blob));
+    const url = createObjectURL(
+      new Blob([CAPTURE_WORKLET_CODE], { type: "application/javascript" }),
+    );
     await ctx.audioWorklet.addModule(url);
 
     const source = ctx.createMediaStreamSource(stream);
@@ -147,7 +174,9 @@ export class MicCaptureImpl implements MicCapture {
 }
 
 /** Convenience factory: builds and starts a capture in one call. */
-export async function startCapture(deps: CaptureDeps = {}): Promise<MicCapture> {
+export async function startCapture(
+  deps: CaptureDeps = {},
+): Promise<MicCapture> {
   const cap = new MicCaptureImpl();
   await cap.start(deps);
   return cap;

@@ -82,9 +82,7 @@ export async function ingestDocuments(
               session_id: sessionId,
               seq: i,
               text: chunks[i]!,
-              embedding: new Uint8Array(
-                Float32Array.from(vectors[i]!).buffer,
-              ),
+              embedding: new Uint8Array(Float32Array.from(vectors[i]!).buffer),
             })
             .execute();
         }
@@ -110,7 +108,10 @@ export async function ingestDocuments(
   return out;
 }
 
-export async function listDocuments(db: Db, sessionId: string): Promise<Document[]> {
+export async function listDocuments(
+  db: Db,
+  sessionId: string,
+): Promise<Document[]> {
   const rows = await db
     .selectFrom("documents")
     .selectAll()
@@ -118,10 +119,7 @@ export async function listDocuments(db: Db, sessionId: string): Promise<Document
     .orderBy("created_at")
     .execute();
   return rows.map((r) =>
-    v.parse(
-      DocumentSchema,
-      r.error === null ? { ...r, error: undefined } : r,
-    ),
+    v.parse(DocumentSchema, r.error === null ? { ...r, error: undefined } : r),
   );
 }
 
@@ -138,7 +136,10 @@ export async function deleteDocument(
     .executeTakeFirst();
   if (!doc) return false;
   await db.transaction().execute(async (tx) => {
-    await tx.deleteFrom("chunks").where("document_id", "=", documentId).execute();
+    await tx
+      .deleteFrom("chunks")
+      .where("document_id", "=", documentId)
+      .execute();
     await tx.deleteFrom("documents").where("id", "=", documentId).execute();
   });
   return true;
@@ -149,7 +150,13 @@ export async function loadVectors(
   db: Db,
   sessionId: string,
 ): Promise<
-  { text: string; document_id: string; document_name: string; seq: number; embedding: number[] }[]
+  {
+    text: string;
+    document_id: string;
+    document_name: string;
+    seq: number;
+    embedding: number[];
+  }[]
 > {
   const rows = await db
     .selectFrom("chunks")
@@ -176,7 +183,9 @@ export async function loadVectors(
 export function embeddingsClientFromConfig(
   cfg: { base_url: string; api_key?: string; model: string } | undefined,
 ): EmbeddingClient | undefined {
-  return cfg ? new EmbeddingClient(cfg.base_url, cfg.model, cfg.api_key) : undefined;
+  return cfg
+    ? new EmbeddingClient(cfg.base_url, cfg.model, cfg.api_key)
+    : undefined;
 }
 
 export type { DocumentKind };

@@ -20,7 +20,9 @@ export class EmbeddingClient {
       body: JSON.stringify({ model: this.model, input: texts }),
     });
     if (!res.ok) {
-      throw new Error(`embeddings request failed: ${res.status} ${await res.text()}`);
+      throw new Error(
+        `embeddings request failed: ${res.status} ${await res.text()}`,
+      );
     }
     const parsed = v.parse(EmbeddingResponseSchema, await res.json());
     const sorted = [...parsed.data].sort(
@@ -33,7 +35,13 @@ export class EmbeddingClient {
 /** Brute-force cosine retrieval (see .agents/notes/2026-09-04-sqlite-vec-spike.md). */
 export function retrieve(
   query: number[],
-  rows: { text: string; document_id: string; document_name: string; seq: number; embedding: number[] }[],
+  rows: {
+    text: string;
+    document_id: string;
+    document_name: string;
+    seq: number;
+    embedding: number[];
+  }[],
   k: number,
 ): RetrievedChunk[] {
   return rows
@@ -47,4 +55,3 @@ export function retrieve(
     .sort((a, b) => b.score - a.score)
     .slice(0, k);
 }
-

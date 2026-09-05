@@ -6,11 +6,18 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useVoice } from "../lib/voice/use-voice";
 import { FormattedMessage, useIntl } from "react-intl";
 import { getSession, getTurns, postTextTurn, pushToolState } from "../lib/api";
-import { $editorBuffer, $muted, $question, $transcriptOpen } from "../stores/session";
+import {
+  $editorBuffer,
+  $muted,
+  $question,
+  $transcriptOpen,
+} from "../stores/session";
 import { $whiteboard } from "../stores/session";
 
 const WhiteboardPanel = lazy(() =>
-  import("../components/whiteboard-panel").then((m) => ({ default: m.WhiteboardPanel })),
+  import("../components/whiteboard-panel").then((m) => ({
+    default: m.WhiteboardPanel,
+  })),
 );
 
 export const Route = createFileRoute("/interview/$id")({
@@ -22,7 +29,13 @@ function useCountdown(durationMin: number) {
   const startedRef = useRef(Date.now());
   useEffect(() => {
     const t = setInterval(() => {
-      setSecsLeft(Math.max(0, durationMin * 60 - Math.floor((Date.now() - startedRef.current) / 1000)));
+      setSecsLeft(
+        Math.max(
+          0,
+          durationMin * 60 -
+            Math.floor((Date.now() - startedRef.current) / 1000),
+        ),
+      );
     }, 1000);
     return () => clearInterval(t);
   }, [durationMin]);
@@ -41,8 +54,15 @@ function Interview() {
   const intl = useIntl();
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { data: session } = useQuery({ queryKey: ["session", id], queryFn: () => getSession(id) });
-  const { data: turns } = useQuery({ queryKey: ["turns", id], queryFn: () => getTurns(id), refetchInterval: 2000 });
+  const { data: session } = useQuery({
+    queryKey: ["session", id],
+    queryFn: () => getSession(id),
+  });
+  const { data: turns } = useQuery({
+    queryKey: ["turns", id],
+    queryFn: () => getTurns(id),
+    refetchInterval: 2000,
+  });
   const question = useStore($question);
   const transcriptOpen = useStore($transcriptOpen);
   const muted = useStore($muted);
@@ -53,12 +73,13 @@ function Interview() {
   const editor = useStore($editorBuffer);
   const whiteboard = useStore($whiteboard);
   const voice = useVoice(id, muted);
-  const orbLive = voice.agentSpeaking || (voice.status === "connected" && !muted);
+  const orbLive =
+    voice.agentSpeaking || (voice.status === "connected" && !muted);
   const statusKey =
     voice.status === "error"
       ? "interview.voiceError"
       : voice.status === "connected"
-        ? phaseKeys[voice.phase] ?? "interview.voiceConnected"
+        ? (phaseKeys[voice.phase] ?? "interview.voiceConnected")
         : voice.status === "connecting"
           ? "interview.voiceConnecting"
           : "interview.voiceIdle";
@@ -70,7 +91,6 @@ function Interview() {
     }, 1000);
     return () => clearTimeout(t);
   }, [id, editor, whiteboard]);
-
 
   const secsLeft = useCountdown(session?.duration_min ?? 30);
   const mm = String(Math.floor(secsLeft / 60)).padStart(2, "0");
@@ -102,16 +122,23 @@ function Interview() {
     <div className="ambient grain flex h-[100dvh] flex-col overflow-hidden bg-cream">
       {/* top bar */}
       <header className="flex items-center justify-between px-4 py-3 md:px-8">
-        <h1 className="font-display text-base font-semibold">{session?.title ?? "…"}</h1>
+        <h1 className="font-display text-base font-semibold">
+          {session?.title ?? "…"}
+        </h1>
         <div className="flex items-center gap-4">
-          <span className={`font-mono text-sm tabular-nums ${wrapping ? "text-persimmon" : "text-espresso-soft"}`}>
+          <span
+            className={`font-mono text-sm tabular-nums ${wrapping ? "text-persimmon" : "text-espresso-soft"}`}
+          >
             {mm}:{ss}
           </span>
           <span
             className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-espresso-soft"
             title={
               voice.status === "error"
-                ? intl.formatMessage({ id: "interview.voiceError" }, { message: voice.error ?? "" })
+                ? intl.formatMessage(
+                    { id: "interview.voiceError" },
+                    { message: voice.error ?? "" },
+                  )
                 : undefined
             }
           >
@@ -128,10 +155,16 @@ function Interview() {
           </span>
           <div
             className={`h-10 w-10 rounded-full bg-gradient-to-br from-persimmon to-persimmon-deep transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-              muted ? "opacity-30 saturate-0" : orbLive ? "orb-live" : "opacity-60"
+              muted
+                ? "opacity-30 saturate-0"
+                : orbLive
+                  ? "orb-live"
+                  : "opacity-60"
             }`}
             role="img"
-            aria-label={intl.formatMessage({ id: muted ? "interview.voiceMuted" : "interview.voiceActive" })}
+            aria-label={intl.formatMessage({
+              id: muted ? "interview.voiceMuted" : "interview.voiceActive",
+            })}
           />
         </div>
       </header>
@@ -142,18 +175,28 @@ function Interview() {
           {/* question block — agent-editable */}
           <section className="rounded-card bg-paper p-2 ring-1 ring-hairline">
             <div className="rounded-[calc(1.5rem-0.375rem)] bg-persimmon-faint p-5 md:p-6">
-              <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-persimmon-deep"><FormattedMessage id="interview.question" /></p>
-              <p key={question.text} className="rise-in mt-2 font-display text-xl font-semibold leading-snug md:text-2xl">
-                {question.text || intl.formatMessage({ id: "interview.preparing" })}
+              <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-persimmon-deep">
+                <FormattedMessage id="interview.question" />
+              </p>
+              <p
+                key={question.text}
+                className="rise-in mt-2 font-display text-xl font-semibold leading-snug md:text-2xl"
+              >
+                {question.text ||
+                  intl.formatMessage({ id: "interview.preparing" })}
               </p>
               {question.hints.length > 0 && (
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {question.hints.map((h, i) => (
                     <li
                       key={h}
-                      style={{ "--rise-delay": `${i * 80}ms` } as React.CSSProperties}
+                      style={
+                        { "--rise-delay": `${i * 80}ms` } as React.CSSProperties
+                      }
                       className="rise-in rounded-full bg-white px-3 py-1 text-xs text-espresso-soft ring-1 ring-hairline"
-                    >{h}</li>
+                    >
+                      {h}
+                    </li>
                   ))}
                 </ul>
               )}
@@ -168,10 +211,18 @@ function Interview() {
                   key={t}
                   onClick={() => setTab(t)}
                   className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-                    tab === t ? "bg-espresso text-cream" : "text-espresso-soft hover:bg-cream-deep"
+                    tab === t
+                      ? "bg-espresso text-cream"
+                      : "text-espresso-soft hover:bg-cream-deep"
                   }`}
                 >
-                  <FormattedMessage id={t === "editor" ? "interview.tab.editor" : "interview.tab.whiteboard"} />
+                  <FormattedMessage
+                    id={
+                      t === "editor"
+                        ? "interview.tab.editor"
+                        : "interview.tab.whiteboard"
+                    }
+                  />
                 </button>
               ))}
             </div>
@@ -181,13 +232,23 @@ function Interview() {
               ) : mounted ? (
                 <Suspense
                   fallback={
-                    <div className="h-full w-full animate-pulse rounded-2xl bg-espresso/5" aria-label={intl.formatMessage({ id: "interview.whiteboardLoading" })} />
+                    <div
+                      className="h-full w-full animate-pulse rounded-2xl bg-espresso/5"
+                      aria-label={intl.formatMessage({
+                        id: "interview.whiteboardLoading",
+                      })}
+                    />
                   }
                 >
                   <WhiteboardPanel />
                 </Suspense>
               ) : (
-                <div className="h-full w-full animate-pulse rounded-2xl bg-espresso/5" aria-label={intl.formatMessage({ id: "interview.whiteboardLoading" })} />
+                <div
+                  className="h-full w-full animate-pulse rounded-2xl bg-espresso/5"
+                  aria-label={intl.formatMessage({
+                    id: "interview.whiteboardLoading",
+                  })}
+                />
               )}
             </div>
           </section>
@@ -198,7 +259,9 @@ function Interview() {
               onClick={() => $muted.set(!muted)}
               className="rounded-full bg-white px-5 py-2.5 text-sm font-medium ring-1 ring-hairline transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:ring-persimmon/50 active:scale-[0.97]"
             >
-              <FormattedMessage id={muted ? "interview.unmute" : "interview.mute"} />
+              <FormattedMessage
+                id={muted ? "interview.unmute" : "interview.mute"}
+              />
             </button>
             <button
               onClick={() => navigate({ to: "/finish/$id", params: { id } })}
@@ -226,8 +289,13 @@ function Interview() {
             <>
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-3">
                 {(turns ?? []).map((t) => (
-                  <div key={t.id} className={`rise-in rounded-2xl px-3 py-2 text-sm ${t.speaker === "agent" ? "bg-persimmon-faint" : "bg-white/70"}`}>
-                    <span className="block text-[10px] uppercase tracking-wider text-espresso-soft">{t.speaker} · {t.source}</span>
+                  <div
+                    key={t.id}
+                    className={`rise-in rounded-2xl px-3 py-2 text-sm ${t.speaker === "agent" ? "bg-persimmon-faint" : "bg-white/70"}`}
+                  >
+                    <span className="block text-[10px] uppercase tracking-wider text-espresso-soft">
+                      {t.speaker} · {t.source}
+                    </span>
                     {t.text}
                   </div>
                 ))}
@@ -237,7 +305,9 @@ function Interview() {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && void sendText()}
-                  placeholder={intl.formatMessage({ id: "interview.typeInstead" })}
+                  placeholder={intl.formatMessage({
+                    id: "interview.typeInstead",
+                  })}
                   className="w-full rounded-full bg-white px-4 py-2.5 text-sm ring-1 ring-hairline outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-espresso-soft focus:ring-2 focus:ring-persimmon/50"
                 />
               </div>

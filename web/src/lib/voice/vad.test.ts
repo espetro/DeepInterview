@@ -77,7 +77,10 @@ describe("createVadGate", () => {
 
   it("destroy releases the impl", async () => {
     const destroyed = vi.fn();
-    const impl: VadImpl = { processFrame: async () => undefined, destroy: destroyed };
+    const impl: VadImpl = {
+      processFrame: async () => undefined,
+      destroy: destroyed,
+    };
     const gate = await createVadGate({ impl });
     await gate.destroy();
     expect(destroyed).toHaveBeenCalled();

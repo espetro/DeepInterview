@@ -17,7 +17,16 @@ import ptBR from "./pt-BR.json";
 import zhCN from "./zh-CN.json";
 
 const MESSAGES: Record<string, Record<string, string>> = {
-  en, de, es, fr, ja, "pt-BR": ptBR, "zh-CN": zhCN, ko, it, ar,
+  en,
+  de,
+  es,
+  fr,
+  ja,
+  "pt-BR": ptBR,
+  "zh-CN": zhCN,
+  ko,
+  it,
+  ar,
 };
 
 /** Locale-prefixed landing paths (`/`, `/es`, `/fr`, ...) carry the locale in the URL

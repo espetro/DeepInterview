@@ -10,7 +10,8 @@ function fakeWs() {
   const ws = {
     readyState: 1,
     OPEN: 1,
-    send: (d: unknown) => sent.push({ kind: typeof d === "string" ? "text" : "binary", data: d }),
+    send: (d: unknown) =>
+      sent.push({ kind: typeof d === "string" ? "text" : "binary", data: d }),
     close: vi.fn(),
     set onopen(cb: () => void) {
       cb();
@@ -59,14 +60,20 @@ function fakePlayer(): PcmPlayer & { written: Uint8Array[] } {
 }
 
 function fakeVad() {
-  const cbs = { start: [] as Array<() => void>, end: [] as Array<(a: Float32Array) => void> };
+  const cbs = {
+    start: [] as Array<() => void>,
+    end: [] as Array<(a: Float32Array) => void>,
+  };
   const gate: VadGate = {
     processFrame: vi.fn(),
     destroy: async () => undefined,
   };
   return {
     gate,
-    factory: (opts: { onSpeechStart: () => void; onSpeechEnd: (audio: Float32Array) => void }) => {
+    factory: (opts: {
+      onSpeechStart: () => void;
+      onSpeechEnd: (audio: Float32Array) => void;
+    }) => {
       cbs.start.push(opts.onSpeechStart);
       cbs.end.push(opts.onSpeechEnd);
       return Promise.resolve(gate);
@@ -116,9 +123,13 @@ describe("ServerVoiceDriver", () => {
     expect(ws.sent).toHaveLength(2);
     const buf = ws.sent[0]!.data as ArrayBuffer;
     expect(new DataView(buf).getUint32(0, false)).toBe(0);
-    expect(new DataView(ws.sent[1]!.data as ArrayBuffer).getUint32(0, false)).toBe(1);
+    expect(
+      new DataView(ws.sent[1]!.data as ArrayBuffer).getUint32(0, false),
+    ).toBe(1);
     vad.speechEnd();
-    expect(JSON.parse(ws.sent.at(-1)!.data as string)).toEqual({ t: "utterance_end" });
+    expect(JSON.parse(ws.sent.at(-1)!.data as string)).toEqual({
+      t: "utterance_end",
+    });
     capture.emit(pcm(100));
     expect(ws.sent).toHaveLength(3); // no new audio frames
   });
@@ -143,8 +154,13 @@ describe("ServerVoiceDriver", () => {
     expect(capture.cap.setMuted).toHaveBeenCalledWith(true);
     capture.emit(pcm(100));
     expect(ws.sent).toHaveLength(2); // only the mute json, no audio frame
-    const muteMsg = ws.sent.find((s) => s.kind === "text" && (s.data as string).includes('"mute"'));
-    expect(JSON.parse(muteMsg!.data as string)).toEqual({ t: "mute", muted: true });
+    const muteMsg = ws.sent.find(
+      (s) => s.kind === "text" && (s.data as string).includes('"mute"'),
+    );
+    expect(JSON.parse(muteMsg!.data as string)).toEqual({
+      t: "mute",
+      muted: true,
+    });
   });
 
   it("barge-in: speech start during agent playback stops player and sends interrupt", async () => {
@@ -152,7 +168,9 @@ describe("ServerVoiceDriver", () => {
     ws.receive(JSON.stringify({ t: "agent_speaking", on: true }));
     expect(driver.agentSpeaking).toBe(true);
     vad.speechStart();
-    const interrupt = ws.sent.find((s) => s.kind === "text" && (s.data as string).includes('"interrupt"'));
+    const interrupt = ws.sent.find(
+      (s) => s.kind === "text" && (s.data as string).includes('"interrupt"'),
+    );
     expect(interrupt).toBeTruthy();
     expect(player.stop).toHaveBeenCalled();
   });
@@ -176,8 +194,34 @@ describe("ServerVoiceDriver", () => {
     driver.events.onAgentTurn = () => turns.push("agent");
     driver.events.onAgentStart = () => turns.push("start");
     driver.events.onAgentDone = () => turns.push("done");
-    ws.receive(JSON.stringify({ t: "user_transcript", turn: { id: crypto.randomUUID(), session_id: sid, seq: 1, speaker: "user", text: "hi", created_at: "2026-01-01T00:00:00.000Z", source: "voice" } }));
-    ws.receive(JSON.stringify({ t: "agent_transcript", turn: { id: crypto.randomUUID(), session_id: sid, seq: 2, speaker: "agent", text: "hello", created_at: "2026-01-01T00:00:01.000Z", source: "voice" } }));
+    ws.receive(
+      JSON.stringify({
+        t: "user_transcript",
+        turn: {
+          id: crypto.randomUUID(),
+          session_id: sid,
+          seq: 1,
+          speaker: "user",
+          text: "hi",
+          created_at: "2026-01-01T00:00:00.000Z",
+          source: "voice",
+        },
+      }),
+    );
+    ws.receive(
+      JSON.stringify({
+        t: "agent_transcript",
+        turn: {
+          id: crypto.randomUUID(),
+          session_id: sid,
+          seq: 2,
+          speaker: "agent",
+          text: "hello",
+          created_at: "2026-01-01T00:00:01.000Z",
+          source: "voice",
+        },
+      }),
+    );
     ws.receive(JSON.stringify({ t: "agent_speaking", on: true }));
     ws.receive(JSON.stringify({ t: "agent_speaking", on: false }));
     expect(turns).toEqual(["user", "agent", "start", "done"]);

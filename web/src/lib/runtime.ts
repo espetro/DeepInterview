@@ -16,7 +16,10 @@ import {
  * used by driver/route wiring.
  */
 
-export const $runtimeMode = persistentAtom<RuntimeMode>(RUNTIME_MODE_STORAGE_KEY, "local-server");
+export const $runtimeMode = persistentAtom<RuntimeMode>(
+  RUNTIME_MODE_STORAGE_KEY,
+  "local-server",
+);
 
 const StoredProfileSchema = v.union([ProviderProfileSchema, v.null()]);
 
@@ -39,12 +42,16 @@ export function redactKey(key: string): string {
   return `${key.slice(0, 3)}${"•".repeat(Math.min(key.length - 5, 8))}${key.slice(-2)}`;
 }
 
-export const $serverReachable = persistentAtom<boolean | null>("di.server-reachable", null, {
-  encode: String,
-  decode: (raw) => (raw === "true" ? true : raw === "false" ? false : null),
-});
+export const $serverReachable = persistentAtom<boolean | null>(
+  "di.server-reachable",
+  null,
+  {
+    encode: String,
+    decode: (raw) => (raw === "true" ? true : raw === "false" ? false : null),
+  },
+);
 
-const API_BASE = import.meta.env.VITE_DI_API_BASE as string | undefined ?? "";
+const API_BASE = (import.meta.env.VITE_DI_API_BASE as string | undefined) ?? "";
 
 /**
  * Probe ${API_BASE}/api/health with a 2s timeout; updates $serverReachable
@@ -60,7 +67,10 @@ export async function probeServer(): Promise<boolean> {
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 2000);
-    const res = await fetch(`${API_BASE}/api/health`, { method: "GET", signal: ctrl.signal });
+    const res = await fetch(`${API_BASE}/api/health`, {
+      method: "GET",
+      signal: ctrl.signal,
+    });
     clearTimeout(timer);
     const ok = res.ok;
     $serverReachable.set(ok);
@@ -89,7 +99,10 @@ let probeStarted = false;
 export function ensureRuntimeProbe(): void {
   if (probeStarted) return;
   probeStarted = true;
-  if ($runtimeMode.get() === "local-server" && $serverReachable.get() !== true) {
+  if (
+    $runtimeMode.get() === "local-server" &&
+    $serverReachable.get() !== true
+  ) {
     void probeServer();
   }
 }

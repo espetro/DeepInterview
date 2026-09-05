@@ -87,14 +87,18 @@ export function MicCheck() {
         onClick={() => (active ? stop() : void start())}
         aria-pressed={active}
         className={`flex h-9 items-center gap-2 rounded-full px-4 text-sm font-medium transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] ${
-          active ? "bg-espresso text-cream" : "bg-cream ring-1 ring-hairline text-espresso hover:ring-persimmon/40"
+          active
+            ? "bg-espresso text-cream"
+            : "bg-cream ring-1 ring-hairline text-espresso hover:ring-persimmon/40"
         }`}
       >
         <span
           className={`h-2 w-2 rounded-full ${active ? "bg-persimmon orb-live" : "bg-espresso-faint"}`}
           aria-hidden
         />
-        {intl.formatMessage({ id: active ? "setup.mic.stop" : "setup.mic.start" })}
+        {intl.formatMessage({
+          id: active ? "setup.mic.stop" : "setup.mic.start",
+        })}
       </button>
 
       {/* compact level meter: segment bar, dark idle, persimmon when live */}

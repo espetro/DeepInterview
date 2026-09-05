@@ -40,7 +40,10 @@ export function testRoutes(db: Db): Hono {
     const reports = await db.selectFrom("reports").selectAll().execute();
     return c.json({
       sessions,
-      reports: reports.map((r) => ({ session_id: r.session_id, data: JSON.parse(r.data) })),
+      reports: reports.map((r) => ({
+        session_id: r.session_id,
+        data: JSON.parse(r.data),
+      })),
     });
   });
 
@@ -112,7 +115,10 @@ export function testRoutes(db: Db): Hono {
         created_at: new Date().toISOString(),
         source: "text" as const,
       };
-      await db.insertInto("turns").values({ ...turn, seq: 0 }).execute();
+      await db
+        .insertInto("turns")
+        .values({ ...turn, seq: 0 })
+        .execute();
 
       const persisted = await db
         .selectFrom("turns")

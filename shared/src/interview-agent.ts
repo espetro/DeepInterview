@@ -73,8 +73,15 @@ export const VOICE_TOOLS: ToolDef[] = [
     parameters: {
       type: "object",
       properties: {
-        question: { type: "string", description: "The new current question text" },
-        hints: { type: "array", items: { type: "string" }, description: "Evaluation hints for the new question" },
+        question: {
+          type: "string",
+          description: "The new current question text",
+        },
+        hints: {
+          type: "array",
+          items: { type: "string" },
+          description: "Evaluation hints for the new question",
+        },
       },
       required: ["question"],
     },
@@ -128,7 +135,10 @@ export function describeWhiteboardSnapshot(json: string): string {
 
 function describeShape(s: WhiteboardShape): string {
   const type = typeof s.type === "string" ? s.type : "unknown";
-  const text = typeof s.text === "string" && s.text.trim() !== "" ? ` text="${s.text}"` : "";
+  const text =
+    typeof s.text === "string" && s.text.trim() !== ""
+      ? ` text="${s.text}"`
+      : "";
   const arrow =
     typeof s.from === "string" || typeof s.to === "string"
       ? ` from ${s.from ?? "?"} to ${s.to ?? "?"}`

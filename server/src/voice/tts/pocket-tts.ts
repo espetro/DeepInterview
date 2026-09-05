@@ -42,7 +42,10 @@ export class PocketTts {
   }
 
   /** Synthesize text, returning PCM16LE mono 24k bytes. */
-  async synthesizeToPcm(text: string, opts?: { signal?: AbortSignal }): Promise<Uint8Array> {
+  async synthesizeToPcm(
+    text: string,
+    opts?: { signal?: AbortSignal },
+  ): Promise<Uint8Array> {
     const wav = await this.fetchSpeechWav(text, opts?.signal);
     const { sampleRate, channels, data } = decodeWav(wav);
     let pcm = data;
@@ -52,15 +55,22 @@ export class PocketTts {
     return resamplePcm16(pcm, sampleRate, SAMPLE_RATE);
   }
 
-  private async fetchSpeechWav(text: string, signal?: AbortSignal): Promise<Uint8Array> {
-    const headers: Record<string, string> = { "content-type": "application/json" };
+  private async fetchSpeechWav(
+    text: string,
+    signal?: AbortSignal,
+  ): Promise<Uint8Array> {
+    const headers: Record<string, string> = {
+      "content-type": "application/json",
+    };
     if (this.opts.apiKey) {
       headers.authorization = `Bearer ${this.opts.apiKey}`;
     }
     const { events, sessionId } = this.opts;
     events
       ?.postEvent(sessionId!, "tts.request", { text_length: text.length })
-      .catch((err) => console.warn(`[voice] failed to log tts.request: ${err}`));
+      .catch((err) =>
+        console.warn(`[voice] failed to log tts.request: ${err}`),
+      );
     const startedAt = Date.now();
     const res = await (this.opts.fetchImpl ?? fetch)(
       `${providerUrl(this.opts.baseUrl)}/v1/audio/speech`,
@@ -80,13 +90,22 @@ export class PocketTts {
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       events
-        ?.postEvent(sessionId!, "tts.failed", { status: res.status, body, latency_ms })
-        .catch((err) => console.warn(`[voice] failed to log tts.failed: ${err}`));
+        ?.postEvent(sessionId!, "tts.failed", {
+          status: res.status,
+          body,
+          latency_ms,
+        })
+        .catch((err) =>
+          console.warn(`[voice] failed to log tts.failed: ${err}`),
+        );
       throw new Error(`pocket tts failed: ${res.status} ${body}`);
     }
     const buffer = new Uint8Array(await res.arrayBuffer());
     events
-      ?.postEvent(sessionId!, "tts.result", { bytes: buffer.byteLength, latency_ms })
+      ?.postEvent(sessionId!, "tts.result", {
+        bytes: buffer.byteLength,
+        latency_ms,
+      })
       .catch((err) => console.warn(`[voice] failed to log tts.result: ${err}`));
     return buffer;
   }
@@ -103,7 +122,8 @@ function downmixToMono(pcm: Uint8Array, channels: number): Uint8Array {
   const outView = new DataView(out.buffer);
   for (let f = 0; f < frames; f++) {
     let sum = 0;
-    for (let ch = 0; ch < channels; ch++) sum += view.getInt16((f * channels + ch) * 2, true);
+    for (let ch = 0; ch < channels; ch++)
+      sum += view.getInt16((f * channels + ch) * 2, true);
     outView.setInt16(f * 2, Math.round(sum / channels), true);
   }
   return out;

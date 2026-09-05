@@ -39,7 +39,9 @@ export function useVoice(sessionId: string, muted: boolean): VoiceState {
     muted,
   });
   const driverRef = React.useRef<SpeechDriver | null>(null);
-  const actorRef = React.useRef<ReturnType<typeof createActor<typeof voiceMachine>> | null>(null);
+  const actorRef = React.useRef<ReturnType<
+    typeof createActor<typeof voiceMachine>
+  > | null>(null);
   const speak = React.useCallback((text: string) => {
     const d = driverRef.current;
     if (d instanceof BrowserVoiceDriver) d.speakAgentTurn(text);
@@ -47,7 +49,13 @@ export function useVoice(sessionId: string, muted: boolean): VoiceState {
 
   React.useEffect(() => {
     let cancelled = false;
-    setState({ status: "connecting", agentSpeaking: false, error: null, phase: "connecting", muted: false });
+    setState({
+      status: "connecting",
+      agentSpeaking: false,
+      error: null,
+      phase: "connecting",
+      muted: false,
+    });
 
     const actor = createActor(voiceMachine);
     actorRef.current = actor;
@@ -67,10 +75,12 @@ export function useVoice(sessionId: string, muted: boolean): VoiceState {
 
       driver.onError = (message: string) => {
         actor.send({ type: "ERROR", message });
-        if (!cancelled) setState((s) => ({ ...s, status: "error", error: message }));
+        if (!cancelled)
+          setState((s) => ({ ...s, status: "error", error: message }));
       };
       driver.events.onSpeechStart = () => actor.send({ type: "SPEECH_START" });
-      driver.events.onSpeechEnd = (text) => actor.send({ type: "SPEECH_END", text });
+      driver.events.onSpeechEnd = (text) =>
+        actor.send({ type: "SPEECH_END", text });
       driver.events.onUserTurn = () => undefined; // transcript display via turns polling
       driver.events.onAgentTurn = () => undefined;
       driver.events.onAgentStart = () => actor.send({ type: "AGENT_START" });
@@ -81,7 +91,12 @@ export function useVoice(sessionId: string, muted: boolean): VoiceState {
         setState((s) => ({
           ...s,
           phase: String(snap.value),
-          agentSpeaking: snap.value === "agent_speaking" ? true : snap.value === "listening" ? false : s.agentSpeaking,
+          agentSpeaking:
+            snap.value === "agent_speaking"
+              ? true
+              : snap.value === "listening"
+                ? false
+                : s.agentSpeaking,
         }));
       });
       actor.start();

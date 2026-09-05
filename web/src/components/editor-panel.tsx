@@ -12,9 +12,20 @@ import { python } from "@codemirror/lang-python";
 import { json } from "@codemirror/lang-json";
 import { sql } from "@codemirror/lang-sql";
 import { oneDark } from "@codemirror/theme-one-dark";
-import { $editorBuffer, $editorLanguage, $editorTheme } from "../stores/session";
+import {
+  $editorBuffer,
+  $editorLanguage,
+  $editorTheme,
+} from "../stores/session";
 
-const LANGUAGES = ["markdown", "javascript", "typescript", "python", "json", "sql"] as const;
+const LANGUAGES = [
+  "markdown",
+  "javascript",
+  "typescript",
+  "python",
+  "json",
+  "sql",
+] as const;
 
 const LANGUAGE_DESCRIPTIONS: readonly LanguageDescription[] = [
   LanguageDescription.of({
@@ -45,7 +56,8 @@ const LANGUAGE_DESCRIPTIONS: readonly LanguageDescription[] = [
 
 function languageSupport(name: string): LanguageSupport {
   const desc =
-    LANGUAGE_DESCRIPTIONS.find((d) => d.name === name) ?? LANGUAGE_DESCRIPTIONS[0]!;
+    LANGUAGE_DESCRIPTIONS.find((d) => d.name === name) ??
+    LANGUAGE_DESCRIPTIONS[0]!;
   // loaders resolve synchronously (Promise.resolve), so support is populated
   // immediately after the first load(); this covers the initial render.
   if (!desc.support) void desc.load();
@@ -58,7 +70,11 @@ const espressoDark = EditorView.theme(
     "&": { color: "#e8e0d8", backgroundColor: "#1a1512" },
     ".cm-content": { caretColor: "#e8624a" },
     "&.cm-focused": { outline: "none" },
-    ".cm-gutters": { backgroundColor: "#1a1512", color: "#6b5d4f", border: "none" },
+    ".cm-gutters": {
+      backgroundColor: "#1a1512",
+      color: "#6b5d4f",
+      border: "none",
+    },
     ".cm-activeLine": { backgroundColor: "#241d18" },
     ".cm-activeLineGutter": { backgroundColor: "#241d18" },
     ".cm-selectionBackground, &.cm-focused .cm-selectionBackground": {
@@ -75,7 +91,11 @@ const plainLight = EditorView.theme(
   {
     "&": { backgroundColor: "#ffffff", color: "#2d2118" },
     "&.cm-focused": { outline: "none" },
-    ".cm-gutters": { backgroundColor: "#ffffff", color: "#a08e7d", border: "none" },
+    ".cm-gutters": {
+      backgroundColor: "#ffffff",
+      color: "#a08e7d",
+      border: "none",
+    },
     ".cm-activeLine": { backgroundColor: "#f7f3ee" },
     ".cm-activeLineGutter": { backgroundColor: "#f7f3ee" },
     ".cm-placeholder": { color: "#a08e7d" },
@@ -104,8 +124,14 @@ export function EditorPanel() {
   const latest = useRef({ buffer });
   latest.current = { buffer };
 
-  const languageExtension = useMemo(() => languageSupport(language), [language]);
-  const themeExtension = useMemo(() => (dark ? espressoDark : plainLight), [dark]);
+  const languageExtension = useMemo(
+    () => languageSupport(language),
+    [language],
+  );
+  const themeExtension = useMemo(
+    () => (dark ? espressoDark : plainLight),
+    [dark],
+  );
 
   useEffect(() => {
     if (!host) return;
@@ -116,9 +142,12 @@ export function EditorPanel() {
           EditorView.lineWrapping,
           languageComp.current.of(languageExtension),
           themeComp.current.of(themeExtension),
-          EditorView.updateListener.of((update: import("@codemirror/view").ViewUpdate) => {
-            if (update.docChanged) $editorBuffer.set(update.state.doc.toString());
-          }),
+          EditorView.updateListener.of(
+            (update: import("@codemirror/view").ViewUpdate) => {
+              if (update.docChanged)
+                $editorBuffer.set(update.state.doc.toString());
+            },
+          ),
         ],
       }),
       parent: host,
@@ -132,12 +161,16 @@ export function EditorPanel() {
 
   useEffect(() => {
     const view = viewRef.current;
-    if (view) view.dispatch({ effects: languageComp.current.reconfigure(languageExtension) });
+    if (view)
+      view.dispatch({
+        effects: languageComp.current.reconfigure(languageExtension),
+      });
   }, [languageExtension]);
 
   useEffect(() => {
     const view = viewRef.current;
-    if (view) view.dispatch({ effects: themeComp.current.reconfigure(themeExtension) });
+    if (view)
+      view.dispatch({ effects: themeComp.current.reconfigure(themeExtension) });
   }, [themeExtension]);
 
   useEffect(() => {
@@ -145,7 +178,9 @@ export function EditorPanel() {
     if (!view) return;
     const current = view.state.doc.toString();
     if (current !== buffer) {
-      view.dispatch({ changes: { from: 0, to: current.length, insert: buffer } });
+      view.dispatch({
+        changes: { from: 0, to: current.length, insert: buffer },
+      });
     }
   }, [buffer, host]);
 
@@ -159,7 +194,9 @@ export function EditorPanel() {
           className="cursor-pointer rounded-full bg-white px-3 py-1.5 text-sm font-medium text-espresso-soft ring-1 ring-hairline outline-none transition-fluid hover:ring-persimmon/40 focus:ring-2 focus:ring-persimmon/50"
         >
           {LANGUAGES.map((l) => (
-            <option key={l} value={l}>{l}</option>
+            <option key={l} value={l}>
+              {l}
+            </option>
           ))}
         </select>
         <button

@@ -8,18 +8,33 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const dir = new URL("../web/src/locales/", import.meta.url).pathname;
-const en = JSON.parse(readFileSync(join(dir, "en.json"), "utf8")) as Record<string, string>;
+const en = JSON.parse(readFileSync(join(dir, "en.json"), "utf8")) as Record<
+  string,
+  string
+>;
 const enKeys = Object.keys(en).sort();
 
 const PLACEHOLDER = /\{(\w+)\}/g;
-const placeholders = (s: string) => [...s.matchAll(PLACEHOLDER)].map((m) => m[1]).sort().join(",");
+const placeholders = (s: string) =>
+  [...s.matchAll(PLACEHOLDER)]
+    .map((m) => m[1])
+    .sort()
+    .join(",");
 
 let failures = 0;
-const fail = (msg: string) => { console.error(`  ✗ ${msg}`); failures++; };
+const fail = (msg: string) => {
+  console.error(`  ✗ ${msg}`);
+  failures++;
+};
 
-for (const file of readdirSync(dir).filter((f) => f.endsWith(".json") && f !== "en.json")) {
+for (const file of readdirSync(dir).filter(
+  (f) => f.endsWith(".json") && f !== "en.json",
+)) {
   const loc = file.replace(/\.json$/, "");
-  const msgs = JSON.parse(readFileSync(join(dir, file), "utf8")) as Record<string, string>;
+  const msgs = JSON.parse(readFileSync(join(dir, file), "utf8")) as Record<
+    string,
+    string
+  >;
   const keys = Object.keys(msgs).sort();
   console.log(`== ${loc} (${keys.length} keys)`);
 
@@ -33,12 +48,16 @@ for (const file of readdirSync(dir).filter((f) => f.endsWith(".json") && f !== "
   }
   for (const k of enKeys) {
     if (k in msgs && placeholders(en[k]) !== placeholders(msgs[k])) {
-      fail(`interpolation mismatch on ${k}: en <${placeholders(en[k])}> vs ${loc} <${placeholders(msgs[k])}>`);
+      fail(
+        `interpolation mismatch on ${k}: en <${placeholders(en[k])}> vs ${loc} <${placeholders(msgs[k])}>`,
+      );
     }
   }
 }
 
-console.log(`en.json: ${enKeys.length} keys across ${enKeys.length ? new Set(enKeys.map((k) => k.split(".")[0])).size : 0} namespaces`);
+console.log(
+  `en.json: ${enKeys.length} keys across ${enKeys.length ? new Set(enKeys.map((k) => k.split(".")[0])).size : 0} namespaces`,
+);
 if (failures) {
   console.error(`\nintl check failed with ${failures} problem(s)`);
   process.exit(1);

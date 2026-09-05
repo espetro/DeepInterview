@@ -38,13 +38,17 @@ test("turns posted via api appear in session turns", async ({ request }) => {
     created_at: new Date().toISOString(),
     source: "text",
   };
-  const post = await request.post(`/v1/sessions/${sessionId}/turns`, { data: turn });
+  const post = await request.post(`/v1/sessions/${sessionId}/turns`, {
+    data: turn,
+  });
   expect(post.status()).toBe(201);
 
   const res = await request.get(`/v1/sessions/${sessionId}/turns`);
   expect(res.ok()).toBeTruthy();
   const turns = await res.json();
-  expect(turns).toContainEqual(expect.objectContaining({ speaker: "user", text: "hello from e2e" }));
+  expect(turns).toContainEqual(
+    expect.objectContaining({ speaker: "user", text: "hello from e2e" }),
+  );
 });
 
 test("report round-trips through the api", async ({ request }) => {
@@ -56,13 +60,17 @@ test("report round-trips through the api", async ({ request }) => {
       {
         name: "system design",
         score: 7,
-        evidence: [{ quote: "shard by user id", turn_seq: 0, verdict: "worked" }],
+        evidence: [
+          { quote: "shard by user id", turn_seq: 0, verdict: "worked" },
+        ],
       },
     ],
     model_answers: [],
     generated_at: new Date().toISOString(),
   };
-  const put = await request.put(`/v1/sessions/${sessionId}/report`, { data: report });
+  const put = await request.put(`/v1/sessions/${sessionId}/report`, {
+    data: report,
+  });
   expect(put.status()).toBe(200);
 
   const res = await request.get(`/v1/sessions/${sessionId}/report`);
@@ -88,7 +96,10 @@ test("tool state round-trips through the api", async ({ request }) => {
 // Keep the .md scenario and the executed spec in sync: every `## heading` in
 // the .md must have a corresponding test title here.
 test("spec md scenarios all have executed counterparts", () => {
-  const md = readFileSync(new URL("./specs/e2e-text.spec.md", import.meta.url), "utf8");
+  const md = readFileSync(
+    new URL("./specs/e2e-text.spec.md", import.meta.url),
+    "utf8",
+  );
   const headings = [...md.matchAll(/^## (.+)$/gm)].map((m) => m[1].trim());
   expect(headings.length).toBeGreaterThan(0);
   for (const h of headings) {

@@ -46,7 +46,9 @@ describe("rag ingestion golden set", () => {
   });
 
   it("retrieves the caching chunk for a cache query", () => {
-    const query = mockEmbed("how does caching and cache stampede mitigation work");
+    const query = mockEmbed(
+      "how does caching and cache stampede mitigation work",
+    );
     const got = retrieve(
       query,
       chunks.map((text, i) => ({
@@ -63,7 +65,9 @@ describe("rag ingestion golden set", () => {
   });
 
   it("retrieves the billing chunk for a payments query", () => {
-    const query = mockEmbed("tell me about billing idempotency and double charges");
+    const query = mockEmbed(
+      "tell me about billing idempotency and double charges",
+    );
     const got = retrieve(
       query,
       chunks.map((text, i) => ({

@@ -27,8 +27,16 @@ describe("wav encoding", () => {
   it("WavBuffer accumulates frames and finalizes", () => {
     const buf = new WavBuffer(16000, 1);
     expect(buf.isEmpty()).toBe(true);
-    buf.pushFrame({ data: new Int16Array([10, 20]), sampleRate: 16000, numChannels: 1 });
-    buf.pushFrame({ data: new Int16Array([30]), sampleRate: 16000, numChannels: 1 });
+    buf.pushFrame({
+      data: new Int16Array([10, 20]),
+      sampleRate: 16000,
+      numChannels: 1,
+    });
+    buf.pushFrame({
+      data: new Int16Array([30]),
+      sampleRate: 16000,
+      numChannels: 1,
+    });
     expect(buf.isEmpty()).toBe(false);
     expect(buf.byteLength).toBe(6);
     const wav = buf.toWav();
@@ -38,7 +46,12 @@ describe("wav encoding", () => {
 });
 
 /** Minimal WAV reader for round-trip assertions: header fields + raw PCM bytes. */
-function decodeWav(wav: Buffer): { sampleRate: number; channels: number; bitsPerSample: number; data: Buffer } {
+function decodeWav(wav: Buffer): {
+  sampleRate: number;
+  channels: number;
+  bitsPerSample: number;
+  data: Buffer;
+} {
   return {
     sampleRate: wav.readUInt32LE(24),
     channels: wav.readUInt16LE(22),
@@ -53,10 +66,16 @@ describe("WavBuffer round-trip (property-based)", () => {
       fc.property(
         fc.integer({ min: 1000, max: 192000 }), // sampleRate
         fc.integer({ min: 1, max: 8 }), // numChannels (only affects the header field here; frames are raw PCM)
-        fc.array(fc.array(fc.integer({ min: -32768, max: 32767 }), { minLength: 0, maxLength: 64 }), {
-          minLength: 0,
-          maxLength: 20,
-        }), // sequence of frames, each an arbitrary-length run of Int16 samples
+        fc.array(
+          fc.array(fc.integer({ min: -32768, max: 32767 }), {
+            minLength: 0,
+            maxLength: 64,
+          }),
+          {
+            minLength: 0,
+            maxLength: 20,
+          },
+        ), // sequence of frames, each an arbitrary-length run of Int16 samples
         (sampleRate, numChannels, frames) => {
           const buf = new WavBuffer(sampleRate, numChannels);
           expect(buf.isEmpty()).toBe(true);
@@ -68,7 +87,10 @@ describe("WavBuffer round-trip (property-based)", () => {
           }));
           for (const frame of pushed) buf.pushFrame(frame);
 
-          const expectedByteLength = frames.reduce((sum, f) => sum + f.length * 2, 0);
+          const expectedByteLength = frames.reduce(
+            (sum, f) => sum + f.length * 2,
+            0,
+          );
           expect(buf.byteLength).toBe(expectedByteLength);
           expect(buf.isEmpty()).toBe(expectedByteLength === 0);
 
@@ -95,7 +117,12 @@ describe("WavBuffer round-trip (property-based)", () => {
 
 describe("WhisperStt", () => {
   it("posts multipart WAV and returns transcript text", async () => {
-    const calls: { url: string; contentType: string; model: string; audio: Buffer }[] = [];
+    const calls: {
+      url: string;
+      contentType: string;
+      model: string;
+      audio: Buffer;
+    }[] = [];
     const fetchImpl = (async (_url: unknown, init?: RequestInit) => {
       const body = init!.body as FormData;
       const file = body.get("file") as File;
@@ -132,7 +159,8 @@ describe("WhisperStt", () => {
     const sttImpl = new WhisperStt({
       baseUrl: "http://fake.local",
       model: "whisper-1",
-      fetchImpl: (async () => new Response("nope", { status: 502 })) as unknown as typeof fetch,
+      fetchImpl: (async () =>
+        new Response("nope", { status: 502 })) as unknown as typeof fetch,
     });
     await expect(
       sttImpl.transcribePcm(new Uint8Array([1, 0, 2, 0])),

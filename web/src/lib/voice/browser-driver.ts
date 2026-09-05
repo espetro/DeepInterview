@@ -1,18 +1,24 @@
+import {
+  cutSentences,
+  type ProviderProfile,
+  type SessionContext,
+} from "@di/shared";
 import type { Turn } from "@di/shared/session";
-import { postTextTurn } from "../api";
+import { ClientAgent, type AgentToolExecutors } from "../agent/client-agent";
+import { synthesizeSpeech } from "../agent/tts";
+import { createPcmPlayer, type PcmPlayer } from "./pcm-player";
 import type { SpeechDriver } from "./server-driver";
 
 /**
- * Browser driver: Web Speech API fallback for browsers/hosts without the
- * voice WS endpoint (e.g. static deploys). Chrome-only in practice:
- * SpeechRecognition (continuous+interim) is Chromium; speechSynthesis is
- * wider but voices vary. There is no server LLM loop here: candidate speech
- * is recognized and posted as a text-source turn via REST, and the route
- * calls speakAgentTurn() when its turns polling sees a new agent turn, so
- * transcripts/reports stay identical to the server driver.
+ * Browser driver, dual-mode:
+ * - client-only runtime (provider profile configured): SpeechRecognition STT
+ *   drives ClientAgent; streamed text is cut into sentences, each synthesized
+ *   via the BYO TTS endpoint into PcmPlayer (24k PCM16). Barge-in (speech
+ *   start during agent playback) aborts the LLM/TTS pipeline and stops audio.
+ * - no TTS endpoint configured (ttsModel empty) or no SpeechRecognition:
+ *   Web Speech API behavior: speechSynthesis speaks the final agent text.
  */
 
-/** structural type for SpeechRecognition (not in TS DOM lib) */
 interface RecognitionLike {
   continuous: boolean;
   interimResults: boolean;
@@ -29,23 +35,60 @@ interface SpeechRecognitionEventLike {
 }
 type RecognitionCtor = new () => RecognitionLike;
 
+export interface BrowserDriverDeps {
+  recognitionCtor?: RecognitionCtor;
+  player?: PcmPlayer;
+  tts?: typeof synthesizeSpeech;
+  speechSynthesis?: SpeechSynthesis | null;
+}
+
 export class BrowserVoiceDriver implements SpeechDriver {
   status: SpeechDriver["status"] = "idle";
   agentSpeaking = false;
   onError: (message: string) => void = () => undefined;
-  events: SpeechDriver["events"] = {};  private recognition: RecognitionLike | null = null;
+  events: SpeechDriver["events"] = {};
+
+  private recognition: RecognitionLike | null = null;
   private muted = false;
   private restarting = false;
+  private player: PcmPlayer;
+  private agent: ClientAgent | null = null;
+  private profile: ProviderProfile | null = null;
+  private pending = "";
+  private abort: AbortController | null = null;
 
-  constructor(private readonly sessionId: string) {}
+  constructor(
+    private readonly sessionId: string,
+    private readonly deps: BrowserDriverDeps = {},
+  ) {
+    this.player = deps.player ?? createPcmPlayer();
+  }
+
+  /** Wire the client-only agent. Called by createDriver when a profile exists. */
+  useClientAgent(
+    profile: ProviderProfile,
+    tools: AgentToolExecutors,
+    getContext: () => SessionContext,
+    fetchImpl?: typeof fetch,
+  ): void {
+    this.profile = profile;
+    this.agent = new ClientAgent(profile, tools, getContext, fetchImpl);
+  }
+
+  private get useTtsEndpoint(): boolean {
+    return this.profile !== null && this.profile.ttsModel.trim() !== "";
+  }
 
   async start(): Promise<void> {
     const w = globalThis as unknown as {
       SpeechRecognition?: RecognitionCtor;
       webkitSpeechRecognition?: RecognitionCtor;
     };
-    const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
-    if (!Ctor || !("speechSynthesis" in globalThis)) {
+    const Ctor =
+      this.deps.recognitionCtor ??
+      w.SpeechRecognition ??
+      w.webkitSpeechRecognition;
+    if (!Ctor || (!("speechSynthesis" in globalThis) && !this.agent)) {
       this.status = "error";
       this.onError("speech recognition not supported in this browser");
       return;
@@ -87,41 +130,132 @@ export class BrowserVoiceDriver implements SpeechDriver {
       const text = result[0].transcript.trim();
       if (!text || this.muted) continue;
       this.events.onSpeechStart?.();
-      postTextTurn(this.sessionId, text)
-        .then((turn) => {
-          this.events.onUserTurn?.(turn as unknown as Turn);
-          this.events.onSpeechEnd?.(text);
-        })
-        .catch((err: unknown) => this.onError(String(err)));
+      this.events.onSpeechEnd?.(text);
+      if (this.agent) {
+        void this.runAgentTurn(text);
+      }
     }
   }
 
-  /** Called by the route when turns polling sees a new agent turn. */
-  speakAgentTurn(text: string) {
-    if (this.muted || !("speechSynthesis" in globalThis)) return;
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.onstart = () => {
-      this.agentSpeaking = true;
-      this.events.onAgentStart?.();
+  /** Stream the agent reply through sentence cutting into pipelined TTS. */
+  private async runAgentTurn(text: string): Promise<void> {
+    const agent = this.agent;
+    const tts = this.deps.tts ?? synthesizeSpeech;
+    if (!agent) return;
+    // barge-in from a previous turn: drop it
+    this.abort?.abort();
+    const ctrl = new AbortController();
+    this.abort = ctrl;
+    const userTurn: Turn = {
+      id: crypto.randomUUID(),
+      session_id: this.sessionId,
+      seq: Date.now(),
+      speaker: "user",
+      text,
+      created_at: new Date().toISOString(),
+      source: "voice",
     };
-    utter.onend = () => {
+    this.events.onUserTurn?.(userTurn);
+
+    this.pending = "";
+    let spoke = false;
+    const speak = async (sentence: string) => {
+      if (ctrl.signal.aborted || !sentence.trim()) return;
+      if (!spoke) {
+        spoke = true;
+        this.agentSpeaking = true;
+        this.events.onAgentStart?.();
+      }
+      try {
+        const pcm = await tts(this.profile!, sentence, ctrl.signal);
+        if (ctrl.signal.aborted) return;
+        this.player.write(pcm);
+      } catch (err) {
+        if (!ctrl.signal.aborted) this.onError(String(err));
+      }
+    };
+
+    try {
+      const full = await agent.respond(text, {
+        signal: ctrl.signal,
+        onText: (delta) => {
+          if (ctrl.signal.aborted) return;
+          this.pending += delta;
+          const { sentences, rest } = cutSentences(this.pending);
+          this.pending = rest;
+          for (const s of sentences) void speak(s);
+        },
+      });
+      if (ctrl.signal.aborted) return;
+      // flush the sentence remainder
+      if (this.pending.trim()) {
+        const rest = this.pending;
+        this.pending = "";
+        await speak(rest);
+      }
+      const agentTurn: Turn = {
+        id: crypto.randomUUID(),
+        session_id: this.sessionId,
+        seq: Date.now() + 1,
+        speaker: "agent",
+        text: full,
+        created_at: new Date().toISOString(),
+        source: "voice",
+      };
+      this.events.onAgentTurn?.(agentTurn);
+      // speechSynthesis fallback when no TTS endpoint is configured
+      if (!this.useTtsEndpoint && full.trim()) this.speakAgentTurn(full);
+      this.finishSpeaking();
+    } catch (err) {
+      if (!ctrl.signal.aborted) {
+        this.onError(String(err));
+        this.finishSpeaking();
+      }
+    }
+  }
+
+  private finishSpeaking() {
+    if (this.agentSpeaking) {
       this.agentSpeaking = false;
       this.events.onAgentDone?.();
-    };
+    }
+  }
+
+  /** speechSynthesis fallback (no TTS endpoint): speak final text. */
+  speakAgentTurn(text: string) {
+    const synth =
+      this.deps.speechSynthesis ?? globalThis.speechSynthesis ?? null;
+    if (this.muted || !synth) return;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.onend = () => this.finishSpeaking();
     this.agentSpeaking = true;
     this.events.onAgentStart?.();
-    globalThis.speechSynthesis.speak(utter);
+    synth.speak(utter);
+  }
+
+  /**
+   * Barge-in: called from the route's VAD path when the user starts speaking
+   * during agent playback. Same semantics as the server interrupt.
+   */
+  interrupt(): void {
+    this.player.stop();
+    this.abort?.abort();
+    this.abort = null;
+    if (!this.useTtsEndpoint) globalThis.speechSynthesis?.cancel();
+    this.finishSpeaking();
   }
 
   setMuted(muted: boolean): void {
     this.muted = muted;
-    if (muted) globalThis.speechSynthesis?.cancel();
+    if (muted) {
+      this.interrupt();
+    }
   }
 
   async stop(): Promise<void> {
     this.recognition?.stop();
     this.recognition = null;
-    globalThis.speechSynthesis?.cancel();
+    this.interrupt();
     this.status = "idle";
     this.agentSpeaking = false;
   }
