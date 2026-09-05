@@ -43,6 +43,21 @@
 - Voice wiring: WebSocket + Web Audio, no SFU/WebRTC. On mount the screen picks a speech driver: the server driver (`web/src/lib/voice/server-driver.ts`) opens `GET /v1/sessions/:id/voice` (WS) and streams mic audio: `AudioWorklet` capture at 16k PCM16 mono (browser resamples via the `AudioContext` rate), client-side Silero VAD (`@ricky0123/vad-web`, assets vendored at `/vad/`) delimits utterances; frames go out as binary WS frames (4-byte BE seq + PCM16LE) only while the VAD says the user is speaking, ending with `{t:"utterance_end"}`. Server messages drive playback and UI: `tts` chunks (b64 or binary with the same seq framing) play through a `PcmPlayer` (`AudioContext` at 24k, back-to-back `AudioBufferSourceNode` scheduling); `agent_speaking` on/off, `user_transcript` / `agent_transcript` surface for state (transcript display still comes from turns polling). Barge-in: a VAD speech-start during agent playback stops the player and sends `{t:"interrupt"}`. Mute keeps the mic track but drops frames client-side and sends `{t:"mute",muted}`. An xstate v5 FSM (`web/src/lib/voice/machine.ts`: idle→connecting→listening→user_speaking→thinking→agent_speaking→listening, barge-in via interrupted) drives the status label.
 - Driver fallback: `web/src/lib/voice/browser-driver.ts` (Web Speech API: `SpeechRecognition` for STT posting turns via the same REST endpoint, `speechSynthesis.speak` for agent turns the turns polling finds; Chrome-only in practice). Selection (`web/src/lib/voice/index.ts`): `VITE_VOICE_DEFAULT` pins one; otherwise probe `${BASE}/api/health` — reachable means the di binary hosts the WS endpoint. Both drivers post turns through the existing REST API, so transcripts and reports are identical regardless of driver. Turn `seq` is assigned server-side on `POST /v1/sessions/:id/turns` (max existing seq + 1), so concurrent writers (voice, text input) never collide.
 - Controls bottom: mute, end-early. Both end paths lead to `/finish/[id]`.
+- **Client-only runtime** (ADR-0003, `$effectiveRuntime === "client-only"`):
+  no `di` server, so this screen swaps its data source instead of its voice
+  driver. Session/turns come from OPFS (`web/src/lib/opfs-store.ts`) and the
+  `$clientTurns` nanostore instead of REST polling; the browser driver's
+  `ClientAgent` runs the LLM loop directly against the BYO `baseUrl`, and
+  every turn it emits (`onUserTurn`/`onAgentTurn`) is both pushed onto
+  `$clientTurns` for immediate display and persisted to OPFS
+  (`web/src/lib/voice/use-voice.ts`), since there is no server-side turn
+  store to poll. Turn `seq` is assigned client-side (`Date.now()`-based in
+  `browser-driver.ts`) rather than server-side, since there is no shared
+  writer to serialize against. Typed input reuses the same agent path via
+  `BrowserVoiceDriver.sendText` / `voice.sendText`, rather than
+  `POST /v1/sessions/:id/turns`. The `pushToolState` REST call (editor/
+  whiteboard mirroring) is skipped entirely in this mode — client-only's tool
+  executors read the nanostores in-process, so there is nothing to push.
 
 ## URL / state
 
