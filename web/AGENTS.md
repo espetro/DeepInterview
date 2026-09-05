@@ -16,6 +16,25 @@ sync with these headings too.
 nanostores atoms for local/UI state; TanStack Router file routes with `$id`
 params. See `.agents/docs/screens/*.md` for the per-route contract.
 
+## Components & design tokens
+
+shadcn/ui is the base component library. Design tokens live in
+`src/theme.css` (`@theme` block): the di palette (cream/espresso/persimmon)
+plus the shadcn semantic tokens (`--color-popover`, `--color-accent`,
+`--color-border`, `--color-primary`, …) mapped onto it. Always style via
+those semantic classes (`bg-popover`, `text-muted-foreground`,
+`focus:bg-accent`), never raw hexes.
+
+- `src/components/vendor/` holds CLI-fetched shadcn primitives
+  (`components.json` aliases `ui` → there). **Never edit vendored files**
+  — treat them as generated. Fix at the call site or wrap.
+- Never hand-roll a control that shadcn ships (button, input, label, tabs,
+  radio-group, select, dialog, dropdown-menu…). Build customs **on top of**
+  vendored primitives, in their own module (e.g. `locale-switcher.tsx`
+  wraps `Button variant="outline"` + `dropdown-menu`).
+- Add new primitives with `bunx shadcn@latest add <name>` from `web/`,
+  then commit them as a separate vendor commit.
+
 ## Icons
 
 lucide-react only (project decision). Do not add other icon sets.
