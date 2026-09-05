@@ -1,12 +1,16 @@
-import {
-  cutSentences,
-  type ProviderProfile,
-  type SessionContext,
+import { cutSentences } from "@di/shared";
+import type {
+  ProviderProfile,
+  SessionContext,
+  TurnMetrics,
+  TurnPhase,
 } from "@di/shared";
 import type { Turn } from "@di/shared/session";
-import { ClientAgent, type AgentToolExecutors } from "../agent/client-agent";
+import { ClientAgent } from "../agent/client-agent";
+import type { AgentToolExecutors } from "../agent/client-agent";
 import { synthesizeSpeech } from "../agent/tts";
-import { createPcmPlayer, type PcmPlayer } from "./pcm-player";
+import { createPcmPlayer } from "./pcm-player";
+import type { PcmPlayer } from "./pcm-player";
 import type { SpeechDriver } from "./server-driver";
 
 /**
@@ -40,6 +44,7 @@ export interface BrowserDriverDeps {
   player?: PcmPlayer;
   tts?: typeof synthesizeSpeech;
   speechSynthesis?: SpeechSynthesis | null;
+  onMetrics?: (metrics: TurnMetrics) => void;
 }
 
 export class BrowserVoiceDriver implements SpeechDriver {
@@ -142,6 +147,8 @@ export class BrowserVoiceDriver implements SpeechDriver {
     const agent = this.agent;
     const tts = this.deps.tts ?? synthesizeSpeech;
     if (!agent) return;
+    const reportError = (error: unknown, phase: TurnPhase) =>
+      this.onError(`[${phase}] ${String(error)}`);
     // barge-in from a previous turn: drop it
     this.abort?.abort();
     const ctrl = new AbortController();
@@ -171,7 +178,7 @@ export class BrowserVoiceDriver implements SpeechDriver {
         if (ctrl.signal.aborted) return;
         this.player.write(pcm);
       } catch (err) {
-        if (!ctrl.signal.aborted) this.onError(String(err));
+        if (!ctrl.signal.aborted) reportError(err, "tts");
       }
     };
 
@@ -185,6 +192,8 @@ export class BrowserVoiceDriver implements SpeechDriver {
           this.pending = rest;
           for (const s of sentences) void speak(s);
         },
+        onError: reportError,
+        onMetrics: (metrics) => this.deps.onMetrics?.(metrics),
       });
       if (ctrl.signal.aborted) return;
       // flush the sentence remainder
@@ -208,7 +217,7 @@ export class BrowserVoiceDriver implements SpeechDriver {
       this.finishSpeaking();
     } catch (err) {
       if (!ctrl.signal.aborted) {
-        this.onError(String(err));
+        reportError(err, "llm");
         this.finishSpeaking();
       }
     }

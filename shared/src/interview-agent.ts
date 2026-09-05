@@ -1,9 +1,31 @@
+import type { TurnMetrics } from "./voice";
+
 /**
  * Interview agent definitions shared by the server voice loop and the
  * browser client-only agent: system prompt builder, tool definitions and
  * the sentence chunker used for pipelined TTS. Pure, no runtime imports,
  * so it runs in Bun and the browser alike.
  */
+
+/** Where in a turn's pipeline an error originated. */
+export type TurnPhase = "llm" | "tool" | "tts";
+
+/** Turn observability shared by the server VoiceLoop and the browser ClientAgent. */
+export interface TurnEvents {
+  onText?: (delta: string) => void;
+  onMetrics?: (metrics: TurnMetrics) => void;
+  onError?: (error: unknown, phase: TurnPhase) => void;
+}
+
+/** One user turn in, streamed assistant text out — the seam both loops share. */
+export interface TurnRunner {
+  respond(userText: string, events?: TurnEvents): Promise<string>;
+}
+
+/** Exhaustiveness guard for switches over closed unions like TurnPhase. */
+export function assertNever(value: never): never {
+  throw new Error(`unreachable: ${JSON.stringify(value)}`);
+}
 
 /** OpenAI function-tool definition (name/description/parameters JSON schema). */
 export interface ToolDef {

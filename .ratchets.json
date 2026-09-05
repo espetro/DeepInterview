@@ -1,7 +1,7 @@
 {
-  "_comment": "CI fails on any increase over these baselines. A commit that increases a value must update it here with a comment explaining why. Updated 2026-09-05 after fixing the server/shared/evals tsc debt (was 86, now 18 — remaining errors are in web/src/lib/agent/, Part 3's in-progress client-agent work). oxlintErrors dropped incidentally (109->107) from the same fixes. maxFileLoc rose 656->664: server/src/voice/loop.ts grew from adding the VoiceLlm.streamChat interface member. cycles is measured from web/src/router.tsx via `rev-dep circular` (scripts/check-ratchets.ts); a routeTree.gen.ts<->router.tsx cycle shows up from other entry points but is a generated TanStack Router artifact, not tracked here.",
-  "tscErrors": 18,
-  "oxlintErrors": 107,
+  "_comment": "CI fails on any increase over these baselines. A commit that increases a value must update it here with a comment explaining why. Updated 2026-09-05 after fixing the web/src/lib/agent/ tsc debt (18->4, the remaining 4 are a pre-existing valibot FailureOutput typing gap in shared/src/index.test.ts, out of scope for Part 3) and satisfying the openai-compatible provider + client-agent lint rules along the way (oxlintErrors 107->99). maxFileLoc rose 656->664: server/src/voice/loop.ts grew from adding the VoiceLlm.streamChat interface member. cycles is measured from web/src/router.tsx via `rev-dep circular` (scripts/check-ratchets.ts); a routeTree.gen.ts<->router.tsx cycle shows up from other entry points but is a generated TanStack Router artifact, not tracked here.",
+  "tscErrors": 4,
+  "oxlintErrors": 99,
   "cycles": 0,
   "maxFileLoc": 664
 }
