@@ -121,9 +121,11 @@ test.describe("client-only runtime (no di server)", () => {
   // PROVIDER_PROFILE_STORAGE_KEY; not imported since this package has no
   // workspace dependency on @di/shared.
   const PROFILE = {
-    baseUrl: "http://mock.local/v1",
-    apiKey: "test-key",
-    llmModel: "mock-model",
+    llm: {
+      baseUrl: "http://mock.local/v1",
+      apiKey: "test-key",
+      model: "mock-model",
+    },
   };
 
   async function seedClientOnly(page: Page) {
@@ -132,7 +134,7 @@ test.describe("client-only runtime (no di server)", () => {
         localStorage.setItem("di.runtime-mode", mode as string);
         localStorage.setItem("di.provider-profile", JSON.stringify(profile));
       },
-      ["client-only", PROFILE] as const,
+      ["custom", PROFILE] as const,
     );
   }
 
