@@ -13,7 +13,7 @@ const ratchets = JSON.parse(readFileSync(join(root, ".ratchets.json"), "utf8"));
 async function countTscErrors(): Promise<number> {
   let total = 0;
   for (const ws of ["shared", "server", "web", "evals"]) {
-    const proc = Bun.spawn(["bunx", "tsc", "--noEmit"], {
+    const proc = Bun.spawn(["bunx", "tsc", "--noEmit", "--incremental", "false"], {
       cwd: join(root, ws),
       stdout: "pipe",
       stderr: "pipe",
