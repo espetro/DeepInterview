@@ -2,7 +2,7 @@ import { toJsonSchema } from "@valibot/to-json-schema";
 import * as v from "valibot";
 import { VOICE_TOOLS, assertNever, buildPrompt, describeWhiteboardSnapshot } from "@di/shared";
 import type {
-  ProviderProfile,
+  ProviderEndpoint,
   SessionContext,
   ToolDef,
   TurnEvents,
@@ -68,12 +68,12 @@ export class ClientAgent implements TurnRunner {
   private model: LanguageModelV3;
 
   constructor(
-    private readonly profile: ProviderProfile,
+    private readonly llm: ProviderEndpoint,
     private readonly tools: AgentToolExecutors,
     private readonly getContext: () => SessionContext,
     private readonly fetchImpl?: typeof fetch,
   ) {
-    this.model = createOpenAiCompatibleModel(profile, { fetchImpl });
+    this.model = createOpenAiCompatibleModel(this.llm, { fetchImpl });
   }
 
   /** Full transcript so far (for persistence/report). */

@@ -2,12 +2,16 @@ import { describe, expect, it, vi } from "vitest";
 import { ClientAgent } from "./client-agent";
 import { decodeWav, resamplePcm16, synthesizeSpeech } from "./tts";
 
-const PROFILE = {
+const LLM = {
   baseUrl: "http://t.local/v1",
   apiKey: "sk-x",
-  llmModel: "m1",
-  ttsVoice: "alloy",
-  ttsModel: "tts-1",
+  model: "m1",
+};
+const TTS = {
+  baseUrl: "http://t.local/v1",
+  apiKey: "sk-x",
+  model: "tts-1",
+  voice: "alloy",
 };
 
 function sse(chunks: unknown[]): Response {
@@ -56,7 +60,7 @@ describe("ClientAgent.respond", () => {
       ]);
     });
 
-    const agent = new ClientAgent(PROFILE, executors, CTX, fetchMock as unknown as typeof fetch);
+    const agent = new ClientAgent(LLM, executors, CTX, fetchMock as unknown as typeof fetch);
     const deltas: string[] = [];
     const full = await agent.respond("hello", {
       onText: (d) => deltas.push(d),
@@ -78,7 +82,7 @@ describe("ClientAgent.respond", () => {
     };
     const fetchMock = vi.fn().mockResolvedValue(new Response("server exploded", { status: 500 }));
 
-    const agent = new ClientAgent(PROFILE, executors, CTX, fetchMock as unknown as typeof fetch);
+    const agent = new ClientAgent(LLM, executors, CTX, fetchMock as unknown as typeof fetch);
     const errors: unknown[] = [];
     const full = await agent.respond("hello", {
       onError: (err) => errors.push(err),
@@ -121,7 +125,7 @@ describe("ClientAgent.respond", () => {
       });
     });
 
-    const agent = new ClientAgent(PROFILE, executors, CTX, fetchMock as unknown as typeof fetch);
+    const agent = new ClientAgent(LLM, executors, CTX, fetchMock as unknown as typeof fetch);
     const deltas: string[] = [];
     await agent.respond("hello", {
       signal: ctrl.signal,
@@ -175,7 +179,7 @@ describe("tts", () => {
       .fn()
       .mockResolvedValue(new Response(wavBytes(Int16Array.from([100, -100]), 44100)));
     const bytes = await synthesizeSpeech(
-      PROFILE,
+      TTS,
       "hi",
       undefined,
       fetchMock as unknown as typeof fetch,
@@ -197,7 +201,7 @@ describe("tts", () => {
   it("synthesizeSpeech throws on error status", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response("nope", { status: 401 }));
     await expect(
-      synthesizeSpeech(PROFILE, "hi", undefined, fetchMock as unknown as typeof fetch),
+      synthesizeSpeech(TTS, "hi", undefined, fetchMock as unknown as typeof fetch),
     ).rejects.toThrow("401");
   });
 });

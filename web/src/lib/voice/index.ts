@@ -6,20 +6,21 @@ import { $currentQuestion, $clientTurns } from "../agent/session-store";
 import { $editorBuffer, $question, $whiteboard } from "../../stores/session";
 import { $effectiveRuntime, $providerProfile, $runtimeMode, probeServer } from "../runtime";
 import { describeWhiteboardSnapshot } from "@di/shared";
-import type { ProviderProfile } from "@di/shared";
+import type { ProviderEndpoint, ProviderSections } from "@di/shared";
 
 export type VoiceDriverKind = "server" | "browser";
 
 const API_BASE = (import.meta.env.VITE_DI_API_BASE as string | undefined) ?? "";
 
 /**
- * Pick a driver. Precedence: runtime mode selection (client-only = browser
- * driver), else VITE_VOICE_DEFAULT pin, else probe the server health
+ * Pick a driver. Precedence: runtime mode selection (custom/in-browser =
+ * browser driver), else VITE_VOICE_DEFAULT pin, else probe the server health
  * endpoint; a fetch-able ${BASE}/api/health means the di binary (with the WS
  * voice endpoint) is hosting, otherwise fall back to the browser driver.
  */
 export async function selectDriver(): Promise<VoiceDriverKind> {
-  if ($runtimeMode.get() === "client-only") return "browser";
+  const mode = $runtimeMode.get();
+  if (mode === "custom" || mode === "in-browser") return "browser";
   const pinned = import.meta.env.VITE_VOICE_DEFAULT as VoiceDriverKind | undefined;
   if (pinned === "server" || pinned === "browser") return pinned;
   try {
@@ -36,7 +37,8 @@ export async function createDriver(sessionId: string): Promise<SpeechDriver> {
 
   const profile = $providerProfile.get();
   const driver = new BrowserVoiceDriver(sessionId);
-  if (profile && $effectiveRuntime.get() === "client-only") {
+  if (profile?.llm && $effectiveRuntime.get() !== "server") {
+    const withLlm = profile as ProviderSections & { llm: ProviderEndpoint };
     const executors = createStoreToolExecutors({
       editorGetter: () => $editorBuffer.get(),
       whiteboardGetter: () => describeWhiteboardSnapshot($whiteboard.get()),
@@ -45,7 +47,7 @@ export async function createDriver(sessionId: string): Promise<SpeechDriver> {
         $currentQuestion.set(q);
       },
     });
-    driver.useClientAgent(profile, executors, () => ({
+    driver.useClientAgent(withLlm, executors, () => ({
       mode: "interview",
       currentQuestion: $question.get().text,
       hints: $question.get().hints,
@@ -56,4 +58,4 @@ export async function createDriver(sessionId: string): Promise<SpeechDriver> {
 
 export { BrowserVoiceDriver, ServerVoiceDriver, probeServer, $clientTurns };
 export type { SpeechDriver } from "./server-driver";
-export type { ProviderProfile };
+export type { ProviderSections };

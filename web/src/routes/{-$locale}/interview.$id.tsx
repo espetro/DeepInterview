@@ -56,7 +56,7 @@ function Interview() {
   const locale = useLocale();
   const navigate = useNavigate();
   const effectiveRuntime = useStore($effectiveRuntime);
-  const clientOnly = effectiveRuntime === "client-only";
+  const clientOnly = effectiveRuntime !== "server";
   const { data: session } = useQuery({
     queryKey: ["session", id, effectiveRuntime],
     queryFn: () => (clientOnly ? getClientSession(id) : getSession(id)),
