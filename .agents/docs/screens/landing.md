@@ -1,4 +1,9 @@
-# Screen: Landing (`/`) — Variant B "playful notebook"
+# Screen: Landing (`/`, `/{-$locale}`) — Variant B "playful notebook"
+
+The landing lives under the optional `{-$locale}` route segment: `/` is the en
+landing, `/es`, `/fr`, ... are locale landings. All in-app routes share the
+same optional prefix (`/setup`, `/es/setup`, ...). Locale switching swaps the
+prefix via real links, so prerender crawl discovers every locale page.
 
 ## ASCII mockup
 
@@ -31,8 +36,9 @@
 
 ## Behavior
 
-- CTA **"grill me ->"** navigates to `/setup`.
-- Nav: logo (home), history (`/history`), github (external).
+- Shared AppHeader (from `__root`): logo, GitHub icon link, placeholder account button.
+- CTA **"grill me ->"** navigates to `/setup` (locale-prefixed).
+- Locale switcher in the header area: real links to `/`, `/es`, ... so crawlLinks prerenders all locale pages.
 - 5 tilted sticker/post-it cards with real interview-question content, placed at edges; decorative rotation, no interactivity.
 - Trust micro-line under CTA: single sentence, no stats (v1).
 
