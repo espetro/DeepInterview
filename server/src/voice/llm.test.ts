@@ -108,8 +108,7 @@ describe("OpenAiChatClient.chat", () => {
     expect(result.toolCalls[0]!.args).toEqual({ _raw: "not-json{" });
   });
 
-  it("emits llm.request/llm.result events and throws on error status", async () => {
-    const events: { type: string; payload?: unknown }[] = [];
+  it("emits llm.request/llm.result events and throws on error status", async () => {    const events: { type: string; payload?: unknown }[] = [];
     const sink = { postEvent: async (_s: string, type: string, payload?: unknown) => void events.push({ type, payload }) };
     const ok = new OpenAiChatClient({
       baseUrl: "http://fake.local",
@@ -133,5 +132,99 @@ describe("OpenAiChatClient.chat", () => {
     });
     await expect(failing.chat([{ role: "user", content: "x" }])).rejects.toThrow(/429/);
     expect(events.map((e) => e.type)).toEqual(["llm.request", "llm.failed"]);
+  });
+});
+
+/** Build a Response with a ReadableStream of SSE chunks. */
+function sseResponse(chunks: string[]): Response {
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      const enc = new TextEncoder();
+      for (const c of chunks) controller.enqueue(enc.encode(c));
+      controller.close();
+    },
+  });
+  return new Response(body, { headers: { "content-type": "text/event-stream" } });
+}
+
+describe("OpenAiChatClient.streamChat", () => {
+  it("parses SSE content deltas, fires onFirstToken/onText, and requests stream:true", async () => {
+    let captured: any;
+    const llm = new OpenAiChatClient({
+      baseUrl: "http://fake.local",
+      model: "m",
+      fetchImpl: fetchStub((_url, init) => {
+        captured = JSON.parse(String(init!.body));
+        return sseResponse([
+          'data: {"choices":[{"delta":{"content":"Hello"}}]}\n\n',
+          'data: {"choices":[{"delta":{"content":" there."}}]}\n\n',
+          "data: [DONE]\n\n",
+        ]);
+      }),
+    });
+    const firstTokens: number[] = [];
+    const deltas: string[] = [];
+    const result = await llm.streamChat([{ role: "user", content: "hi" }], undefined, {
+      onFirstToken: () => firstTokens.push(1),
+      onText: (d) => deltas.push(d),
+    });
+    expect(captured.stream).toBe(true);
+    expect(result.content).toBe("Hello there.");
+    expect(result.toolCalls).toEqual([]);
+    expect(deltas).toEqual(["Hello", " there."]);
+    expect(firstTokens).toHaveLength(1);
+  });
+
+  it("merges incremental tool_calls by index", async () => {
+    const llm = new OpenAiChatClient({
+      baseUrl: "http://fake.local",
+      model: "m",
+      fetchImpl: fetchStub(() =>
+        sseResponse([
+          'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"c1","function":{"name":"update_question","arguments":"{\\"quest"}}]}}]}\n\n',
+          'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"ion\\":\\"Q2?\\"}"}}]}}]}\n\n',
+          'data: {"choices":[{"delta":{"tool_calls":[{"index":1,"id":"c2","function":{"name":"read_editor","arguments":"{}"}}]}}]}\n\n',
+          "data: [DONE]\n\n",
+        ]),
+      ),
+    });
+    const result = await llm.streamChat([{ role: "user", content: "next" }], tools);
+    expect(result.toolCalls).toEqual([
+      { name: "update_question", args: { question: "Q2?" } },
+      { name: "read_editor", args: {} },
+    ]);
+  });
+
+  it("falls back to buffered JSON when the response is not SSE", async () => {
+    const deltas: string[] = [];
+    const llm = new OpenAiChatClient({
+      baseUrl: "http://fake.local",
+      model: "m",
+      fetchImpl: fetchStub(() =>
+        Response.json({
+          choices: [{ message: { role: "assistant", content: "buffered reply." } }],
+        }),
+      ),
+    });
+    const result = await llm.streamChat([{ role: "user", content: "hi" }], undefined, {
+      onText: (d) => deltas.push(d),
+    });
+    expect(result.content).toBe("buffered reply.");
+    expect(deltas).toEqual(["buffered reply."]);
+  });
+
+  it("emits llm.ttft_ms in the llm.result event payload", async () => {
+    const events: { type: string; payload?: unknown }[] = [];
+    const sink = { postEvent: async (_s: string, type: string, payload?: unknown) => void events.push({ type, payload }) };
+    const llm = new OpenAiChatClient({
+      baseUrl: "http://fake.local",
+      model: "m",
+      fetchImpl: fetchStub(() => sseResponse(['data: {"choices":[{"delta":{"content":"x"}}]}\n\n', "data: [DONE]\n\n"])),
+      events: sink,
+      sessionId: "s1",
+    });
+    await llm.streamChat([{ role: "user", content: "hi" }]);
+    const result = events.find((e) => e.type === "llm.result")!;
+    expect(result.payload).toMatchObject({ stream: true, ttft_ms: expect.any(Number) });
   });
 });
