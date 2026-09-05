@@ -61,7 +61,9 @@ async function makeLoop(
       messages.push(m);
       if (m.t === "tts") {
         seenPcm.push(new Uint8Array(Buffer.from(m.pcm, "base64")));
-        seenTexts.push(m.text ?? "");
+      }
+      if (m.t === "agent_transcript") {
+        seenTexts.push(m.turn.text);
       }
     },
     sendBinary: (d) => binary.push(d),
@@ -75,7 +77,7 @@ function stubStt(text: string): VoiceStt & { calls: number; aborts: number } {
   return {
     calls: 0,
     aborts: 0,
-    async transcribePcm(_pcm, opts) {
+    async transcribePcm(_pcm: Uint8Array, opts?: { signal?: AbortSignal }) {
       (this as any).calls++;
       if (opts?.signal?.aborted) (this as any).aborts++;
       return text;
