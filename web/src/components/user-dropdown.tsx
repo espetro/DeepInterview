@@ -1,4 +1,4 @@
-import { History, Settings } from "lucide-react";
+import { History, Settings, SlidersHorizontal } from "lucide-react";
 import * as React from "react";
 import { FormattedMessage } from "react-intl";
 
@@ -10,6 +10,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./vendor/dropdown-menu";
 
@@ -38,15 +39,13 @@ export function UserDropdown() {
             aria-label="account"
             className="size-8 rounded-full border bg-card/60 p-0"
           >
-            <Avatar className="size-8">
-              <AvatarFallback className="text-xs font-semibold">G</AvatarFallback>
-            </Avatar>
+            <SlidersHorizontal className="size-4 text-espresso" aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
           sideOffset={6}
-          className="min-w-[22rem] rounded-xl border-border/70 bg-popover/95 p-1.5 shadow-2xl backdrop-blur-xl"
+          className="min-w-[22rem] rounded-xl border-border/70 bg-popover p-1.5 shadow-2xl"
         >
           <div className="flex items-start gap-3 px-2 py-2">
             <Avatar className="size-9">
@@ -67,8 +66,9 @@ export function UserDropdown() {
             </span>
             <LocaleSwitcher />
           </div>
+          <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="cursor-pointer"
+            className="cursor-pointer rounded-lg px-2.5 py-2.5"
             onSelect={(event) => {
               event.preventDefault();
               openAt("history");
@@ -78,7 +78,7 @@ export function UserDropdown() {
             <FormattedMessage id="account.history" />
           </DropdownMenuItem>
           <DropdownMenuItem
-            className="cursor-pointer"
+            className="cursor-pointer rounded-lg px-2.5 py-2.5"
             onSelect={(event) => {
               event.preventDefault();
               openAt("settings");

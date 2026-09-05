@@ -492,7 +492,7 @@ export function SettingsDialog({ open, onOpenChange, pane, onPaneChange }: Setti
         className={
           isMobile
             ? "inset-0 h-svh w-screen max-w-none translate-x-0 translate-y-0 rounded-none border-0 bg-background p-0 [&>button]:hidden"
-            : "flex h-[min(28rem,calc(100vh-4rem))] w-[calc(100vw-2rem)] max-w-2xl flex-row gap-0 overflow-hidden rounded-2xl border-border/70 bg-background/95 p-0 shadow-2xl backdrop-blur-2xl"
+            : "flex h-[min(28rem,calc(100vh-4rem))] w-[calc(100vw-2rem)] max-w-2xl flex-row gap-0 overflow-hidden rounded-2xl border-border bg-background p-0 shadow-2xl"
         }
       >
         <DialogTitle className="sr-only">
@@ -501,17 +501,17 @@ export function SettingsDialog({ open, onOpenChange, pane, onPaneChange }: Setti
         <DialogDescription className="sr-only">
           <FormattedMessage id="settings.title" />
         </DialogDescription>
-        <nav className="flex w-44 shrink-0 flex-col gap-0.5 p-3">
+        <nav className="flex w-44 shrink-0 flex-col gap-0.5 border-r border-border p-3">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => onPaneChange(tab.id)}
               className={
-                "flex items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm " +
+                "flex items-center gap-2 rounded-lg px-2.5 py-2.5 text-left text-sm transition-colors " +
                 (pane === tab.id
-                  ? "bg-muted font-medium text-foreground"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")
+                  ? "bg-accent font-medium text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground")
               }
             >
               {tab.icon}
@@ -519,7 +519,7 @@ export function SettingsDialog({ open, onOpenChange, pane, onPaneChange }: Setti
             </button>
           ))}
         </nav>
-        <div className="m-2 ml-0 flex-1 overflow-y-auto rounded-xl bg-card p-5">
+        <div className="m-2 ml-0 flex-1 overflow-y-auto rounded-xl bg-card p-5 ring-1 ring-hairline">
           {pane === "history" ? (
             <HistoryPane />
           ) : pane === "aiProvider" ? (
