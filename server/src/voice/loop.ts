@@ -9,6 +9,7 @@ import {
 import type { Db } from "../store/db";
 import { WavBuffer } from "./stt/wav.ts";
 import { WhisperStt } from "./stt/whisper-stt.ts";
+import { StreamingWhisperStt, type StreamingSttPort } from "./stt/streaming-stt.ts";
 import { PocketTts } from "./tts/pocket-tts.ts";
 import { OpenAiChatClient, type LlmMessage, type ToolDef } from "./llm.ts";
 import {
@@ -44,6 +45,8 @@ export interface VoiceLoopDeps {
   stt?: VoiceStt;
   tts?: VoiceTts;
   llm?: VoiceLlm;
+  /** Streaming STT stub for tests when config.stt.mode is "streaming". */
+  streamingStt?: StreamingSttPort;
 }
 
 /** 20ms of PCM16 mono at 24k = 480 samples = 960 bytes. */
@@ -65,6 +68,8 @@ export class VoiceLoop {
   private readonly stt: VoiceStt;
   private readonly tts: VoiceTts;
   private readonly llm: VoiceLlm;
+  /** Set when config.stt.mode is "streaming": audio is fed incrementally. */
+  private readonly streamingStt: StreamingSttPort | undefined;
 
   private buffer = new WavBuffer(CAPTURE_SAMPLE_RATE, 1);
   /** When the current utterance's first audio frame arrived (VAD start proxy). */
@@ -112,6 +117,17 @@ export class VoiceLoop {
         events,
         sessionId: this.sessionId,
       });
+    if (this.config.stt.mode === "streaming") {
+      this.streamingStt =
+        deps.streamingStt ??
+        new StreamingWhisperStt({
+          baseUrl: this.config.stt.base_url,
+          apiKey: this.config.stt.api_key,
+          model: this.config.stt.model,
+          events,
+          sessionId: this.sessionId,
+        });
+    }
   }
 
   /** Call on WS connection open: binds session context and emits agent.started. */
@@ -134,6 +150,7 @@ export class VoiceLoop {
       const pcm = msg.data.byteLength > AUDIO_HEADER_BYTES ? msg.data.subarray(AUDIO_HEADER_BYTES) : new Uint8Array(0);
       this.trackFrame(pcm);
       this.buffer.pushBytes(pcm);
+      void this.streamingStt?.feed(pcm).catch((err) => console.warn(`[voice] stt feed failed: ${err}`));
       return;
     }
     if (msg.t === "audio") {
@@ -141,6 +158,7 @@ export class VoiceLoop {
       const pcm = new Uint8Array(Buffer.from(msg.pcm, "base64"));
       this.trackFrame(pcm);
       this.buffer.pushBytes(pcm);
+      void this.streamingStt?.feed(pcm).catch((err) => console.warn(`[voice] stt feed failed: ${err}`));
       return;
     }
     if (msg.t === "mute") {
@@ -161,7 +179,7 @@ export class VoiceLoop {
       this.firstFrameAt = undefined;
       const pcm = this.buffer.toPcm();
       this.buffer.clear();
-      if (pcm.byteLength === 0) return;
+      if (pcm.byteLength === 0 && this.streamingStt === undefined) return;
       // Serialize: seq assignment and history mutation must not interleave.
       this.turnLock = this.turnLock.then(() => this.runTurn(pcm, t0, vadMs)).catch((err) => {
         console.error(`[voice] turn failed: ${err}`);
@@ -186,7 +204,9 @@ export class VoiceLoop {
     const metrics: TurnMetrics = { vad_ms: vadMs, total_ms: 0 };
     try {
       const sttStart = Date.now();
-      const text = (await this.stt.transcribePcm(pcm, { signal })).trim();
+      const text = (
+        this.streamingStt !== undefined ? await this.streamingStt.finish({ signal }) : await this.stt.transcribePcm(pcm, { signal })
+      ).trim();
       if (text === "") return;
       metrics.stt_ms = Date.now() - sttStart;
 
