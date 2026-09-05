@@ -79,6 +79,27 @@ export const ErrorMessageSchema = v.object({
 });
 export type ErrorMessage = v.InferOutput<typeof ErrorMessageSchema>;
 
+/** Per-turn latency measurements (ms), sent after the final tts chunk. */
+export const TurnMetricsSchema = v.object({
+  /** utterance duration (VAD end minus first speech frame) */
+  vad_ms: v.number(),
+  /** buffered STT transcription round-trip */
+  stt_ms: v.optional(v.number()),
+  /** time to first LLM token (streaming) or full completion */
+  llm_ttft_ms: v.optional(v.number()),
+  /** utterance end to first audio chunk sent */
+  first_audio_ms: v.optional(v.number()),
+  /** utterance end to final audio chunk sent */
+  total_ms: v.number(),
+});
+export type TurnMetrics = v.InferOutput<typeof TurnMetricsSchema>;
+
+export const MetricsMessageSchema = v.object({
+  t: v.literal("metrics"),
+  metrics: TurnMetricsSchema,
+});
+export type MetricsMessage = v.InferOutput<typeof MetricsMessageSchema>;
+
 /** Client -> server WS messages (control plane; audio rides binary frames). */
 export const VoiceClientMessageSchema = v.union([
   AudioFrameMessageSchema,
@@ -95,6 +116,7 @@ export const VoiceServerMessageSchema = v.union([
   AgentTranscriptMessageSchema,
   TtsMessageSchema,
   ErrorMessageSchema,
+  MetricsMessageSchema,
 ]);
 export type VoiceServerMessage = v.InferOutput<typeof VoiceServerMessageSchema>;
 
