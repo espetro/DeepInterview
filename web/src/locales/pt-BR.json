@@ -119,5 +119,12 @@
   "setup.profile.saved": "perfil do provedor salvo",
   "setup.profile.missing": "configure um perfil do provedor para entrevistas no navegador",
   "setup.profile.invalidUrl": "a URL base deve ser uma URL válida",
-  "setup.profile.required": "este campo é obrigatório"
+  "setup.profile.required": "este campo é obrigatório",
+  "error.title": "algo deu errado",
+  "error.message": "ocorreu um erro inesperado ao exibir esta página.",
+  "error.retry": "tentar novamente",
+  "error.home": "voltar ao início",
+  "notfound.title": "404",
+  "notfound.message": "esta página não existe — o link pode estar desatualizado ou o endereço digitado errado.",
+  "notfound.home": "voltar ao início"
 }

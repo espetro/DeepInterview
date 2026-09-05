@@ -119,5 +119,12 @@
   "setup.profile.saved": "profil fournisseur enregistré",
   "setup.profile.missing": "configurez un profil fournisseur pour les entretiens dans le navigateur",
   "setup.profile.invalidUrl": "l'URL de base doit être une URL valide",
-  "setup.profile.required": "ce champ est obligatoire"
+  "setup.profile.required": "ce champ est obligatoire",
+  "error.title": "quelque chose s'est mal passé",
+  "error.message": "une erreur inattendue s'est produite lors de l'affichage de cette page.",
+  "error.retry": "réessayer",
+  "error.home": "retour à l'accueil",
+  "notfound.title": "404",
+  "notfound.message": "cette page n'existe pas — le lien est peut-être périmé ou l'adresse mal tapée.",
+  "notfound.home": "retour à l'accueil"
 }

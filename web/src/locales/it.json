@@ -119,5 +119,12 @@
   "setup.profile.saved": "profilo provider salvato",
   "setup.profile.missing": "configura un profilo provider per i colloqui nel browser",
   "setup.profile.invalidUrl": "l'URL di base deve essere un URL valido",
-  "setup.profile.required": "questo campo è obbligatorio"
+  "setup.profile.required": "questo campo è obbligatorio",
+  "error.title": "qualcosa è andato storto",
+  "error.message": "si è verificato un errore imprevisto durante il rendering di questa pagina.",
+  "error.retry": "riprova",
+  "error.home": "torna alla home",
+  "notfound.title": "404",
+  "notfound.message": "questa pagina non esiste — il link potrebbe essere scaduto o l'indirizzo errato.",
+  "notfound.home": "torna alla home"
 }

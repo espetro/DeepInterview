@@ -119,5 +119,12 @@
   "setup.profile.saved": "공급자 프로필 저장됨",
   "setup.profile.missing": "브라우저 내 면접을 위해 공급자 프로필을 구성하세요",
   "setup.profile.invalidUrl": "베이스 URL은 유효한 URL이어야 합니다",
-  "setup.profile.required": "필수 입력 항목입니다"
+  "setup.profile.required": "필수 입력 항목입니다",
+  "error.title": "문제가 발생했습니다",
+  "error.message": "이 페이지를 표시하는 중 예기치 않은 오류가 발생했습니다.",
+  "error.retry": "다시 시도",
+  "error.home": "홈으로 돌아가기",
+  "notfound.title": "404",
+  "notfound.message": "이 페이지는 존재하지 않습니다. 링크가 오래되었거나 주소가 잘못 입력되었을 수 있습니다.",
+  "notfound.home": "홈으로 돌아가기"
 }

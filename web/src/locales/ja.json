@@ -119,5 +119,12 @@
   "setup.profile.saved": "プロバイダープロファイルを保存しました",
   "setup.profile.missing": "ブラウザ内面接にはプロバイダープロファイルが必要です",
   "setup.profile.invalidUrl": "ベース URL は有効な URL である必要があります",
-  "setup.profile.required": "この項目は必須です"
+  "setup.profile.required": "この項目は必須です",
+  "error.title": "問題が発生しました",
+  "error.message": "このページの表示中に予期しないエラーが発生しました。",
+  "error.retry": "再試行",
+  "error.home": "ホームに戻る",
+  "notfound.title": "404",
+  "notfound.message": "このページは存在しません。リンクが古いか、アドレスが間違っている可能性があります。",
+  "notfound.home": "ホームに戻る"
 }

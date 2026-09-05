@@ -119,5 +119,12 @@
   "setup.profile.saved": "provider profile saved",
   "setup.profile.missing": "configure a provider profile to run in-browser interviews",
   "setup.profile.invalidUrl": "base URL must be a valid URL",
-  "setup.profile.required": "this field is required"
+  "setup.profile.required": "this field is required",
+  "error.title": "something went wrong",
+  "error.message": "an unexpected error occurred while rendering this page.",
+  "error.retry": "try again",
+  "error.home": "back home",
+  "notfound.title": "404",
+  "notfound.message": "this page doesn't exist — maybe the link is stale or the address got mistyped.",
+  "notfound.home": "back home"
 }
