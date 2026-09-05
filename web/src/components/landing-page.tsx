@@ -18,28 +18,28 @@ const STICKERS = [
     id: "system",
     rotate: "rotate-2",
     tone: "bg-white",
-    pos: "top-64 right-1/3",
+    pos: "top-24 right-64",
     delay: 650,
   },
   {
     id: "resume",
     rotate: "-rotate-2",
     tone: "bg-white",
-    pos: "bottom-40 right-16",
+    pos: "top-44 right-10",
     delay: 800,
   },
   {
     id: "whyLeave",
     rotate: "rotate-1",
     tone: "bg-persimmon-faint",
-    pos: "top-72 right-24",
+    pos: "top-[19rem] right-64",
     delay: 950,
   },
   {
     id: "quickFire",
     rotate: "-rotate-1",
     tone: "bg-white",
-    pos: "bottom-10 left-10",
+    pos: "top-[25rem] right-36",
     delay: 1100,
   },
 ];
@@ -114,7 +114,7 @@ export function LandingPage() {
         </div>
 
         <Reveal delay={500}>
-          <p className="mt-20 text-xs uppercase tracking-[0.15em] text-espresso-soft">
+          <p className="mt-20 max-w-2xl text-xs uppercase tracking-[0.15em] text-espresso-soft">
             <FormattedMessage id="landing.trust" />
           </p>
         </Reveal>
