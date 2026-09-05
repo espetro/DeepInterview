@@ -154,9 +154,29 @@ export function createApp(fixture: MockFixture = loadFixture()) {
   };
 }
 
+/** Dev CORS: the browser SPA calls these endpoints cross-origin (client-only mode). */
+const CORS_HEADERS: Record<string, string> = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, POST, OPTIONS",
+  "access-control-allow-headers": "content-type, authorization",
+};
+
+function withCors(res: Response): Response {
+  const headers = new Headers(res.headers);
+  for (const [k, v] of Object.entries(CORS_HEADERS)) headers.set(k, v);
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
+
 export function startServer(port: number, fixture?: MockFixture) {
   const app = createApp(fixture);
-  return Bun.serve({ port, fetch: app.fetch });
+  return Bun.serve({
+    port,
+    async fetch(req) {
+      if (req.method === "OPTIONS")
+        return new Response(null, { status: 204, headers: CORS_HEADERS });
+      return withCors(await app.fetch(req));
+    },
+  });
 }
 
 if (import.meta.main) {
