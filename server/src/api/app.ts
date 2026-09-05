@@ -20,7 +20,7 @@ export interface AppDeps {
   voiceDeps?: Pick<VoiceDeps, "loopFactory">;
 }
 
-export async function createApp(deps: AppDeps): Hono {
+export async function createApp(deps: AppDeps): Promise<Hono> {
   const app = new Hono();
 
   app.route(
@@ -48,7 +48,7 @@ export async function createApp(deps: AppDeps): Hono {
     app.get("*", (c) => {
       const url = new URL(c.req.url);
       if (url.pathname.startsWith("/v1") || url.pathname.startsWith("/api"))
-        return c.next();
+        return c.notFound();
       return c.html(readFileSync(`${deps.webAssets!.root}/index.html`, "utf8"));
     });
   }

@@ -100,13 +100,13 @@ export function apiRoutes(
       if (!session) return c.json({ error: "not found" }, 404);
       // The server owns sequencing: concurrent writers (voice worker, text
       // input, tests) cannot agree on the next seq among themselves.
-      const [{ max_seq }] = await db
+      const { max_seq } = await db
         .selectFrom("turns")
         .select((eb) =>
           eb.fn.coalesce(eb.fn.max("seq"), eb.lit(-1)).as("max_seq"),
         )
         .where("session_id", "=", id)
-        .execute();
+        .executeTakeFirstOrThrow();
       const turn = { ...body, session_id: id, seq: Number(max_seq) + 1 };
       await db.insertInto("turns").values(turn).execute();
       return c.json(v.parse(TurnSchema, turn), 201);
