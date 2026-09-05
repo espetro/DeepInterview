@@ -3,6 +3,7 @@ import { Github } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useLocale, withLocale } from "../lib/locale-href";
+import { LocaleSwitcher } from "./locale-switcher";
 
 /**
  * Shared app header mounted in __root for every route. Logo links home (en is
@@ -22,6 +23,7 @@ export function AppHeader({ title }: { title?: ReactNode }) {
       </Link>
       <div className="flex-1 px-4 text-center text-sm font-normal text-espresso-soft">{title}</div>
       <div className="flex items-center gap-3">
+        <LocaleSwitcher />
         <a
           href="https://github.com/espetro/dits"
           target="_blank"
