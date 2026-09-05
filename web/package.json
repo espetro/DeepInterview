@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "test": "bunx vitest run"
+    "test": "bunx vitest run",
+    "typecheck": "tsc --noEmit --checkers 1"
   },
   "dependencies": {
     "@ai-sdk/provider": "^4.0.10",
