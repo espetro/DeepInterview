@@ -1,0 +1,7 @@
+{
+  "_comment": "CI fails on any increase over these baselines. A commit that increases a value must update it here with a comment explaining why. Seeded 2026-09-05 from measured pre-existing debt (not zero) — Part 3 of the dual-mode plan is expected to lower tscErrors. cycles is measured from web/src/router.tsx via `rev-dep circular` (scripts/check-ratchets.ts); a routeTree.gen.ts<->router.tsx cycle shows up from other entry points but is a generated TanStack Router artifact, not tracked here.",
+  "tscErrors": 86,
+  "oxlintErrors": 109,
+  "cycles": 0,
+  "maxFileLoc": 656
+}
