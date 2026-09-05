@@ -9,11 +9,15 @@ _.file = ".env"
 
 # Web dev server (TanStack Start/vite). Server + mock provider:
 #   cd server && DI_TEST_MODE=1 bun run src/cli.ts --config config.example.yaml
-#   bun run evals/mock-provider/main.ts --port 9000
+#   mise run dev:mock
 [tasks.dev]
 description = "Run web dev server (vite dev) in web/"
 run = "bun run dev"
 dir = "web"
+
+[tasks."dev:mock"]
+description = "Run the OpenAI-compatible mock provider on :9000 (CORS-enabled for browser dev)"
+run = "bun run evals/mock-provider/main.ts --port 9000"
 
 [tasks.build]
 description = "Build web SPA"
