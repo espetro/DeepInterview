@@ -1,0 +1,19 @@
+id: no-swallowed-agent-errors
+language: TypeScript
+severity: error
+message: >
+  onError swallows the failure instead of surfacing it. In the voice/agent
+  loop an error here previously resolved the turn to "" silently (dits
+  feat/client-side-opfs commit-E regression) — route it through the
+  turn-lifecycle onError/onMetrics sink instead.
+files:
+  - "web/src/lib/agent/**/*.ts"
+  - "web/src/lib/voice/**/*.ts"
+rule:
+  pattern: "() => undefined"
+  inside:
+    kind: pair
+    stopBy: end
+    has:
+      field: key
+      regex: "^onError$"

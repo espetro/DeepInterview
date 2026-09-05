@@ -1,0 +1,18 @@
+# Git hooks powered by lefthook. Installed automatically by the root
+# package.json `prepare` script (`lefthook install`) on `bun install`.
+#
+# pre-commit runs T0 (must stay under ~2s or agents start using --no-verify).
+# pre-push runs the T2 gate (mise run validate) — typecheck + test, affected
+# only, queued through task-spooler so concurrent pushes never stack tsgo.
+# Bypass with `git push --no-verify` only when you have already fixed the
+# underlying issue and are unblocking an unrelated emergency push.
+
+pre-commit:
+  commands:
+    validate-staged:
+      run: bun scripts/validate.ts --staged
+
+pre-push:
+  commands:
+    validate:
+      run: bun scripts/validate.ts
