@@ -1,4 +1,4 @@
-# Screen: History (`/history`)
+# Screen: History (`/{-$locale}/history`)
 
 ## ASCII mockup
 

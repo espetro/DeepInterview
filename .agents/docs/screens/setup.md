@@ -1,4 +1,4 @@
-# Screen: Setup (`/setup`)
+# Screen: Setup (`/{-$locale}/setup`)
 
 ## ASCII mockup
 
@@ -65,5 +65,6 @@
 
 ## URL / state
 
+- Optional locale prefix: `/setup` (en) or `/es/setup`, ... — the prefix is the i18n source of truth.
 - No URL params on entry. On submit, the created session id drives the next route.
 - Form state is local + valibot schema (`CreateSessionRequest` from `@di/shared` via formisch).
