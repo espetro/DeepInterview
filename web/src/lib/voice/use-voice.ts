@@ -44,9 +44,7 @@ export function useVoice(sessionId: string, muted: boolean): VoiceState {
     muted,
   });
   const driverRef = React.useRef<SpeechDriver | null>(null);
-  const actorRef = React.useRef<ReturnType<
-    typeof createActor<typeof voiceMachine>
-  > | null>(null);
+  const actorRef = React.useRef<ReturnType<typeof createActor<typeof voiceMachine>> | null>(null);
   const speak = React.useCallback((text: string) => {
     const d = driverRef.current;
     if (d instanceof BrowserVoiceDriver) d.speakAgentTurn(text);
@@ -84,12 +82,10 @@ export function useVoice(sessionId: string, muted: boolean): VoiceState {
 
       driver.onError = (message: string) => {
         actor.send({ type: "ERROR", message });
-        if (!cancelled)
-          setState((s) => ({ ...s, status: "error", error: message }));
+        if (!cancelled) setState((s) => ({ ...s, status: "error", error: message }));
       };
       driver.events.onSpeechStart = () => actor.send({ type: "SPEECH_START" });
-      driver.events.onSpeechEnd = (text) =>
-        actor.send({ type: "SPEECH_END", text });
+      driver.events.onSpeechEnd = (text) => actor.send({ type: "SPEECH_END", text });
       // server driver: transcript display via turns polling instead (di
       // already persisted the turn server-side when it emitted this event).
       // browser driver: nothing else persists this turn, so do it here.

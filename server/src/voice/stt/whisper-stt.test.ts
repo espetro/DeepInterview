@@ -2,9 +2,7 @@ import { describe, it, expect } from "vitest";
 import { WhisperStt, encodePcmWav } from "./whisper-stt.ts";
 import { decodeWav } from "./wav.ts";
 
-function fetchStub(
-  handler: (url: string, init?: RequestInit) => Response,
-): typeof fetch {
+function fetchStub(handler: (url: string, init?: RequestInit) => Response): typeof fetch {
   return handler as unknown as typeof fetch;
 }
 
@@ -76,9 +74,7 @@ describe("WhisperStt.transcribePcm", () => {
       events: { postEvent: async (_sid, type) => void events.push(type) },
       sessionId: "s1",
     });
-    await expect(stt.transcribePcm(new Uint8Array([0, 0]))).rejects.toThrow(
-      /502/,
-    );
+    await expect(stt.transcribePcm(new Uint8Array([0, 0]))).rejects.toThrow(/502/);
     expect(events).toEqual(["stt.request", "stt.failed"]);
   });
 

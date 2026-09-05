@@ -10,8 +10,7 @@ function fakeWs() {
   const ws = {
     readyState: 1,
     OPEN: 1,
-    send: (d: unknown) =>
-      sent.push({ kind: typeof d === "string" ? "text" : "binary", data: d }),
+    send: (d: unknown) => sent.push({ kind: typeof d === "string" ? "text" : "binary", data: d }),
     close: vi.fn(),
     set onopen(cb: () => void) {
       cb();
@@ -70,10 +69,7 @@ function fakeVad() {
   };
   return {
     gate,
-    factory: (opts: {
-      onSpeechStart: () => void;
-      onSpeechEnd: (audio: Float32Array) => void;
-    }) => {
+    factory: (opts: { onSpeechStart: () => void; onSpeechEnd: (audio: Float32Array) => void }) => {
       cbs.start.push(opts.onSpeechStart);
       cbs.end.push(opts.onSpeechEnd);
       return Promise.resolve(gate);
@@ -123,9 +119,7 @@ describe("ServerVoiceDriver", () => {
     expect(ws.sent).toHaveLength(2);
     const buf = ws.sent[0]!.data as ArrayBuffer;
     expect(new DataView(buf).getUint32(0, false)).toBe(0);
-    expect(
-      new DataView(ws.sent[1]!.data as ArrayBuffer).getUint32(0, false),
-    ).toBe(1);
+    expect(new DataView(ws.sent[1]!.data as ArrayBuffer).getUint32(0, false)).toBe(1);
     vad.speechEnd();
     expect(JSON.parse(ws.sent.at(-1)!.data as string)).toEqual({
       t: "utterance_end",
@@ -154,9 +148,7 @@ describe("ServerVoiceDriver", () => {
     expect(capture.cap.setMuted).toHaveBeenCalledWith(true);
     capture.emit(pcm(100));
     expect(ws.sent).toHaveLength(2); // only the mute json, no audio frame
-    const muteMsg = ws.sent.find(
-      (s) => s.kind === "text" && (s.data as string).includes('"mute"'),
-    );
+    const muteMsg = ws.sent.find((s) => s.kind === "text" && (s.data as string).includes('"mute"'));
     expect(JSON.parse(muteMsg!.data as string)).toEqual({
       t: "mute",
       muted: true,

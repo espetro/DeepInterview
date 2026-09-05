@@ -95,10 +95,7 @@ export interface ToolStateDto {
   whiteboard: string;
 }
 
-export async function pushToolState(
-  id: string,
-  state: ToolStateDto,
-): Promise<void> {
+export async function pushToolState(id: string, state: ToolStateDto): Promise<void> {
   const res = await fetch(`${BASE}/v1/sessions/${id}/tools`, {
     method: "PUT",
     headers: { "content-type": "application/json" },

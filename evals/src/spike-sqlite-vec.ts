@@ -30,9 +30,7 @@ export function spikeVec(): { rowid: number; distance: number }[] {
   const db = new Database(":memory:");
   sqliteVec.load(db);
   db.exec("CREATE VIRTUAL TABLE items USING vec0(embedding float[4])");
-  const ins = db.prepare(
-    "INSERT INTO items(rowid, embedding) VALUES (?, vec_f32(?))",
-  );
+  const ins = db.prepare("INSERT INTO items(rowid, embedding) VALUES (?, vec_f32(?))");
   ins.run(1, new Float32Array([1, 0, 0, 0]));
   ins.run(2, new Float32Array([0, 1, 0, 0]));
   ins.run(3, new Float32Array([0.9, 0.1, 0, 0]));

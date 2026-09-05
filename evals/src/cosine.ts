@@ -1,7 +1,6 @@
 /** Brute-force cosine similarity between two equal-length vectors. */
 export function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length)
-    throw new Error(`length mismatch: ${a.length} vs ${b.length}`);
+  if (a.length !== b.length) throw new Error(`length mismatch: ${a.length} vs ${b.length}`);
   let dot = 0;
   let na = 0;
   let nb = 0;

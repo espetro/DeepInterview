@@ -10,9 +10,7 @@ export interface MockFixture {
 
 export function loadFixture(name = "default"): MockFixture {
   const dir = join(dirname(fileURLToPath(import.meta.url)), "../fixtures");
-  return JSON.parse(
-    readFileSync(join(dir, `${name}.json`), "utf8"),
-  ) as MockFixture;
+  return JSON.parse(readFileSync(join(dir, `${name}.json`), "utf8")) as MockFixture;
 }
 
 /** Minimal valid 16-bit PCM mono WAV, 1 second at 8kHz. */
@@ -23,8 +21,7 @@ export function makeWav(): Uint8Array {
   const buf = new ArrayBuffer(44 + dataSize);
   const view = new DataView(buf);
   const writeStr = (offset: number, s: string) => {
-    for (let i = 0; i < s.length; i++)
-      view.setUint8(offset + i, s.charCodeAt(i));
+    for (let i = 0; i < s.length; i++) view.setUint8(offset + i, s.charCodeAt(i));
   };
   writeStr(0, "RIFF");
   view.setUint32(4, 36 + dataSize, true);
@@ -49,10 +46,7 @@ export function makeWav(): Uint8Array {
   return new Uint8Array(buf);
 }
 
-type Handler = (
-  req: Request,
-  fixture: MockFixture,
-) => Response | Promise<Response>;
+type Handler = (req: Request, fixture: MockFixture) => Response | Promise<Response>;
 
 /** Deterministic embedding: 64-dim token-hash bag-of-words, L2-normalized. */
 export function mockEmbed(text: string, dims = 64): number[] {
@@ -166,9 +160,7 @@ export function startServer(port: number, fixture?: MockFixture) {
 }
 
 if (import.meta.main) {
-  const port = Number(
-    new URLSearchParams(process.argv.slice(2).join("&")).get("port") ?? 9000,
-  );
+  const port = Number(new URLSearchParams(process.argv.slice(2).join("&")).get("port") ?? 9000);
   const server = startServer(port);
   console.log(`mock provider listening on http://localhost:${server.port}`);
 }

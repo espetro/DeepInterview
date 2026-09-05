@@ -4,12 +4,7 @@ import type { SpeechDriver } from "./server-driver";
 import { createStoreToolExecutors } from "../agent/client-agent";
 import { $currentQuestion, $clientTurns } from "../agent/session-store";
 import { $editorBuffer, $question, $whiteboard } from "../../stores/session";
-import {
-  $effectiveRuntime,
-  $providerProfile,
-  $runtimeMode,
-  probeServer,
-} from "../runtime";
+import { $effectiveRuntime, $providerProfile, $runtimeMode, probeServer } from "../runtime";
 import { describeWhiteboardSnapshot } from "@di/shared";
 import type { ProviderProfile } from "@di/shared";
 
@@ -25,9 +20,7 @@ const API_BASE = (import.meta.env.VITE_DI_API_BASE as string | undefined) ?? "";
  */
 export async function selectDriver(): Promise<VoiceDriverKind> {
   if ($runtimeMode.get() === "client-only") return "browser";
-  const pinned = import.meta.env.VITE_VOICE_DEFAULT as
-    | VoiceDriverKind
-    | undefined;
+  const pinned = import.meta.env.VITE_VOICE_DEFAULT as VoiceDriverKind | undefined;
   if (pinned === "server" || pinned === "browser") return pinned;
   try {
     const res = await fetch(`${API_BASE}/api/health`, { method: "GET" });

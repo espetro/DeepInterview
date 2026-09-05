@@ -65,9 +65,7 @@ test.describe("text mode (di server)", () => {
         {
           name: "system design",
           score: 7,
-          evidence: [
-            { quote: "shard by user id", turn_seq: 0, verdict: "worked" },
-          ],
+          evidence: [{ quote: "shard by user id", turn_seq: 0, verdict: "worked" }],
         },
       ],
       model_answers: [],
@@ -103,10 +101,7 @@ test.describe("text mode (di server)", () => {
 });
 
 test("spec md scenarios all have executed counterparts", () => {
-  const md = readFileSync(
-    new URL("./specs/e2e-text.spec.md", import.meta.url),
-    "utf8",
-  );
+  const md = readFileSync(new URL("./specs/e2e-text.spec.md", import.meta.url), "utf8");
   const headings = [...md.matchAll(/^## (.+)$/gm)].map((m) => m[1].trim());
   expect(headings.length).toBeGreaterThan(0);
   for (const h of headings) {
@@ -241,10 +236,7 @@ test.describe("client-only runtime (no di server)", () => {
   });
 
   test("client-only spec md scenarios all have executed counterparts", () => {
-    const md = readFileSync(
-      new URL("./specs/e2e-client-only.spec.md", import.meta.url),
-      "utf8",
-    );
+    const md = readFileSync(new URL("./specs/e2e-client-only.spec.md", import.meta.url), "utf8");
     const headings = [...md.matchAll(/^## (.+)$/gm)].map((m) => m[1].trim());
     expect(headings.length).toBeGreaterThan(0);
     for (const h of headings) {

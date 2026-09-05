@@ -85,8 +85,7 @@ function waitFor<T>(probe: () => T | undefined, ms = 2000): Promise<T> {
     const tick = () => {
       const v = probe();
       if (v) return resolve(v);
-      if (Date.now() - started > ms)
-        return reject(new Error("waitFor timeout"));
+      if (Date.now() - started > ms) return reject(new Error("waitFor timeout"));
       setTimeout(tick, 25);
     };
     tick();
@@ -106,9 +105,7 @@ describe("voice websocket endpoint", () => {
     );
     expect(bad.status).toBe(404);
 
-    const ws = new WebSocket(
-      `ws://localhost:${server.port}/v1/sessions/${sessionId}/voice`,
-    );
+    const ws = new WebSocket(`ws://localhost:${server.port}/v1/sessions/${sessionId}/voice`);
     const messages: { t: string; [k: string]: unknown }[] = [];
     const binary: Uint8Array[] = [];
     ws.onmessage = (ev) => {
@@ -123,17 +120,12 @@ describe("voice websocket endpoint", () => {
     // stream one binary PCM frame (4-byte BE seq + 8 bytes pcm) then utterance_end
     const frame = new Uint8Array(4 + 8);
     new DataView(frame.buffer).setUint32(0, 0, false);
-    frame.set(
-      new Uint8Array([1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0]).subarray(0, 8),
-      4,
-    );
+    frame.set(new Uint8Array([1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0]).subarray(0, 8), 4);
     ws.send(frame);
     ws.send(JSON.stringify({ t: "utterance_end" }));
 
     const done = await waitFor(() =>
-      messages.some((m) => m.t === "agent_speaking" && m.on === false)
-        ? messages
-        : undefined,
+      messages.some((m) => m.t === "agent_speaking" && m.on === false) ? messages : undefined,
     );
     expect(done.map((m) => m.t)).toEqual([
       "user_transcript",
@@ -146,20 +138,12 @@ describe("voice websocket endpoint", () => {
     expect(binary).toHaveLength(1);
     expect(binary[0]!.length).toBe(4 + 960);
 
-    const turns = await db
-      .selectFrom("turns")
-      .selectAll()
-      .orderBy("seq")
-      .execute();
+    const turns = await db.selectFrom("turns").selectAll().orderBy("seq").execute();
     expect(turns.map((t) => [t.speaker, t.text])).toEqual([
       ["user", "hello agent"],
       ["agent", "Hi, ready when you are."],
     ]);
-    const events = await db
-      .selectFrom("events")
-      .select("type")
-      .orderBy("id")
-      .execute();
+    const events = await db.selectFrom("events").select("type").orderBy("id").execute();
     expect(events.map((e) => e.type)).toContain("agent.started");
     ws.close();
   });

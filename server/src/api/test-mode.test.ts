@@ -32,12 +32,7 @@ describe("deriveStalledAt", () => {
     },
     {
       name: "stt failed: chain ends at stt.failed",
-      stages: [
-        "agent.started",
-        "vad.speech_ended",
-        "stt.request",
-        "stt.failed",
-      ],
+      stages: ["agent.started", "vad.speech_ended", "stt.request", "stt.failed"],
       expected: "stt.failed",
     },
     {

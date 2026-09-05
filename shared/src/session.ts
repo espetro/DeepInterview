@@ -50,9 +50,7 @@ export const CreateSessionRequestSchema = v.object({
   duration_min: v.pipe(v.number(), v.integer(), v.minValue(5), v.maxValue(120)),
   prompt: v.optional(v.string()),
 });
-export type CreateSessionRequest = v.InferOutput<
-  typeof CreateSessionRequestSchema
->;
+export type CreateSessionRequest = v.InferOutput<typeof CreateSessionRequestSchema>;
 
 /** Browser-pushed editor/whiteboard state the worker reads via GET /v1/sessions/:id/tools. */
 export const ToolStateSchema = v.object({

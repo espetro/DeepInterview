@@ -27,10 +27,7 @@ describe("document routes", () => {
     db = createDatabase(":memory:");
     await migrate(db);
     app = new Hono();
-    app.route(
-      "/v1",
-      apiRoutes(db, { testMode: false, embeddings: new StubEmbeddings() }),
-    );
+    app.route("/v1", apiRoutes(db, { testMode: false, embeddings: new StubEmbeddings() }));
     const res = await app.request("/v1/sessions", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -51,10 +48,7 @@ describe("document routes", () => {
   }
 
   it("ingests a text document and returns it ready with chunk count", async () => {
-    const res = await upload(
-      "notes.md",
-      "# notes\n\nabout caching systems\n\nmore text here",
-    );
+    const res = await upload("notes.md", "# notes\n\nabout caching systems\n\nmore text here");
     expect(res.status).toBe(201);
     const { documents } = (await res.json()) as {
       documents: { name: string; status: string; chunk_count?: number }[];
@@ -93,9 +87,7 @@ describe("document routes", () => {
   });
 
   it("404s context for unknown sessions", async () => {
-    const res = await app.request(
-      "/v1/sessions/00000000-0000-4000-8000-000000000000/context",
-    );
+    const res = await app.request("/v1/sessions/00000000-0000-4000-8000-000000000000/context");
     expect(res.status).toBe(404);
   });
 
@@ -103,16 +95,11 @@ describe("document routes", () => {
     const { documents } = (await (
       await app.request(`/v1/sessions/${sessionId}/documents`)
     ).json()) as { documents: { id: string }[] };
-    const res = await app.request(
-      `/v1/sessions/${sessionId}/documents/${documents[0]!.id}`,
-      {
-        method: "DELETE",
-      },
-    );
+    const res = await app.request(`/v1/sessions/${sessionId}/documents/${documents[0]!.id}`, {
+      method: "DELETE",
+    });
     expect(res.status).toBe(204);
     const ctx = await app.request(`/v1/sessions/${sessionId}/context`);
-    expect(((await ctx.json()) as { chunks: unknown[] }).chunks).toHaveLength(
-      0,
-    );
+    expect(((await ctx.json()) as { chunks: unknown[] }).chunks).toHaveLength(0);
   });
 });

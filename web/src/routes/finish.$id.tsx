@@ -15,8 +15,7 @@ function formatTimestamp(createdAt: string) {
 
 function transcriptToMarkdown(session: { title: string }, turns: TurnDto[]) {
   const lines = turns.map(
-    (t) =>
-      `**${t.speaker}** (${t.source}, ${formatTimestamp(t.created_at)}): ${t.text}`,
+    (t) => `**${t.speaker}** (${t.source}, ${formatTimestamp(t.created_at)}): ${t.text}`,
   );
   return `# ${session.title}\n\n${lines.join("\n\n")}\n`;
 }
@@ -86,8 +85,7 @@ function Finish() {
   useEffect(() => {
     if (!menuOpen) return;
     const onClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node))
-        setMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     };
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);

@@ -3,9 +3,7 @@ async function ortWasmThreaded(moduleArg = {}) {
   var f = moduleArg,
     aa = !!globalThis.window,
     ba = !!globalThis.WorkerGlobalScope,
-    h =
-      globalThis.process?.versions?.node &&
-      "renderer" != globalThis.process?.type,
+    h = globalThis.process?.versions?.node && "renderer" != globalThis.process?.type,
     m = ba && self.name?.startsWith("em-pthread");
   if (h) {
     const { createRequire: a } = await import("module");
@@ -26,8 +24,7 @@ async function ortWasmThreaded(moduleArg = {}) {
   };
   var SharedArrayBuffer =
     globalThis.SharedArrayBuffer ??
-    new WebAssembly.Memory({ initial: 0, maximum: 0, shared: !0 }).buffer
-      .constructor;
+    new WebAssembly.Memory({ initial: 0, maximum: 0, shared: !0 }).buffer.constructor;
   const da =
     (a) =>
     async (...b) => {
@@ -84,8 +81,7 @@ async function ortWasmThreaded(moduleArg = {}) {
       f.webnnOnReleaseSession = (c) => {
         d.onReleaseSession(c);
       };
-      f.webnnCreateMLTensorDownloader = (c, e) =>
-        d.createMLTensorDownloader(c, e);
+      f.webnnCreateMLTensorDownloader = (c, e) => d.createMLTensorDownloader(c, e);
       f.webnnRegisterMLTensor = (c, e, g, k) => d.registerMLTensor(c, e, g, k);
       f.webnnCreateMLContext = (c) => d.createMLContext(c);
       f.webnnRegisterGraphInput = d.registerGraphInput.bind(d);
@@ -93,8 +89,7 @@ async function ortWasmThreaded(moduleArg = {}) {
       f.webnnRegisterGraphOutput = d.registerGraphOutput.bind(d);
       f.webnnIsGraphOutput = d.isGraphOutput.bind(d);
       f.webnnCreateTemporaryTensor = d.createTemporaryTensor.bind(d);
-      f.webnnIsGraphInputOutputTypeSupported =
-        d.isGraphInputOutputTypeSupported.bind(d);
+      f.webnnIsGraphInputOutputTypeSupported = d.isGraphInputOutputTypeSupported.bind(d);
     }
   };
   let fa = () => {
@@ -115,8 +110,7 @@ async function ortWasmThreaded(moduleArg = {}) {
       "_OrtBindInput",
     ]);
     "undefined" !== typeof da &&
-      ((f._OrtRun = da(f._OrtRun)),
-      (f._OrtRunWithBinding = da(f._OrtRunWithBinding)));
+      ((f._OrtRun = da(f._OrtRun)), (f._OrtRunWithBinding = da(f._OrtRunWithBinding)));
     fa = void 0;
   };
   f.asyncInit = () => {
@@ -168,9 +162,7 @@ async function ortWasmThreaded(moduleArg = {}) {
             e.open("GET", a, !0);
             e.responseType = "arraybuffer";
             e.onload = () => {
-              200 == e.status || (0 == e.status && e.response)
-                ? d(e.response)
-                : c(e.status);
+              200 == e.status || (0 == e.status && e.response) ? d(e.response) : c(e.status);
             };
             e.onerror = c;
             e.send(null);
@@ -295,9 +287,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     a = "Aborted(" + a + ")";
     r(a);
     t = !0;
-    a = new WebAssembly.RuntimeError(
-      a + ". Build with -sASSERTIONS for more info.",
-    );
+    a = new WebAssembly.RuntimeError(a + ". Build with -sASSERTIONS for more info.");
     ya?.(a);
     throw a;
   }
@@ -328,8 +318,7 @@ async function ortWasmThreaded(moduleArg = {}) {
         var d = fetch(b, { credentials: "same-origin" });
         return await WebAssembly.instantiateStreaming(d, a);
       } catch (c) {
-        (r(`wasm streaming compile failed: ${c}`),
-          r("falling back to ArrayBuffer instantiation"));
+        (r(`wasm streaming compile failed: ${c}`), r("falling back to ArrayBuffer instantiation"));
       }
     return Ua(b, a);
   }
@@ -656,7 +645,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     ud = [],
     N = {};
   function Ee() {
-    for (var a = f.numThreads - 1; a--; ) ze();
+    for (var a = f.numThreads - 1; a--;) ze();
     we.push(async () => {
       var b = Fe();
       xe++;
@@ -694,8 +683,7 @@ async function ortWasmThreaded(moduleArg = {}) {
           He(() => {
             Ge(N[k.Nd]);
           });
-        else if ("loaded" === g)
-          ((a.loaded = !0), h && !a.Rc && a.unref(), b(a));
+        else if ("loaded" === g) ((a.loaded = !0), h && !a.Rc && a.unref(), b(a));
         else if ("setimmediate" === k.target) a.postMessage(k);
         else if ("uncaughtException" === g) a.onerror(k.error);
         else if ("callHandler" === g) f[k.vd](...k.args);
@@ -705,9 +693,7 @@ async function ortWasmThreaded(moduleArg = {}) {
         r(`${"worker sent an error!"} ${g.filename}:${g.lineno}: ${g.message}`);
         throw g;
       };
-      h &&
-        (a.on("message", (g) => a.onmessage({ data: g })),
-        a.on("error", (g) => a.onerror(g)));
+      h && (a.on("message", (g) => a.onmessage({ data: g })), a.on("error", (g) => a.onerror(g)));
       var d = [],
         c = [],
         e;
@@ -795,8 +781,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     var a = Ie.pop();
     a || H("no exception to throw");
     var b = a.cd;
-    0 == (v(), A)[(a.Tc + 13) >>> 0] &&
-      (Ie.push(a), Me(a, !0), Le(a, !1), Je++);
+    0 == (v(), A)[(a.Tc + 13) >>> 0] && (Ie.push(a), Me(a, !0), Le(a, !1), Je++);
     Hd(b);
     Q = b;
     throw Q;
@@ -837,17 +822,15 @@ async function ortWasmThreaded(moduleArg = {}) {
     Qe = (a, b, d, c) => {
       d = b + d;
       if (c) return d;
-      for (; a[b] && !(b >= d); ) ++b;
+      for (; a[b] && !(b >= d);) ++b;
       return b;
     },
     Re = (a, b = 0, d, c) => {
       b >>>= 0;
       d = Qe(a, b, d, c);
       if (16 < d - b && a.buffer && Pe)
-        return Pe.decode(
-          a.buffer instanceof ArrayBuffer ? a.subarray(b, d) : a.slice(b, d),
-        );
-      for (c = ""; b < d; ) {
+        return Pe.decode(a.buffer instanceof ArrayBuffer ? a.subarray(b, d) : a.slice(b, d));
+      for (c = ""; b < d;) {
         var e = a[b++];
         if (e & 128) {
           var g = a[b++] & 63;
@@ -860,11 +843,7 @@ async function ortWasmThreaded(moduleArg = {}) {
                 : ((e & 7) << 18) | (g << 12) | (k << 6) | (a[b++] & 63);
             65536 > e
               ? (c += String.fromCharCode(e))
-              : ((e -= 65536),
-                (c += String.fromCharCode(
-                  55296 | (e >> 10),
-                  56320 | (e & 1023),
-                )));
+              : ((e -= 65536), (c += String.fromCharCode(55296 | (e >> 10), 56320 | (e & 1023))));
           }
         } else c += String.fromCharCode(e);
       }
@@ -913,7 +892,7 @@ async function ortWasmThreaded(moduleArg = {}) {
   var yb = () => H(""),
     S = (a) => {
       a >>>= 0;
-      for (var b = ""; ; ) {
+      for (var b = ""; ;) {
         var d = (v(), B)[a++ >>> 0];
         if (!d) return b;
         b += String.fromCharCode(d);
@@ -930,8 +909,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     };
   function We(a, b, d = {}) {
     var c = b.name;
-    if (!a)
-      throw new Ve(`type "${c}" must have a positive integer typeid pointer`);
+    if (!a) throw new Ve(`type "${c}" must have a positive integer typeid pointer`);
     if (Te.hasOwnProperty(a)) {
       if (d.yd) return;
       throw new Ve(`Cannot register type '${c}' twice`);
@@ -948,17 +926,11 @@ async function ortWasmThreaded(moduleArg = {}) {
       case 1:
         return d ? (c) => (v(), A)[c >>> 0] : (c) => (v(), B)[c >>> 0];
       case 2:
-        return d
-          ? (c) => (v(), Ma)[(c >>> 1) >>> 0]
-          : (c) => (v(), Na)[(c >>> 1) >>> 0];
+        return d ? (c) => (v(), Ma)[(c >>> 1) >>> 0] : (c) => (v(), Na)[(c >>> 1) >>> 0];
       case 4:
-        return d
-          ? (c) => (v(), C)[(c >>> 2) >>> 0]
-          : (c) => (v(), D)[(c >>> 2) >>> 0];
+        return d ? (c) => (v(), C)[(c >>> 2) >>> 0] : (c) => (v(), D)[(c >>> 2) >>> 0];
       case 8:
-        return d
-          ? (c) => (v(), F)[(c >>> 3) >>> 0]
-          : (c) => (v(), Pa)[(c >>> 3) >>> 0];
+        return d ? (c) => (v(), F)[(c >>> 3) >>> 0] : (c) => (v(), Pa)[(c >>> 3) >>> 0];
       default:
         throw new TypeError(`invalid integer width (${b}): ${a}`);
     }
@@ -1230,8 +1202,7 @@ async function ortWasmThreaded(moduleArg = {}) {
       return b - c;
     },
     jf = (a) => {
-      for (var b = 0, d = 0; d < a.length; ++d)
-        (65535 < a.codePointAt(d) && d++, (b += 4));
+      for (var b = 0, d = 0; d < a.length; ++d) (65535 < a.codePointAt(d) && d++, (b += 4));
       return b;
     };
   function Gb(a, b, d) {
@@ -1253,8 +1224,7 @@ async function ortWasmThreaded(moduleArg = {}) {
         return l;
       },
       Vc: (k, l) => {
-        if ("string" != typeof l)
-          throw new Ve(`Cannot pass non-string to C++ string type ${d}`);
+        if ("string" != typeof l) throw new Ve(`Cannot pass non-string to C++ string type ${d}`);
         var n = g(l),
           p = xd(4 + n + b);
         (v(), D)[(p >>> 2) >>> 0] = n / b;
@@ -1293,10 +1263,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     kf =
       !Atomics.waitAsync ||
       (globalThis.navigator?.userAgent &&
-        91 >
-          Number(
-            (navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./) || [])[2],
-          ));
+        91 > Number((navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./) || [])[2]));
   function Ha(a) {
     a >>>= 0;
     kf ||
@@ -1323,11 +1290,9 @@ async function ortWasmThreaded(moduleArg = {}) {
     e >>>= 0;
     lf.length = 0;
     d = e >>> 3;
-    for (c = (e + c) >>> 3; d < c; ) {
+    for (c = (e + c) >>> 3; d < c;) {
       var g;
-      (v(), F)[d++ >>> 0]
-        ? (g = (v(), F)[d++ >>> 0])
-        : (g = (v(), E)[d++ >>> 0]);
+      (v(), F)[d++ >>> 0] ? (g = (v(), F)[d++ >>> 0]) : (g = (v(), E)[d++ >>> 0]);
       lf.push(g);
     }
     return (b ? mf[b] : nf[a])(...lf);
@@ -1360,10 +1325,7 @@ async function ortWasmThreaded(moduleArg = {}) {
           q &&
             1 === Z &&
             0 === pf.length &&
-            ((Z = 0),
-            (O += 1),
-            of(re),
-            "undefined" != typeof Fibers && Fibers.be()));
+            ((Z = 0), (O += 1), of(re), "undefined" != typeof Fibers && Fibers.be()));
       }
     };
     qf.set(a, b);
@@ -1437,9 +1399,7 @@ async function ortWasmThreaded(moduleArg = {}) {
           "undefined" != typeof MainLoop && MainLoop.ud && MainLoop.pause(),
           of(() => qe(q)));
       } else
-        2 === Z
-          ? ((Z = 0), of(te), I(q), (q = null), wf.forEach(He))
-          : H(`invalid state: ${Z}`);
+        2 === Z ? ((Z = 0), of(te), I(q), (q = null), wf.forEach(He)) : H(`invalid state: ${Z}`);
       return rf;
     }
   }
@@ -1510,8 +1470,7 @@ async function ortWasmThreaded(moduleArg = {}) {
         l = "";
         break;
       case 1:
-        ((k.getStringOrSymbol = Gf),
-          (l = "toValue(handle)[getStringOrSymbol(methodName)]"));
+        ((k.getStringOrSymbol = Gf), (l = "toValue(handle)[getStringOrSymbol(methodName)]"));
     }
     l += `(${a})`;
     c.zd ||
@@ -1571,7 +1530,7 @@ async function ortWasmThreaded(moduleArg = {}) {
   }
   function bc(a) {
     a >>>= 0;
-    for (var b = V(a); b.length; ) {
+    for (var b = V(a); b.length;) {
       var d = b.pop();
       b.pop()(d);
     }
@@ -1596,9 +1555,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     (v(), C)[((b + 16) >>> 2) >>> 0] = a.getUTCMonth();
     (v(), C)[((b + 20) >>> 2) >>> 0] = a.getUTCFullYear() - 1900;
     (v(), C)[((b + 24) >>> 2) >>> 0] = a.getUTCDay();
-    a =
-      ((a.getTime() - Date.UTC(a.getUTCFullYear(), 0, 1, 0, 0, 0, 0)) / 864e5) |
-      0;
+    a = ((a.getTime() - Date.UTC(a.getUTCFullYear(), 0, 1, 0, 0, 0, 0)) / 864e5) | 0;
     (v(), C)[((b + 28) >>> 2) >>> 0] = a;
   }
   var Hf = (a) => 0 === a % 4 && (0 !== a % 100 || 0 === a % 400),
@@ -1615,8 +1572,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     (v(), C)[((b + 16) >>> 2) >>> 0] = a.getMonth();
     (v(), C)[((b + 20) >>> 2) >>> 0] = a.getFullYear() - 1900;
     (v(), C)[((b + 24) >>> 2) >>> 0] = a.getDay();
-    var d =
-      ((Hf(a.getFullYear()) ? If : Jf)[a.getMonth()] + a.getDate() - 1) | 0;
+    var d = ((Hf(a.getFullYear()) ? If : Jf)[a.getMonth()] + a.getDate() - 1) | 0;
     (v(), C)[((b + 28) >>> 2) >>> 0] = d;
     (v(), C)[((b + 36) >>> 2) >>> 0] = -(60 * a.getTimezoneOffset());
     d = new Date(a.getFullYear(), 6, 1).getTimezoneOffset();
@@ -1643,8 +1599,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     0 > d
       ? ((v(), C)[((a + 32) >>> 2) >>> 0] = Number(e != g && k == c))
       : 0 < d != (k == c) &&
-        ((e = Math.max(g, e)),
-        b.setTime(b.getTime() + 6e4 * ((0 < d ? k : e) - c)));
+        ((e = Math.max(g, e)), b.setTime(b.getTime() + 6e4 * ((0 < d ? k : e) - c)));
     (v(), C)[((a + 24) >>> 2) >>> 0] = b.getDay();
     d = ((Hf(b.getFullYear()) ? If : Jf)[b.getMonth()] + b.getDate() - 1) | 0;
     (v(), C)[((a + 28) >>> 2) >>> 0] = d;
@@ -1710,7 +1665,7 @@ async function ortWasmThreaded(moduleArg = {}) {
   var Mf = [],
     Nf = (a, b) => {
       Mf.length = 0;
-      for (var d; (d = (v(), B)[a++ >>> 0]); ) {
+      for (var d; (d = (v(), B)[a++ >>> 0]);) {
         var c = 105 != d;
         c &= 112 != d;
         b += c && b % 8 ? 4 : 0;
@@ -1748,8 +1703,7 @@ async function ortWasmThreaded(moduleArg = {}) {
   function rc() {
     return 4294901760;
   }
-  var tc = () =>
-      h ? require("os").cpus().length : navigator.hardwareConcurrency,
+  var tc = () => (h ? require("os").cpus().length : navigator.hardwareConcurrency),
     Of = {},
     Pf = (a) => {
       var b;
@@ -1815,13 +1769,9 @@ async function ortWasmThreaded(moduleArg = {}) {
     a >>>= 0;
     b >>>= 0;
     if (Of.gd == a) var c = Of.Jd;
-    else
-      ((c = Error().stack.toString().split("\n")),
-        "Error" == c[0] && c.shift(),
-        Qf(c));
-    for (var e = 3; c[e] && Pf(c[e]) != a; ) ++e;
-    for (a = 0; a < d && c[a + e]; ++a)
-      (v(), C)[((b + 4 * a) >>> 2) >>> 0] = Pf(c[a + e]);
+    else ((c = Error().stack.toString().split("\n")), "Error" == c[0] && c.shift(), Qf(c));
+    for (var e = 3; c[e] && Pf(c[e]) != a;) ++e;
+    for (a = 0; a < d && c[a + e]; ++a) (v(), C)[((b + 4 * a) >>> 2) >>> 0] = Pf(c[a + e]);
     return a;
   }
   var Rf = {},
@@ -1833,9 +1783,7 @@ async function ortWasmThreaded(moduleArg = {}) {
             PATH: "/",
             PWD: "/",
             HOME: "/home/web_user",
-            LANG:
-              (globalThis.navigator?.language ?? "C").replace("-", "_") +
-              ".UTF-8",
+            LANG: (globalThis.navigator?.language ?? "C").replace("-", "_") + ".UTF-8",
             _: ha || "./this.program",
           },
           b;
@@ -1896,9 +1844,7 @@ async function ortWasmThreaded(moduleArg = {}) {
         var p = a,
           u = (v(), B)[(k + n) >>> 0],
           w = Uf[p];
-        0 === u || 10 === u
-          ? ((1 === p ? sa : r)(Re(w)), (w.length = 0))
-          : w.push(u);
+        0 === u || 10 === u ? ((1 === p ? sa : r)(Re(w)), (w.length = 0)) : w.push(u);
       }
       e += l;
     }
@@ -1909,9 +1855,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     return a >>> 0;
   }
   m || Ee();
-  m ||
-    ((x = new WebAssembly.Memory({ initial: 256, maximum: 65536, shared: !0 })),
-    wa());
+  m || ((x = new WebAssembly.Memory({ initial: 256, maximum: 65536, shared: !0 })), wa());
   f.wasmBinary && (ta = f.wasmBinary);
   f.stackSave = () => L();
   f.stackRestore = (a) => K(a);
@@ -2186,90 +2130,70 @@ async function ortWasmThreaded(moduleArg = {}) {
         f.$b("ReduceMean", a, {
           keepDims: !!b,
           noopWithEmptyAxes: !!d,
-          axes: c
-            ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0))
-            : [],
+          axes: c ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0)) : [],
         });
       },
       1059308: (a, b, d, c, e) => {
         f.$b("ReduceMax", a, {
           keepDims: !!b,
           noopWithEmptyAxes: !!d,
-          axes: c
-            ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0))
-            : [],
+          axes: c ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0)) : [],
         });
       },
       1059482: (a, b, d, c, e) => {
         f.$b("ReduceMin", a, {
           keepDims: !!b,
           noopWithEmptyAxes: !!d,
-          axes: c
-            ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0))
-            : [],
+          axes: c ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0)) : [],
         });
       },
       1059656: (a, b, d, c, e) => {
         f.$b("ReduceProd", a, {
           keepDims: !!b,
           noopWithEmptyAxes: !!d,
-          axes: c
-            ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0))
-            : [],
+          axes: c ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0)) : [],
         });
       },
       1059831: (a, b, d, c, e) => {
         f.$b("ReduceSum", a, {
           keepDims: !!b,
           noopWithEmptyAxes: !!d,
-          axes: c
-            ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0))
-            : [],
+          axes: c ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0)) : [],
         });
       },
       1060005: (a, b, d, c, e) => {
         f.$b("ReduceL1", a, {
           keepDims: !!b,
           noopWithEmptyAxes: !!d,
-          axes: c
-            ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0))
-            : [],
+          axes: c ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0)) : [],
         });
       },
       1060178: (a, b, d, c, e) => {
         f.$b("ReduceL2", a, {
           keepDims: !!b,
           noopWithEmptyAxes: !!d,
-          axes: c
-            ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0))
-            : [],
+          axes: c ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0)) : [],
         });
       },
       1060351: (a, b, d, c, e) => {
         f.$b("ReduceLogSum", a, {
           keepDims: !!b,
           noopWithEmptyAxes: !!d,
-          axes: c
-            ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0))
-            : [],
+          axes: c ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0)) : [],
         });
       },
       1060528: (a, b, d, c, e) => {
         f.$b("ReduceSumSquare", a, {
           keepDims: !!b,
           noopWithEmptyAxes: !!d,
-          axes: c
-            ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0))
-            : [],
+          axes: c ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0)) : [],
         });
       },
       1060708: (a, b, d, c, e) => {
         f.$b("ReduceLogSumExp", a, {
           keepDims: !!b,
           noopWithEmptyAxes: !!d,
-          axes: c
-            ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0))
-            : [],
+          axes: c ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0)) : [],
         });
       },
       1060888: (a) => {
@@ -2277,9 +2201,7 @@ async function ortWasmThreaded(moduleArg = {}) {
       },
       1060941: (a, b, d) => {
         f.$b("Transpose", a, {
-          perm: b
-            ? Array.from((v(), C).subarray(Number(b) >>> 0, Number(d) >>> 0))
-            : [],
+          perm: b ? Array.from((v(), C).subarray(Number(b) >>> 0, Number(d) >>> 0)) : [],
         });
       },
       1061065: (a, b, d, c) => {
@@ -2309,12 +2231,8 @@ async function ortWasmThreaded(moduleArg = {}) {
           pads: [g, k],
           strides: [l],
           wIsConst: () => !!(v(), A)[p >>> 0],
-          outputPadding: u
-            ? Array.from((v(), C).subarray(Number(u) >>> 0, Number(w) >>> 0))
-            : [],
-          outputShape: y
-            ? Array.from((v(), C).subarray(Number(y) >>> 0, Number(z) >>> 0))
-            : [],
+          outputPadding: u ? Array.from((v(), C).subarray(Number(u) >>> 0, Number(w) >>> 0)) : [],
+          outputShape: y ? Array.from((v(), C).subarray(Number(y) >>> 0, Number(z) >>> 0)) : [],
           activation: R(W),
         });
       },
@@ -2322,26 +2240,16 @@ async function ortWasmThreaded(moduleArg = {}) {
         f.$b("ConvTranspose", a, {
           format: l ? "NHWC" : "NCHW",
           autoPad: b,
-          dilations: Array.from(
-            (v(), C).subarray(Number(d) >>> 0, ((Number(d) >>> 0) + 2) >>> 0),
-          ),
+          dilations: Array.from((v(), C).subarray(Number(d) >>> 0, ((Number(d) >>> 0) + 2) >>> 0)),
           group: c,
           kernelShape: Array.from(
             (v(), C).subarray(Number(e) >>> 0, ((Number(e) >>> 0) + 2) >>> 0),
           ),
-          pads: Array.from(
-            (v(), C).subarray(Number(g) >>> 0, ((Number(g) >>> 0) + 4) >>> 0),
-          ),
-          strides: Array.from(
-            (v(), C).subarray(Number(k) >>> 0, ((Number(k) >>> 0) + 2) >>> 0),
-          ),
+          pads: Array.from((v(), C).subarray(Number(g) >>> 0, ((Number(g) >>> 0) + 4) >>> 0)),
+          strides: Array.from((v(), C).subarray(Number(k) >>> 0, ((Number(k) >>> 0) + 2) >>> 0)),
           wIsConst: () => !!(v(), A)[n >>> 0],
-          outputPadding: p
-            ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0))
-            : [],
-          outputShape: w
-            ? Array.from((v(), C).subarray(Number(w) >>> 0, Number(y) >>> 0))
-            : [],
+          outputPadding: p ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0)) : [],
+          outputShape: w ? Array.from((v(), C).subarray(Number(w) >>> 0, Number(y) >>> 0)) : [],
           activation: R(z),
         });
       },
@@ -2355,12 +2263,8 @@ async function ortWasmThreaded(moduleArg = {}) {
           pads: [g, k],
           strides: [l],
           wIsConst: () => !!(v(), A)[p >>> 0],
-          outputPadding: u
-            ? Array.from((v(), C).subarray(Number(u) >>> 0, Number(w) >>> 0))
-            : [],
-          outputShape: y
-            ? Array.from((v(), C).subarray(Number(y) >>> 0, Number(z) >>> 0))
-            : [],
+          outputPadding: u ? Array.from((v(), C).subarray(Number(u) >>> 0, Number(w) >>> 0)) : [],
+          outputShape: y ? Array.from((v(), C).subarray(Number(y) >>> 0, Number(z) >>> 0)) : [],
           activation: R(W),
         });
       },
@@ -2368,26 +2272,16 @@ async function ortWasmThreaded(moduleArg = {}) {
         f.$b("ConvTranspose", a, {
           format: l ? "NHWC" : "NCHW",
           autoPad: b,
-          dilations: Array.from(
-            (v(), C).subarray(Number(d) >>> 0, ((Number(d) >>> 0) + 2) >>> 0),
-          ),
+          dilations: Array.from((v(), C).subarray(Number(d) >>> 0, ((Number(d) >>> 0) + 2) >>> 0)),
           group: c,
           kernelShape: Array.from(
             (v(), C).subarray(Number(e) >>> 0, ((Number(e) >>> 0) + 2) >>> 0),
           ),
-          pads: Array.from(
-            (v(), C).subarray(Number(g) >>> 0, ((Number(g) >>> 0) + 4) >>> 0),
-          ),
-          strides: Array.from(
-            (v(), C).subarray(Number(k) >>> 0, ((Number(k) >>> 0) + 2) >>> 0),
-          ),
+          pads: Array.from((v(), C).subarray(Number(g) >>> 0, ((Number(g) >>> 0) + 4) >>> 0)),
+          strides: Array.from((v(), C).subarray(Number(k) >>> 0, ((Number(k) >>> 0) + 2) >>> 0)),
           wIsConst: () => !!(v(), A)[n >>> 0],
-          outputPadding: p
-            ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0))
-            : [],
-          outputShape: w
-            ? Array.from((v(), C).subarray(Number(w) >>> 0, Number(y) >>> 0))
-            : [],
+          outputPadding: p ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0)) : [],
+          outputShape: w ? Array.from((v(), C).subarray(Number(w) >>> 0, Number(y) >>> 0)) : [],
           activation: R(z),
         });
       },
@@ -2401,18 +2295,10 @@ async function ortWasmThreaded(moduleArg = {}) {
           ceil_mode: d,
           count_include_pad: c,
           storage_order: e,
-          dilations: g
-            ? Array.from((v(), C).subarray(Number(g) >>> 0, Number(k) >>> 0))
-            : [],
-          kernel_shape: l
-            ? Array.from((v(), C).subarray(Number(l) >>> 0, Number(n) >>> 0))
-            : [],
-          pads: p
-            ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0))
-            : [],
-          strides: w
-            ? Array.from((v(), C).subarray(Number(w) >>> 0, Number(y) >>> 0))
-            : [],
+          dilations: g ? Array.from((v(), C).subarray(Number(g) >>> 0, Number(k) >>> 0)) : [],
+          kernel_shape: l ? Array.from((v(), C).subarray(Number(l) >>> 0, Number(n) >>> 0)) : [],
+          pads: p ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0)) : [],
+          strides: w ? Array.from((v(), C).subarray(Number(w) >>> 0, Number(y) >>> 0)) : [],
         });
       },
       1064181: (a, b) => {
@@ -2425,18 +2311,10 @@ async function ortWasmThreaded(moduleArg = {}) {
           ceil_mode: d,
           count_include_pad: c,
           storage_order: e,
-          dilations: g
-            ? Array.from((v(), C).subarray(Number(g) >>> 0, Number(k) >>> 0))
-            : [],
-          kernel_shape: l
-            ? Array.from((v(), C).subarray(Number(l) >>> 0, Number(n) >>> 0))
-            : [],
-          pads: p
-            ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0))
-            : [],
-          strides: w
-            ? Array.from((v(), C).subarray(Number(w) >>> 0, Number(y) >>> 0))
-            : [],
+          dilations: g ? Array.from((v(), C).subarray(Number(g) >>> 0, Number(k) >>> 0)) : [],
+          kernel_shape: l ? Array.from((v(), C).subarray(Number(l) >>> 0, Number(n) >>> 0)) : [],
+          pads: p ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0)) : [],
+          strides: w ? Array.from((v(), C).subarray(Number(w) >>> 0, Number(y) >>> 0)) : [],
         });
       },
       1064751: (a, b) => {
@@ -2449,18 +2327,10 @@ async function ortWasmThreaded(moduleArg = {}) {
           ceil_mode: d,
           count_include_pad: c,
           storage_order: e,
-          dilations: g
-            ? Array.from((v(), C).subarray(Number(g) >>> 0, Number(k) >>> 0))
-            : [],
-          kernel_shape: l
-            ? Array.from((v(), C).subarray(Number(l) >>> 0, Number(n) >>> 0))
-            : [],
-          pads: p
-            ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0))
-            : [],
-          strides: w
-            ? Array.from((v(), C).subarray(Number(w) >>> 0, Number(y) >>> 0))
-            : [],
+          dilations: g ? Array.from((v(), C).subarray(Number(g) >>> 0, Number(k) >>> 0)) : [],
+          kernel_shape: l ? Array.from((v(), C).subarray(Number(l) >>> 0, Number(n) >>> 0)) : [],
+          pads: p ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0)) : [],
+          strides: w ? Array.from((v(), C).subarray(Number(w) >>> 0, Number(y) >>> 0)) : [],
         });
       },
       1065313: (a, b) => {
@@ -2473,18 +2343,10 @@ async function ortWasmThreaded(moduleArg = {}) {
           ceil_mode: d,
           count_include_pad: c,
           storage_order: e,
-          dilations: g
-            ? Array.from((v(), C).subarray(Number(g) >>> 0, Number(k) >>> 0))
-            : [],
-          kernel_shape: l
-            ? Array.from((v(), C).subarray(Number(l) >>> 0, Number(n) >>> 0))
-            : [],
-          pads: p
-            ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0))
-            : [],
-          strides: w
-            ? Array.from((v(), C).subarray(Number(w) >>> 0, Number(y) >>> 0))
-            : [],
+          dilations: g ? Array.from((v(), C).subarray(Number(g) >>> 0, Number(k) >>> 0)) : [],
+          kernel_shape: l ? Array.from((v(), C).subarray(Number(l) >>> 0, Number(n) >>> 0)) : [],
+          pads: p ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0)) : [],
+          strides: w ? Array.from((v(), C).subarray(Number(w) >>> 0, Number(y) >>> 0)) : [],
         });
       },
       1065875: (a, b, d, c, e) => {
@@ -2509,9 +2371,7 @@ async function ortWasmThreaded(moduleArg = {}) {
         f.$b("Split", a, {
           axis: b,
           numOutputs: d,
-          splitSizes: c
-            ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0))
-            : [],
+          splitSizes: c ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0)) : [],
         });
       },
       1066528: (a) => {
@@ -2529,9 +2389,7 @@ async function ortWasmThreaded(moduleArg = {}) {
       1066811: (a, b, d, c, e, g, k, l, n, p, u) => {
         f.$b("Resize", a, {
           antialias: b,
-          axes: d
-            ? Array.from((v(), C).subarray(Number(d) >>> 0, Number(c) >>> 0))
-            : [],
+          axes: d ? Array.from((v(), C).subarray(Number(d) >>> 0, Number(c) >>> 0)) : [],
           coordinateTransformMode: R(e),
           cubicCoeffA: g,
           excludeOutside: k,
@@ -2543,15 +2401,9 @@ async function ortWasmThreaded(moduleArg = {}) {
       },
       1067173: (a, b, d, c, e, g, k) => {
         f.$b("Slice", a, {
-          starts: b
-            ? Array.from((v(), C).subarray(Number(b) >>> 0, Number(d) >>> 0))
-            : [],
-          ends: c
-            ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0))
-            : [],
-          axes: g
-            ? Array.from((v(), C).subarray(Number(g) >>> 0, Number(k) >>> 0))
-            : [],
+          starts: b ? Array.from((v(), C).subarray(Number(b) >>> 0, Number(d) >>> 0)) : [],
+          ends: c ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0)) : [],
+          axes: g ? Array.from((v(), C).subarray(Number(g) >>> 0, Number(k) >>> 0)) : [],
         });
       },
       1067437: (a) => {
@@ -2579,9 +2431,7 @@ async function ortWasmThreaded(moduleArg = {}) {
         f.$b("Pad", a, {
           mode: b,
           value: d,
-          pads: c
-            ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0))
-            : [],
+          pads: c ? Array.from((v(), C).subarray(Number(c) >>> 0, Number(e) >>> 0)) : [],
         });
       },
       1067994: (a, b, d, c, e, g) => {
@@ -2635,9 +2485,7 @@ async function ortWasmThreaded(moduleArg = {}) {
           scale: e,
           doRotary: g,
           qkvHiddenSizes: k
-            ? Array.from(
-                (v(), C).subarray(Number(l) >>> 0, (Number(l) + k) >>> 0),
-              )
+            ? Array.from((v(), C).subarray(Number(l) >>> 0, (Number(l) + k) >>> 0))
             : [],
           pastPresentShareBuffer: !!n,
         });
@@ -2655,19 +2503,11 @@ async function ortWasmThreaded(moduleArg = {}) {
         f.$b("Conv", a, {
           format: w ? "NHWC" : "NCHW",
           auto_pad: b,
-          dilations: d
-            ? Array.from((v(), C).subarray(Number(d) >>> 0, Number(c) >>> 0))
-            : [],
+          dilations: d ? Array.from((v(), C).subarray(Number(d) >>> 0, Number(c) >>> 0)) : [],
           group: e,
-          kernel_shape: g
-            ? Array.from((v(), C).subarray(Number(g) >>> 0, Number(k) >>> 0))
-            : [],
-          pads: l
-            ? Array.from((v(), C).subarray(Number(l) >>> 0, Number(n) >>> 0))
-            : [],
-          strides: p
-            ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0))
-            : [],
+          kernel_shape: g ? Array.from((v(), C).subarray(Number(g) >>> 0, Number(k) >>> 0)) : [],
+          pads: l ? Array.from((v(), C).subarray(Number(l) >>> 0, Number(n) >>> 0)) : [],
+          strides: p ? Array.from((v(), C).subarray(Number(p) >>> 0, Number(u) >>> 0)) : [],
           w_is_const: () => !!(v(), A)[Number(y) >>> 0],
           activation: R(z),
           activation_params: W
@@ -3206,7 +3046,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     if (0 < xe) ye = Da;
     else if (m) (xa?.(f), Ra());
     else {
-      for (var a = we; 0 < a.length; ) a.shift()(f);
+      for (var a = we; 0 < a.length;) a.shift()(f);
       0 < xe ? (ye = Da) : ((f.calledRun = !0), t || (Ra(), xa?.(f)));
     }
   }
@@ -3223,8 +3063,6 @@ async function ortWasmThreaded(moduleArg = {}) {
 }
 export default ortWasmThreaded;
 var isPthread = globalThis.self?.name?.startsWith("em-pthread");
-var isNode =
-  globalThis.process?.versions?.node && globalThis.process?.type != "renderer";
-if (isNode)
-  isPthread = (await import("worker_threads")).workerData === "em-pthread";
+var isNode = globalThis.process?.versions?.node && globalThis.process?.type != "renderer";
+if (isNode) isPthread = (await import("worker_threads")).workerData === "em-pthread";
 isPthread && ortWasmThreaded();

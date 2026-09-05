@@ -1,10 +1,5 @@
 import { cutSentences } from "@di/shared";
-import type {
-  ProviderProfile,
-  SessionContext,
-  TurnMetrics,
-  TurnPhase,
-} from "@di/shared";
+import type { ProviderProfile, SessionContext, TurnMetrics, TurnPhase } from "@di/shared";
 import type { Turn } from "@di/shared/session";
 import { ClientAgent } from "../agent/client-agent";
 import type { AgentToolExecutors } from "../agent/client-agent";
@@ -89,10 +84,7 @@ export class BrowserVoiceDriver implements SpeechDriver {
       SpeechRecognition?: RecognitionCtor;
       webkitSpeechRecognition?: RecognitionCtor;
     };
-    const Ctor =
-      this.deps.recognitionCtor ??
-      w.SpeechRecognition ??
-      w.webkitSpeechRecognition;
+    const Ctor = this.deps.recognitionCtor ?? w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Ctor || (!("speechSynthesis" in globalThis) && !this.agent)) {
       this.status = "error";
       this.onError("speech recognition not supported in this browser");
@@ -149,10 +141,7 @@ export class BrowserVoiceDriver implements SpeechDriver {
   }
 
   /** Stream the agent reply through sentence cutting into pipelined TTS. */
-  private async runAgentTurn(
-    text: string,
-    source: Turn["source"],
-  ): Promise<void> {
+  private async runAgentTurn(text: string, source: Turn["source"]): Promise<void> {
     const agent = this.agent;
     const tts = this.deps.tts ?? synthesizeSpeech;
     if (!agent) return;
@@ -246,8 +235,7 @@ export class BrowserVoiceDriver implements SpeechDriver {
 
   /** speechSynthesis fallback (no TTS endpoint): speak final text. */
   speakAgentTurn(text: string) {
-    const synth =
-      this.deps.speechSynthesis ?? globalThis.speechSynthesis ?? null;
+    const synth = this.deps.speechSynthesis ?? globalThis.speechSynthesis ?? null;
     if (this.muted || !synth) return;
     const utter = new SpeechSynthesisUtterance(text);
     utter.onend = () => this.finishSpeaking();

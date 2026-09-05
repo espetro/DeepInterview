@@ -21,14 +21,10 @@ export class EmbeddingClient {
       body: JSON.stringify({ model: this.model, input: texts }),
     });
     if (!res.ok) {
-      throw new Error(
-        `embeddings request failed: ${res.status} ${await res.text()}`,
-      );
+      throw new Error(`embeddings request failed: ${res.status} ${await res.text()}`);
     }
     const parsed = v.parse(EmbeddingResponseSchema, await res.json());
-    const sorted = [...parsed.data].sort(
-      (a, b) => (a.index ?? 0) - (b.index ?? 0),
-    );
+    const sorted = [...parsed.data].sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
     return sorted.map((d) => d.embedding);
   }
 }

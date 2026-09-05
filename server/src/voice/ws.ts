@@ -113,8 +113,7 @@ export async function tryUpgradeVoice(
     .select("id")
     .where("id", "=", sessionId)
     .executeTakeFirst();
-  if (!session)
-    return Response.json({ error: "session not found" }, { status: 404 });
+  if (!session) return Response.json({ error: "session not found" }, { status: 404 });
   if (server.upgrade(req, { data: { sessionId } })) return null;
   return new Response("websocket upgrade failed", { status: 400 });
 }

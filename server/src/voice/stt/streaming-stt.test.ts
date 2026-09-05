@@ -6,10 +6,7 @@ function pcm(bytes: number): Uint8Array {
 }
 
 /** SSE response that only completes after `release()` is called. */
-function sseResponse(
-  deltas: string[],
-  holdOpen?: { release: () => void },
-): Response {
+function sseResponse(deltas: string[], holdOpen?: { release: () => void }): Response {
   const body = new ReadableStream<Uint8Array>({
     start(controller) {
       const enc = new TextEncoder();
@@ -53,9 +50,9 @@ describe("StreamingWhisperStt", () => {
     expect(requests).toHaveLength(1); // single duplex streaming request
     expect(requests[0]!.url).toContain("/v1/audio/transcriptions?stream=true");
     expect(requests[0]!.url).toContain("model=whisper-1");
-    expect(
-      (requests[0]!.init.headers as Record<string, string>).authorization,
-    ).toBe("Bearer sk-test");
+    expect((requests[0]!.init.headers as Record<string, string>).authorization).toBe(
+      "Bearer sk-test",
+    );
     // next utterance opens a fresh session
     const text2 = await stt.finish();
     expect(text2).toBe(""); // nothing fed: buffered fallback returns empty

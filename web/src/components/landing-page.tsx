@@ -82,9 +82,7 @@ export function LandingPage() {
             <FormattedMessage
               id="landing.heading"
               values={{
-                em: (chunks: React.ReactNode) => (
-                  <span className="text-persimmon">{chunks}</span>
-                ),
+                em: (chunks: React.ReactNode) => <span className="text-persimmon">{chunks}</span>,
               }}
             />
           </h1>
@@ -125,10 +123,7 @@ export function LandingPage() {
         </Reveal>
 
         {/* sticker / post-it field — staggered float-in, gentle idle drift */}
-        <div
-          className="pointer-events-none absolute inset-0 hidden md:block"
-          aria-hidden="true"
-        >
+        <div className="pointer-events-none absolute inset-0 hidden md:block" aria-hidden="true">
           {STICKERS.map((s) => (
             <div
               key={s.id}

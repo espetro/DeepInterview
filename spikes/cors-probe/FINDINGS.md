@@ -5,11 +5,11 @@ Spike page: `cors-check.html` (see `README.md` for how to run). Phase 1.2 of
 
 ## Documented CORS posture per provider
 
-| Provider | Direct browser fetch | Notes |
-|---|---|---|
-| **Groq** | ✅ Allowed | No opt-in header needed. Community/3rd-party API directories consistently report CORS enabled on `api.groq.com`; browser `fetch()` with `Authorization: Bearer` is the documented pattern for client-side apps. Watch: same rate limits as server calls; don't send `credentials: 'include'`. |
-| **OpenAI** | ✅ Allowed | API sends permissive `access-control-allow-*`; official TS SDK ships `dangerouslyAllowBrowser` flag (key exposure is the concern, not CORS). Direct browser calls go through when the user accepts the key-exposure tradeoff (which BYOK local-first apps do by design). |
-| **Anthropic** | ✅ Allowed **with opt-in header** | Requires `anthropic-dangerous-direct-browser-access: true` on the request (in addition to `x-api-key` + `anthropic-version`); without it the preflight is rejected. Introduced Aug 2024 (Simon Willison's writeup). Our probe sends this header. |
+| Provider      | Direct browser fetch              | Notes                                                                                                                                                                                                                                                                                         |
+| ------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Groq**      | ✅ Allowed                        | No opt-in header needed. Community/3rd-party API directories consistently report CORS enabled on `api.groq.com`; browser `fetch()` with `Authorization: Bearer` is the documented pattern for client-side apps. Watch: same rate limits as server calls; don't send `credentials: 'include'`. |
+| **OpenAI**    | ✅ Allowed                        | API sends permissive `access-control-allow-*`; official TS SDK ships `dangerouslyAllowBrowser` flag (key exposure is the concern, not CORS). Direct browser calls go through when the user accepts the key-exposure tradeoff (which BYOK local-first apps do by design).                      |
+| **Anthropic** | ✅ Allowed **with opt-in header** | Requires `anthropic-dangerous-direct-browser-access: true` on the request (in addition to `x-api-key` + `anthropic-version`); without it the preflight is rejected. Introduced Aug 2024 (Simon Willison's writeup). Our probe sends this header.                                              |
 
 All three keys travel as request headers from the browser — acceptable for di's
 BYOK model (keys live client-side, user-supplied, never on our servers).
@@ -51,7 +51,7 @@ Settings UI should expose three voice tiers, in this order:
    parakeet (STT) / pocket-tts via `scripts/local-voice-stack.sh`
    (process-compose shim, requires the parakeet model in
    `~/.cache/parakeet.cpp/models/`). Important architectural note: these are
-   *server processes*. Under Option C (client-side only, static bundle, no
+   _server processes_. Under Option C (client-side only, static bundle, no
    sidecar) di cannot launch or supervise them — the user must start the stack
    themselves and point di at `http://localhost:<port>` as a custom
    `base_url`. Hence this stays a **DIY tier only**, never a default. If the

@@ -12,10 +12,7 @@ function log(msg: string, cls = "") {
 
 const SESSION_KEY = "di.spike.session";
 
-async function api(
-  path: string,
-  init?: RequestInit,
-): Promise<{ status: number; body: any }> {
+async function api(path: string, init?: RequestInit): Promise<{ status: number; body: any }> {
   const res = await fetch(`/v1${path}`, init);
   const text = await res.text();
   let body: any = text;
@@ -28,8 +25,7 @@ async function api(
 }
 
 async function registerSw(): Promise<void> {
-  if ("serviceWorker" in navigator === false)
-    throw new Error("no serviceWorker in navigator");
+  if ("serviceWorker" in navigator === false) throw new Error("no serviceWorker in navigator");
   const reg = await navigator.serviceWorker.register("/sw.ts", {
     type: "module",
     scope: "/",
@@ -51,9 +47,7 @@ const reportBody = (sessionId: string) => ({
       evidence: [{ quote: "did x", turn_seq: 0, verdict: "worked" }],
     },
   ],
-  model_answers: [
-    { question_id: crypto.randomUUID(), question_text: "q?", answer: "a" },
-  ],
+  model_answers: [{ question_id: crypto.randomUUID(), question_text: "q?", answer: "a" }],
   generated_at: new Date().toISOString(),
 });
 
@@ -106,10 +100,7 @@ async function runRoundTrip(): Promise<void> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(reportBody(sid)),
   });
-  log(
-    `PUT /v1/sessions/:id/report -> ${put.status}`,
-    put.status === 200 ? "ok" : "bad",
-  );
+  log(`PUT /v1/sessions/:id/report -> ${put.status}`, put.status === 200 ? "ok" : "bad");
   const got = await api(`/sessions/${sid}/report`);
   log(
     `GET /v1/sessions/:id/report -> ${got.status} overall=${got.body.overall_score}`,
@@ -128,9 +119,7 @@ async function runRoundTrip(): Promise<void> {
     gotTools.body.editor === "fn main() {}" ? "ok" : "bad",
   );
 
-  log(
-    "reload the page and run again to verify persistence (session list should include this id).",
-  );
+  log("reload the page and run again to verify persistence (session list should include this id).");
 }
 
 async function checkPersistence(): Promise<void> {
@@ -148,21 +137,13 @@ async function checkPersistence(): Promise<void> {
     turns.status === 200 ? "ok" : "bad",
   );
   const rep = await api(`/sessions/${sid}/report`);
-  log(
-    `GET report after reload -> ${rep.status}`,
-    rep.status === 200 ? "ok" : "bad",
-  );
+  log(`GET report after reload -> ${rep.status}`, rep.status === 200 ? "ok" : "bad");
 }
 
 document
   .getElementById("run")!
-  .addEventListener(
-    "click",
-    () => void runRoundTrip().catch((e) => log(`error: ${e}`, "bad")),
-  );
-document
-  .getElementById("reload")!
-  .addEventListener("click", () => location.reload());
+  .addEventListener("click", () => void runRoundTrip().catch((e) => log(`error: ${e}`, "bad")));
+document.getElementById("reload")!.addEventListener("click", () => location.reload());
 void registerSw()
   .then(checkPersistence)
   .catch((e) => {

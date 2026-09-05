@@ -6,18 +6,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 // Inlined literal (not imported from stores/session.ts): that module also
 // exports persistentAtom-backed stores which touch localStorage at import
 // time, unsafe in this Node-only config context.
-const LOCALES = [
-  "en",
-  "de",
-  "es",
-  "fr",
-  "ja",
-  "pt-BR",
-  "zh-CN",
-  "ko",
-  "it",
-  "ar",
-] as const;
+const LOCALES = ["en", "de", "es", "fr", "ja", "pt-BR", "zh-CN", "ko", "it", "ar"] as const;
 
 export default defineConfig({
   plugins: [
@@ -26,10 +15,9 @@ export default defineConfig({
       prerender: { enabled: true, crawlLinks: true },
       // belt-and-suspenders: explicit locale landing pages, in case crawl
       // discovery via LandingLocaleSwitcher links ever misses one.
-      pages: [
-        "/",
-        ...LOCALES.filter((l) => l !== "en").map((l) => `/${l}`),
-      ].map((path) => ({ path })),
+      pages: ["/", ...LOCALES.filter((l) => l !== "en").map((l) => `/${l}`)].map((path) => ({
+        path,
+      })),
     }),
     react(),
     tailwindcss(),

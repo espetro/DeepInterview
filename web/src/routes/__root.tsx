@@ -1,10 +1,5 @@
 import { useEffect } from "react";
-import {
-  Outlet,
-  createRootRoute,
-  HeadContent,
-  Scripts,
-} from "@tanstack/react-router";
+import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { AppIntlProvider, useIsRtl } from "../locales/i18n";
 import "../theme.css";
 

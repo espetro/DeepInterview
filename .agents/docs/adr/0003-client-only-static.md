@@ -26,7 +26,7 @@ REST API branches on `$effectiveRuntime`:
 
 - **setup** (`web/src/routes/setup.tsx`): client-only creates the session via
   `web/src/lib/opfs-store.ts#createClientSession` instead of `POST
-  /v1/sessions`, and skips document upload (no ingestion pipeline exists
+/v1/sessions`, and skips document upload (no ingestion pipeline exists
   client-side — files are accepted by the picker but dropped). Also resets
   `$clientTurns`/`$currentQuestion` (`resetClientSession`) so a new session
   never inherits a previous one's turns from the nanostore.

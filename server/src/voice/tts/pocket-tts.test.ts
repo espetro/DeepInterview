@@ -2,9 +2,7 @@ import { describe, it, expect } from "vitest";
 import { PocketTts } from "./pocket-tts.ts";
 import { encodeWav, wavHeader } from "../stt/wav.ts";
 
-function fetchStub(
-  handler: (url: string, init?: RequestInit) => Response,
-): typeof fetch {
+function fetchStub(handler: (url: string, init?: RequestInit) => Response): typeof fetch {
   return handler as unknown as typeof fetch;
 }
 
@@ -14,18 +12,13 @@ function wav24k(samples: number[]): Uint8Array {
   const view = new DataView(pcm.buffer);
   samples.forEach((s, i) => view.setInt16(i * 2, s, true));
   return new Uint8Array(
-    Buffer.concat([
-      wavHeader(pcm.length, { sampleRate: 24_000, channels: 1 }),
-      pcm,
-    ]),
+    Buffer.concat([wavHeader(pcm.length, { sampleRate: 24_000, channels: 1 }), pcm]),
   );
 }
 
 function pcmSamples(pcm: Uint8Array): number[] {
   const view = new DataView(pcm.buffer, pcm.byteOffset, pcm.byteLength);
-  return Array.from({ length: pcm.length / 2 }, (_, i) =>
-    view.getInt16(i * 2, true),
-  );
+  return Array.from({ length: pcm.length / 2 }, (_, i) => view.getInt16(i * 2, true));
 }
 
 describe("PocketTts.synthesizeToPcm", () => {
@@ -64,8 +57,7 @@ describe("PocketTts.synthesizeToPcm", () => {
             encodeWav(
               [
                 new Uint8Array(
-                  new Int16Array([100, -100, 50, -50, 25, -25, 10, -10])
-                    .buffer as ArrayBuffer,
+                  new Int16Array([100, -100, 50, -50, 25, -25, 10, -10]).buffer as ArrayBuffer,
                 ),
               ],
               {
@@ -92,9 +84,7 @@ describe("PocketTts.synthesizeToPcm", () => {
       baseUrl: "http://fake.local",
       model: "pocket",
       voice: "alloy",
-      fetchImpl: fetchStub(
-        () => new Response(wav24k([0, 0]) as unknown as BodyInit),
-      ),
+      fetchImpl: fetchStub(() => new Response(wav24k([0, 0]) as unknown as BodyInit)),
       events: sink,
       sessionId: "s1",
     });

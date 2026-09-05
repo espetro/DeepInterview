@@ -63,13 +63,7 @@ describe("voiceMachine", () => {
         { type: "SPEECH_START" },
         { type: "SPEECH_END", text: "   " },
       ]),
-    ).toEqual([
-      "idle",
-      "connecting",
-      "listening",
-      "user_speaking",
-      "listening",
-    ]);
+    ).toEqual(["idle", "connecting", "listening", "user_speaking", "listening"]);
   });
 
   it("thinking with no agent speech returns to listening", () => {

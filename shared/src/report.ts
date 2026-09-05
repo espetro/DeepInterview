@@ -48,9 +48,7 @@ export interface ReportPromptContext {
  * server-side generator would use the exact same contract.
  */
 export function buildReportPrompt(ctx: ReportPromptContext): string {
-  const transcript = ctx.turns
-    .map((t) => `[${t.seq}] ${t.speaker}: ${t.text}`)
-    .join("\n");
+  const transcript = ctx.turns.map((t) => `[${t.seq}] ${t.speaker}: ${t.text}`).join("\n");
   return [
     "You are scoring a completed interview transcript against a rubric of the",
     "candidate's demonstrated competencies. Be specific and evidence-based:",

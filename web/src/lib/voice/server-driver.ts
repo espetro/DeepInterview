@@ -38,14 +38,9 @@ const API_BASE = (import.meta.env.VITE_DI_API_BASE as string | undefined) ?? "";
 /** Build the voice WS URL from the page origin + API base override. */
 export function voiceWsUrl(sessionId: string): string {
   const originOverride =
-    API_BASE && /^https?:/.test(API_BASE)
-      ? API_BASE.replace(/^http/, "ws")
-      : null;
+    API_BASE && /^https?:/.test(API_BASE) ? API_BASE.replace(/^http/, "ws") : null;
   if (originOverride) return `${originOverride}/v1/sessions/${sessionId}/voice`;
-  const proto =
-    typeof location !== "undefined" && location.protocol === "https:"
-      ? "wss"
-      : "ws";
+  const proto = typeof location !== "undefined" && location.protocol === "https:" ? "wss" : "ws";
   const host = typeof location !== "undefined" ? location.host : "localhost";
   return `${proto}://${host}${API_BASE}/v1/sessions/${sessionId}/voice`;
 }
@@ -104,9 +99,7 @@ export class ServerVoiceDriver implements SpeechDriver {
 
   async start(): Promise<void> {
     this.status = "connecting";
-    const WS =
-      this.deps.WebSocketCtor ??
-      (globalThis.WebSocket as new (url: string) => WebSocket);
+    const WS = this.deps.WebSocketCtor ?? (globalThis.WebSocket as new (url: string) => WebSocket);
     const ws = new WS(voiceWsUrl(this.sessionId));
     this.ws = ws;
     this.agentSpeaking = false;
@@ -181,8 +174,7 @@ export class ServerVoiceDriver implements SpeechDriver {
         break;
       case "tts":
         this.player.write(decodeB64(msg.pcm));
-        if ((msg as TtsMessage).final && !this.agentSpeaking)
-          this.events.onAgentDone?.();
+        if ((msg as TtsMessage).final && !this.agentSpeaking) this.events.onAgentDone?.();
         break;
       case "error":
         this.onError(msg.message);
@@ -210,8 +202,7 @@ export class ServerVoiceDriver implements SpeechDriver {
   }
 
   private sendJson(msg: unknown) {
-    if (this.ws?.readyState === WebSocket.OPEN)
-      this.ws.send(JSON.stringify(msg));
+    if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(msg));
   }
 
   private sendBinary(buf: ArrayBuffer) {

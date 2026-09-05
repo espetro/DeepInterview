@@ -2,13 +2,13 @@
 
 ## Services and ports
 
-| Service | Port | Notes |
-| --- | --- | --- |
-| web (TanStack Start) | 3000 | served by the di server |
-| lightrag | 9621 | RAG / grounding |
-| whisper / speaches | 8001 | STT |
-| kokoro | 8890 | TTS |
-| Ollama | 11434 | local LLM |
+| Service              | Port  | Notes                   |
+| -------------------- | ----- | ----------------------- |
+| web (TanStack Start) | 3000  | served by the di server |
+| lightrag             | 9621  | RAG / grounding         |
+| whisper / speaches   | 8001  | STT                     |
+| kokoro               | 8890  | TTS                     |
+| Ollama               | 11434 | local LLM               |
 
 ## Env files
 
@@ -87,7 +87,7 @@ BYO `baseUrl`, with no local hop in between:
 - **persistence**: OPFS read-modify-write per turn (`opfs-store.ts`) is local
   disk I/O, not network — negligible next to any of the above.
 
-No numbers are captured here yet; this is a latency *shape* map (what talks
+No numbers are captured here yet; this is a latency _shape_ map (what talks
 to what), not a benchmark. Recommended follow-up in `04-m3-rag-ingestion`
 scope: measure with the mock provider (`evals/src/mock-provider`) once one
 exists.

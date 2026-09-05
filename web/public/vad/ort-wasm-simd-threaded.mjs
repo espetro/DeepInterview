@@ -3,9 +3,7 @@ async function ortWasmThreaded(moduleArg = {}) {
   var h = moduleArg,
     aa = !!globalThis.window,
     k = !!globalThis.WorkerGlobalScope,
-    m =
-      globalThis.process?.versions?.node &&
-      "renderer" != globalThis.process?.type,
+    m = globalThis.process?.versions?.node && "renderer" != globalThis.process?.type,
     n = k && self.name?.startsWith("em-pthread");
   if (m) {
     const { createRequire: a } = await import("module");
@@ -26,8 +24,7 @@ async function ortWasmThreaded(moduleArg = {}) {
   };
   var SharedArrayBuffer =
       globalThis.SharedArrayBuffer ??
-      new WebAssembly.Memory({ initial: 0, maximum: 0, shared: !0 }).buffer
-        .constructor,
+      new WebAssembly.Memory({ initial: 0, maximum: 0, shared: !0 }).buffer.constructor,
     ca = "./this.program",
     da = (a, b) => {
       throw b;
@@ -74,9 +71,7 @@ async function ortWasmThreaded(moduleArg = {}) {
             e.open("GET", a, !0);
             e.responseType = "arraybuffer";
             e.onload = () => {
-              200 == e.status || (0 == e.status && e.response)
-                ? d(e.response)
-                : c(e.status);
+              200 == e.status || (0 == e.status && e.response) ? d(e.response) : c(e.status);
             };
             e.onerror = c;
             e.send(null);
@@ -199,9 +194,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     a = "Aborted(" + a + ")";
     p(a);
     pa = !0;
-    a = new WebAssembly.RuntimeError(
-      a + ". Build with -sASSERTIONS for more info.",
-    );
+    a = new WebAssembly.RuntimeError(a + ". Build with -sASSERTIONS for more info.");
     sa?.(a);
     throw a;
   }
@@ -232,8 +225,7 @@ async function ortWasmThreaded(moduleArg = {}) {
         var d = fetch(b, { credentials: "same-origin" });
         return await WebAssembly.instantiateStreaming(d, a);
       } catch (c) {
-        (p(`wasm streaming compile failed: ${c}`),
-          p("falling back to ArrayBuffer instantiation"));
+        (p(`wasm streaming compile failed: ${c}`), p("falling back to ArrayBuffer instantiation"));
       }
     return La(b, a);
   }
@@ -485,7 +477,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     Ic = [],
     S = {};
   function ed() {
-    for (var a = h.numThreads - 1; a--; ) ad();
+    for (var a = h.numThreads - 1; a--;) ad();
     $c.push(async () => {
       var b = fd();
       O++;
@@ -523,8 +515,7 @@ async function ortWasmThreaded(moduleArg = {}) {
           hd(() => {
             gd(S[g.cc]);
           });
-        else if ("loaded" === f)
-          ((a.loaded = !0), m && !a.Ob && a.unref(), b(a));
+        else if ("loaded" === f) ((a.loaded = !0), m && !a.Ob && a.unref(), b(a));
         else if ("setimmediate" === g.target) a.postMessage(g);
         else if ("uncaughtException" === f) a.onerror(g.error);
         else if ("callHandler" === f) h[g.Yb](...g.args);
@@ -534,9 +525,7 @@ async function ortWasmThreaded(moduleArg = {}) {
         p(`${"worker sent an error!"} ${f.filename}:${f.lineno}: ${f.message}`);
         throw f;
       };
-      m &&
-        (a.on("message", (f) => a.onmessage({ data: f })),
-        a.on("error", (f) => a.onerror(f)));
+      m && (a.on("message", (f) => a.onmessage({ data: f })), a.on("error", (f) => a.onerror(f)));
       var d = [],
         c = [],
         e;
@@ -630,8 +619,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     var a = kd.pop();
     a || J("no exception to throw");
     var b = a.Ub;
-    0 == (v(), z)[(a.Qb + 13) >>> 0] &&
-      (kd.push(a), od(a, !0), nd(a, !1), ld++);
+    0 == (v(), z)[(a.Qb + 13) >>> 0] && (kd.push(a), od(a, !0), nd(a, !1), ld++);
     Uc(b);
     W = b;
     throw W;
@@ -675,14 +663,12 @@ async function ortWasmThreaded(moduleArg = {}) {
       d = e + d;
       if (c) c = d;
       else {
-        for (; a[e] && !(e >= d); ) ++e;
+        for (; a[e] && !(e >= d);) ++e;
         c = e;
       }
       if (16 < c - b && a.buffer && rd)
-        return rd.decode(
-          a.buffer instanceof ArrayBuffer ? a.subarray(b, c) : a.slice(b, c),
-        );
-      for (e = ""; b < c; )
+        return rd.decode(a.buffer instanceof ArrayBuffer ? a.subarray(b, c) : a.slice(b, c));
+      for (e = ""; b < c;)
         if (((d = a[b++]), d & 128)) {
           var f = a[b++] & 63;
           if (192 == (d & 224)) e += String.fromCharCode(((d & 31) << 6) | f);
@@ -694,11 +680,7 @@ async function ortWasmThreaded(moduleArg = {}) {
                 : ((d & 7) << 18) | (f << 12) | (g << 6) | (a[b++] & 63);
             65536 > d
               ? (e += String.fromCharCode(d))
-              : ((d -= 65536),
-                (e += String.fromCharCode(
-                  55296 | (d >> 10),
-                  56320 | (d & 1023),
-                )));
+              : ((d -= 65536), (e += String.fromCharCode(55296 | (d >> 10), 56320 | (d & 1023))));
           }
         } else e += String.fromCharCode(d);
       return e;
@@ -764,10 +746,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     ud =
       !Atomics.waitAsync ||
       (globalThis.navigator?.userAgent &&
-        91 >
-          Number(
-            (navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./) || [])[2],
-          ));
+        91 > Number((navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./) || [])[2]));
   function Ba(a) {
     a >>>= 0;
     ud ||
@@ -794,11 +773,9 @@ async function ortWasmThreaded(moduleArg = {}) {
     e >>>= 0;
     vd.length = 0;
     d = e >>> 3;
-    for (c = (e + c) >>> 3; d < c; ) {
+    for (c = (e + c) >>> 3; d < c;) {
       var f;
-      (v(), H)[d++ >>> 0]
-        ? (f = (v(), H)[d++ >>> 0])
-        : (f = (v(), G)[d++ >>> 0]);
+      (v(), H)[d++ >>> 0] ? (f = (v(), H)[d++ >>> 0]) : (f = (v(), G)[d++ >>> 0]);
       vd.push(f);
     }
     return (b ? wd[b] : xd[a])(...vd);
@@ -824,9 +801,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     (v(), C)[((b + 16) >>> 2) >>> 0] = a.getUTCMonth();
     (v(), C)[((b + 20) >>> 2) >>> 0] = a.getUTCFullYear() - 1900;
     (v(), C)[((b + 24) >>> 2) >>> 0] = a.getUTCDay();
-    a =
-      ((a.getTime() - Date.UTC(a.getUTCFullYear(), 0, 1, 0, 0, 0, 0)) / 864e5) |
-      0;
+    a = ((a.getTime() - Date.UTC(a.getUTCFullYear(), 0, 1, 0, 0, 0, 0)) / 864e5) | 0;
     (v(), C)[((b + 28) >>> 2) >>> 0] = a;
   }
   var yd = (a) => 0 === a % 4 && (0 !== a % 100 || 0 === a % 400),
@@ -843,8 +818,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     (v(), C)[((b + 16) >>> 2) >>> 0] = a.getMonth();
     (v(), C)[((b + 20) >>> 2) >>> 0] = a.getFullYear() - 1900;
     (v(), C)[((b + 24) >>> 2) >>> 0] = a.getDay();
-    var d =
-      ((yd(a.getFullYear()) ? zd : Ad)[a.getMonth()] + a.getDate() - 1) | 0;
+    var d = ((yd(a.getFullYear()) ? zd : Ad)[a.getMonth()] + a.getDate() - 1) | 0;
     (v(), C)[((b + 28) >>> 2) >>> 0] = d;
     (v(), C)[((b + 36) >>> 2) >>> 0] = -(60 * a.getTimezoneOffset());
     d = new Date(a.getFullYear(), 6, 1).getTimezoneOffset();
@@ -871,8 +845,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     0 > d
       ? ((v(), C)[((a + 32) >>> 2) >>> 0] = Number(e != f && g == c))
       : 0 < d != (g == c) &&
-        ((e = Math.max(f, e)),
-        b.setTime(b.getTime() + 6e4 * ((0 < d ? g : e) - c)));
+        ((e = Math.max(f, e)), b.setTime(b.getTime() + 6e4 * ((0 < d ? g : e) - c)));
     (v(), C)[((a + 24) >>> 2) >>> 0] = b.getDay();
     d = ((yd(b.getFullYear()) ? zd : Ad)[b.getMonth()] + b.getDate() - 1) | 0;
     (v(), C)[((a + 28) >>> 2) >>> 0] = d;
@@ -975,7 +948,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     b >>>= 0;
     d >>>= 0;
     Cd.length = 0;
-    for (var c; (c = (v(), A)[b++ >>> 0]); ) {
+    for (var c; (c = (v(), A)[b++ >>> 0]);) {
       var e = 105 != c;
       e &= 112 != c;
       d += e && d % 8 ? 4 : 0;
@@ -1003,8 +976,7 @@ async function ortWasmThreaded(moduleArg = {}) {
   function Hb() {
     return 4294901760;
   }
-  var Jb = () =>
-      m ? require("os").cpus().length : navigator.hardwareConcurrency,
+  var Jb = () => (m ? require("os").cpus().length : navigator.hardwareConcurrency),
     Z = {},
     Dd = (a) => {
       for (var b = 0, d = 0; d < a.length; ++d) {
@@ -1083,13 +1055,9 @@ async function ortWasmThreaded(moduleArg = {}) {
     a >>>= 0;
     b >>>= 0;
     if (Z.Vb == a) var c = Z.$b;
-    else
-      ((c = Error().stack.toString().split("\n")),
-        "Error" == c[0] && c.shift(),
-        Fd(c));
-    for (var e = 3; c[e] && Ed(c[e]) != a; ) ++e;
-    for (a = 0; a < d && c[a + e]; ++a)
-      (v(), C)[((b + 4 * a) >>> 2) >>> 0] = Ed(c[a + e]);
+    else ((c = Error().stack.toString().split("\n")), "Error" == c[0] && c.shift(), Fd(c));
+    for (var e = 3; c[e] && Ed(c[e]) != a;) ++e;
+    for (a = 0; a < d && c[a + e]; ++a) (v(), C)[((b + 4 * a) >>> 2) >>> 0] = Ed(c[a + e]);
     return a;
   }
   var Gd = {},
@@ -1101,9 +1069,7 @@ async function ortWasmThreaded(moduleArg = {}) {
             PATH: "/",
             PWD: "/",
             HOME: "/home/web_user",
-            LANG:
-              (globalThis.navigator?.language ?? "C").replace("-", "_") +
-              ".UTF-8",
+            LANG: (globalThis.navigator?.language ?? "C").replace("-", "_") + ".UTF-8",
             _: ca || "./this.program",
           },
           b;
@@ -1164,9 +1130,7 @@ async function ortWasmThreaded(moduleArg = {}) {
         var w = a,
           y = (v(), A)[(g + u) >>> 0],
           B = Jd[w];
-        0 === y || 10 === y
-          ? ((1 === w ? oa : p)(sd(B)), (B.length = 0))
-          : B.push(y);
+        0 === y || 10 === y ? ((1 === w ? oa : p)(sd(B)), (B.length = 0)) : B.push(y);
       }
       e += l;
     }
@@ -1177,9 +1141,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     return a >>> 0;
   }
   n || ed();
-  n ||
-    ((x = new WebAssembly.Memory({ initial: 256, maximum: 65536, shared: !0 })),
-    qa());
+  n || ((x = new WebAssembly.Memory({ initial: 256, maximum: 65536, shared: !0 })), qa());
   h.wasmBinary && (q = h.wasmBinary);
   h.stackSave = () => N();
   h.stackRestore = (a) => M(a);
@@ -1301,28 +1263,7 @@ async function ortWasmThreaded(moduleArg = {}) {
   function Qa() {
     return "undefined" !== typeof wasmOffsetConverter;
   }
-  var Jc,
-    Kc,
-    Lc,
-    za,
-    Ea,
-    Mc,
-    Nc,
-    Oc,
-    Pc,
-    Qc,
-    K,
-    L,
-    Rc,
-    M,
-    Sc,
-    N,
-    Tc,
-    Uc,
-    Vc,
-    Wc,
-    Xc,
-    Pa;
+  var Jc, Kc, Lc, za, Ea, Mc, Nc, Oc, Pc, Qc, K, L, Rc, M, Sc, N, Tc, Uc, Vc, Wc, Xc, Pa;
   function bc(a, b, d, c) {
     var e = N();
     try {
@@ -1713,7 +1654,7 @@ async function ortWasmThreaded(moduleArg = {}) {
     if (0 < O) P = xa;
     else if (n) (ra?.(h), Ia());
     else {
-      for (var a = $c; 0 < a.length; ) a.shift()(h);
+      for (var a = $c; 0 < a.length;) a.shift()(h);
       0 < O ? (P = xa) : ((h.calledRun = !0), pa || (Ia(), ra?.(h)));
     }
   }
@@ -1730,8 +1671,6 @@ async function ortWasmThreaded(moduleArg = {}) {
 }
 export default ortWasmThreaded;
 var isPthread = globalThis.self?.name?.startsWith("em-pthread");
-var isNode =
-  globalThis.process?.versions?.node && globalThis.process?.type != "renderer";
-if (isNode)
-  isPthread = (await import("worker_threads")).workerData === "em-pthread";
+var isNode = globalThis.process?.versions?.node && globalThis.process?.type != "renderer";
+if (isNode) isPthread = (await import("worker_threads")).workerData === "em-pthread";
 isPthread && ortWasmThreaded();

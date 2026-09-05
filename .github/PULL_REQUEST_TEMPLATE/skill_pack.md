@@ -3,9 +3,9 @@
 
 ## New skill pack(s)
 
-| Pack | Company | Role (slug) | Level |
-|---|---|---|---|
-| `skills/….md` | `generic` / … | `…-…` | … |
+| Pack          | Company       | Role (slug) | Level |
+| ------------- | ------------- | ----------- | ----- |
+| `skills/….md` | `generic` / … | `…-…`       | …     |
 
 ## Checklist
 

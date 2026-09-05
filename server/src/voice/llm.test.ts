@@ -2,9 +2,7 @@ import { describe, it, expect } from "vitest";
 import { OpenAiChatClient } from "./llm.ts";
 import type { ToolDef } from "./llm.ts";
 
-function fetchStub(
-  handler: (url: string, init?: RequestInit) => Response,
-): typeof fetch {
+function fetchStub(handler: (url: string, init?: RequestInit) => Response): typeof fetch {
   return handler as unknown as typeof fetch;
 }
 
@@ -21,9 +19,7 @@ const tools: ToolDef[] = [
 
 describe("OpenAiChatClient.chat", () => {
   it("posts the OpenAI request shape and parses content", async () => {
-    let captured:
-      | { url: string; body: any; headers: Record<string, string> }
-      | undefined;
+    let captured: { url: string; body: any; headers: Record<string, string> } | undefined;
     const llm = new OpenAiChatClient({
       baseUrl: "http://fake.local/",
       model: "mock-llm",
@@ -104,9 +100,7 @@ describe("OpenAiChatClient.chat", () => {
         },
       },
     ]);
-    expect(result.toolCalls).toEqual([
-      { name: "update_question", args: { question: "Q2?" } },
-    ]);
+    expect(result.toolCalls).toEqual([{ name: "update_question", args: { question: "Q2?" } }]);
   });
 
   it("omits the tools key when no tools are given, tolerates unparseable args", async () => {
@@ -148,9 +142,7 @@ describe("OpenAiChatClient.chat", () => {
     const ok = new OpenAiChatClient({
       baseUrl: "http://fake.local",
       model: "m",
-      fetchImpl: fetchStub(() =>
-        Response.json({ choices: [{ message: { content: "hey" } }] }),
-      ),
+      fetchImpl: fetchStub(() => Response.json({ choices: [{ message: { content: "hey" } }] })),
       events: sink,
       sessionId: "s1",
     });
@@ -167,9 +159,7 @@ describe("OpenAiChatClient.chat", () => {
       events: sink,
       sessionId: "s1",
     });
-    await expect(
-      failing.chat([{ role: "user", content: "x" }]),
-    ).rejects.toThrow(/429/);
+    await expect(failing.chat([{ role: "user", content: "x" }])).rejects.toThrow(/429/);
     expect(events.map((e) => e.type)).toEqual(["llm.request", "llm.failed"]);
   });
 });
@@ -205,14 +195,10 @@ describe("OpenAiChatClient.streamChat", () => {
     });
     const firstTokens: number[] = [];
     const deltas: string[] = [];
-    const result = await llm.streamChat(
-      [{ role: "user", content: "hi" }],
-      undefined,
-      {
-        onFirstToken: () => firstTokens.push(1),
-        onText: (d) => deltas.push(d),
-      },
-    );
+    const result = await llm.streamChat([{ role: "user", content: "hi" }], undefined, {
+      onFirstToken: () => firstTokens.push(1),
+      onText: (d) => deltas.push(d),
+    });
     expect(captured.stream).toBe(true);
     expect(result.content).toBe("Hello there.");
     expect(result.toolCalls).toEqual([]);
@@ -233,10 +219,7 @@ describe("OpenAiChatClient.streamChat", () => {
         ]),
       ),
     });
-    const result = await llm.streamChat(
-      [{ role: "user", content: "next" }],
-      tools,
-    );
+    const result = await llm.streamChat([{ role: "user", content: "next" }], tools);
     expect(result.toolCalls).toEqual([
       { name: "update_question", args: { question: "Q2?" } },
       { name: "read_editor", args: {} },
@@ -250,19 +233,13 @@ describe("OpenAiChatClient.streamChat", () => {
       model: "m",
       fetchImpl: fetchStub(() =>
         Response.json({
-          choices: [
-            { message: { role: "assistant", content: "buffered reply." } },
-          ],
+          choices: [{ message: { role: "assistant", content: "buffered reply." } }],
         }),
       ),
     });
-    const result = await llm.streamChat(
-      [{ role: "user", content: "hi" }],
-      undefined,
-      {
-        onText: (d) => deltas.push(d),
-      },
-    );
+    const result = await llm.streamChat([{ role: "user", content: "hi" }], undefined, {
+      onText: (d) => deltas.push(d),
+    });
     expect(result.content).toBe("buffered reply.");
     expect(deltas).toEqual(["buffered reply."]);
   });
@@ -277,10 +254,7 @@ describe("OpenAiChatClient.streamChat", () => {
       baseUrl: "http://fake.local",
       model: "m",
       fetchImpl: fetchStub(() =>
-        sseResponse([
-          'data: {"choices":[{"delta":{"content":"x"}}]}\n\n',
-          "data: [DONE]\n\n",
-        ]),
+        sseResponse(['data: {"choices":[{"delta":{"content":"x"}}]}\n\n', "data: [DONE]\n\n"]),
       ),
       events: sink,
       sessionId: "s1",

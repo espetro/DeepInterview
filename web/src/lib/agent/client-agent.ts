@@ -1,11 +1,6 @@
 import { toJsonSchema } from "@valibot/to-json-schema";
 import * as v from "valibot";
-import {
-  VOICE_TOOLS,
-  assertNever,
-  buildPrompt,
-  describeWhiteboardSnapshot,
-} from "@di/shared";
+import { VOICE_TOOLS, assertNever, buildPrompt, describeWhiteboardSnapshot } from "@di/shared";
 import type {
   ProviderProfile,
   SessionContext,
@@ -98,13 +93,8 @@ export class ClientAgent implements TurnRunner {
   async respond(userText: string, opts: RespondOptions = {}): Promise<string> {
     this.history.push({ role: "user", content: userText });
     const onError = opts.onError ?? defaultOnError;
-    const {
-      streamText,
-      jsonSchema,
-      stepCountIs,
-      NoSuchToolError,
-      InvalidToolInputError,
-    } = await import("ai");
+    const { streamText, jsonSchema, stepCountIs, NoSuchToolError, InvalidToolInputError } =
+      await import("ai");
     const t0 = Date.now();
     let llmTtftMs: number | undefined;
     const result = streamText({
@@ -143,8 +133,7 @@ export class ClientAgent implements TurnRunner {
       stopWhen: stepCountIs(MAX_HOPS),
       onError: ({ error }: { error: unknown }) => {
         const phase: TurnPhase =
-          NoSuchToolError.isInstance(error) ||
-          InvalidToolInputError.isInstance(error)
+          NoSuchToolError.isInstance(error) || InvalidToolInputError.isInstance(error)
             ? "tool"
             : "llm";
         onError(error, phase);

@@ -123,9 +123,7 @@ export const VOICE_TOOLS = [
 ] as const satisfies readonly ToolDef[];
 
 /** Tool names, for validation without pulling the full defs. */
-export const VOICE_TOOL_NAMES = VOICE_TOOLS.map(
-  (t) => t.name,
-) as VoiceToolName[];
+export const VOICE_TOOL_NAMES = VOICE_TOOLS.map((t) => t.name) as VoiceToolName[];
 export type VoiceToolName = (typeof VOICE_TOOLS)[number]["name"];
 
 export interface WhiteboardShape {
@@ -159,10 +157,7 @@ export function describeWhiteboardSnapshot(json: string): string {
 
 function describeShape(s: WhiteboardShape): string {
   const type = typeof s.type === "string" ? s.type : "unknown";
-  const text =
-    typeof s.text === "string" && s.text.trim() !== ""
-      ? ` text="${s.text}"`
-      : "";
+  const text = typeof s.text === "string" && s.text.trim() !== "" ? ` text="${s.text}"` : "";
   const arrow =
     typeof s.from === "string" || typeof s.to === "string"
       ? ` from ${s.from ?? "?"} to ${s.to ?? "?"}`

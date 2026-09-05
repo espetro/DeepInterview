@@ -36,10 +36,7 @@ export const voiceMachine = setup({
       error: event.type === "ERROR" ? event.message : null,
     })),
     saveUserText: assign(({ event }) => ({
-      lastUserText:
-        event.type === "SPEECH_END" || event.type === "TRANSCRIPT"
-          ? event.text
-          : null,
+      lastUserText: event.type === "SPEECH_END" || event.type === "TRANSCRIPT" ? event.text : null,
     })),
     clear: assign(() => ({ error: null, lastUserText: null })),
   },
