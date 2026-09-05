@@ -7,9 +7,13 @@ import { VoiceLoop } from "./loop";
 /** GET /v1/sessions/:id/voice — WebSocket upgrade path. */
 export const VOICE_WS_PATH_RE = /^\/v1\/sessions\/([0-9a-f-]{36})\/voice$/;
 
+export type VoiceLoopMessage =
+  | v.InferOutput<typeof VoiceClientMessageSchema>
+  | { t: "binary"; data: Uint8Array };
+
 export interface VoiceLoopLike {
   start: () => Promise<void>;
-  handleMessage: (msg: unknown) => Promise<void>;
+  handleMessage: (msg: VoiceLoopMessage) => Promise<void>;
   close: () => void;
 }
 
@@ -32,7 +36,7 @@ export interface VoiceDeps {
  */
 export function voiceWebSocketHandler(deps: VoiceDeps) {
   return {
-    async open(ws: Bun.WebSocketFileType & { loop?: VoiceLoopLike }) {
+    async open(ws: Bun.ServerWebSocket<unknown> & { loop?: VoiceLoopLike }) {
       const { sessionId } = ws.data as { sessionId: string };
       const send = (msg: unknown) => ws.send(JSON.stringify(msg));
       const sendBinary = (d: Uint8Array) =>
@@ -60,7 +64,7 @@ export function voiceWebSocketHandler(deps: VoiceDeps) {
       }
     },
     async message(
-      ws: Bun.WebSocketFileType & { loop?: VoiceLoopLike },
+      ws: Bun.ServerWebSocket<unknown> & { loop?: VoiceLoopLike },
       message: string | Buffer | Uint8Array,
     ) {
       const loop = ws.loop;
@@ -81,7 +85,7 @@ export function voiceWebSocketHandler(deps: VoiceDeps) {
         );
       }
     },
-    close(ws: Bun.WebSocketFileType & { loop?: VoiceLoopLike }) {
+    close(ws: Bun.ServerWebSocket<unknown> & { loop?: VoiceLoopLike }) {
       ws.loop?.close();
     },
   };

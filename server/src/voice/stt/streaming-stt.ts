@@ -127,8 +127,10 @@ export class StreamingWhisperStt implements StreamingSttPort {
         headers,
         body,
         signal,
-        duplex: "half" as RequestDuplex,
-      },
+        // `duplex` is required by fetch for streaming request bodies but
+        // missing from lib.dom.d.ts's RequestInit at this TS lib version.
+        duplex: "half",
+      } as RequestInit & { duplex: "half" },
     )
       .then(async (res) => {
         if (
