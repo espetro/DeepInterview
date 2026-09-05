@@ -1,2 +1,4 @@
 ruleDirs:
   - rules
+ignorePaths:
+  - "**/routeTree.gen.ts"
