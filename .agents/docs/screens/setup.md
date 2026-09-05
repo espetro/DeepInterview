@@ -44,12 +44,15 @@
   error copy; bad-type and cap violations never navigate. Files are listed under
   the drop zone with size and a remove control. Upload failure shows an error but
   does not block starting the interview.
-- Mic check: compact client-side component (`web/src/components/mic-check.tsx`)
-  between files and the form. Idle by default; "test mic" requests getUserMedia,
-  shows a segmented live input-level meter (persimmon, red-ish top segments) and
-  a microphone device picker (populated post-permission). Switching devices
-  restarts capture. Deny/no-device errors show inline copy. Nothing is recorded
-  or transmitted; stop releases the stream.
+- Mic selector: ElevenLabs UI `mic-selector` registry component
+  (`web/src/components/vendor/mic-selector.tsx`, with `live-waveform.tsx`)
+  between files and the form, wrapped in a `data-testid="mic-check"` element.
+  Device list populates without permission (labels fallback to "Microphone
+  <id>"); opening the dropdown requests getUserMedia to resolve real labels.
+  Mute toggle and live waveform preview appear in the dropdown footer while
+  open. Not gated: the start buttons do not depend on mic state. The
+  component renders built-in English strings (no i18n hooks). Nothing is
+  recorded or transmitted; preview capture stops when the dropdown closes.
 - Form fields: duration (20/30/45/60), tone, difficulty, language (interview language, NOT the UI locale), mode (`interview|coach`).
 - Primary action **validate & start** creates the session (POST /v1/sessions) then routes to `/validate/[id]`.
 - Link **proceed without validation** routes straight to `/interview/[id]`.
