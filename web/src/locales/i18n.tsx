@@ -37,7 +37,8 @@ function landingLocaleFromPath(pathname: string): string | null {
   if (pathname === "/") return "en";
   const match = pathname.match(/^\/([^/]+)\/?$/);
   const segment = match?.[1];
-  if (segment && (LOCALES as readonly string[]).includes(segment)) return segment;
+  if (segment && (LOCALES as readonly string[]).includes(segment))
+    return segment;
   return null;
 }
 

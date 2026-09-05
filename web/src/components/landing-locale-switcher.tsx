@@ -12,8 +12,13 @@ import { LOCALES } from "../stores/session";
  */
 export function LandingLocaleSwitcher() {
   return (
-    <nav aria-label="language" className="flex items-center gap-1.5 text-sm text-espresso-soft">
-      <span className="sr-only"><FormattedMessage id="locale.label" /></span>
+    <nav
+      aria-label="language"
+      className="flex items-center gap-1.5 text-sm text-espresso-soft"
+    >
+      <span className="sr-only">
+        <FormattedMessage id="locale.label" />
+      </span>
       {LOCALES.map((l) =>
         l === "en" ? (
           <Link
