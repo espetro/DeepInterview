@@ -14,6 +14,7 @@ import { AlertTriangle } from "lucide-react";
 import { AppIntlProvider, useIsRtl } from "../locales/i18n";
 import { AppHeader } from "../components/app-header";
 import { localeFromPathname, withLocale } from "../lib/locale-href";
+import { maybeSeedFixtures } from "../lib/dev-fixtures";
 import "../theme.css";
 
 export const Route = createRootRoute({
@@ -29,6 +30,11 @@ function RootDocument() {
   useEffect(() => {
     document.documentElement.dir = isRtl ? "rtl" : "ltr";
   }, [isRtl]);
+
+  // Dev fixture seeding: no-op unless DEV && ?fixtures=1|reset (see lib/dev-fixtures).
+  useEffect(() => {
+    void maybeSeedFixtures().catch((err) => console.warn("fixtures seed failed", err));
+  }, []);
 
   return (
     <html lang="en" dir={isRtl ? "rtl" : "ltr"}>
