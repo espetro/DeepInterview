@@ -125,7 +125,7 @@ export function testRoutes(db: Db): Hono {
         .selectAll()
         .where("session_id", "=", session.id)
         .execute();
-      if (persisted.length !== 1 || persisted[0].id !== turn.id) {
+      if (persisted.length !== 1 || persisted[0]?.id !== turn.id) {
         throw new Error("turn did not persist");
       }
 

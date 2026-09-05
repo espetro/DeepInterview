@@ -41,10 +41,12 @@ describe("document routes", () => {
   function upload(name: string, content: string): Promise<Response> {
     const form = new FormData();
     form.append("file", new File([content], name, { type: "text/plain" }));
-    return app.request(`/v1/sessions/${sessionId}/documents`, {
-      method: "POST",
-      body: form,
-    });
+    return Promise.resolve(
+      app.request(`/v1/sessions/${sessionId}/documents`, {
+        method: "POST",
+        body: form,
+      }),
+    );
   }
 
   it("ingests a text document and returns it ready with chunk count", async () => {
@@ -57,8 +59,9 @@ describe("document routes", () => {
       documents: { name: string; status: string; chunk_count?: number }[];
     };
     expect(documents).toHaveLength(1);
-    expect(documents[0]).toMatchObject({ name: "notes.md", status: "ready" });
-    expect(documents[0].chunk_count).toBeGreaterThan(0);
+    const doc = documents[0]!;
+    expect(doc).toMatchObject({ name: "notes.md", status: "ready" });
+    expect(doc.chunk_count).toBeGreaterThan(0);
   });
 
   it("rejects unsupported file types with 415", async () => {
