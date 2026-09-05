@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useLocale, withLocale } from "../../lib/locale-href";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@nanostores/react";
 import { FormattedMessage } from "react-intl";
-import { getSession, getTurns } from "../lib/api";
-import type { TurnDto } from "../lib/api";
-import { $effectiveRuntime } from "../lib/runtime";
-import { getClientSession, getClientTurns } from "../lib/opfs-store";
+import { getSession, getTurns } from "../../lib/api";
+import type { TurnDto } from "../../lib/api";
+import { $effectiveRuntime } from "../../lib/runtime";
+import { getClientSession, getClientTurns } from "../../lib/opfs-store";
 
 function formatTimestamp(createdAt: string) {
   const d = new Date(createdAt);
@@ -28,12 +29,13 @@ function download(filename: string, blob: Blob) {
   URL.revokeObjectURL(a.href);
 }
 
-export const Route = createFileRoute("/finish/$id")({
+export const Route = createFileRoute("/{-$locale}/finish/$id")({
   component: Finish,
 });
 
 function Finish() {
   const { id } = Route.useParams();
+  const locale = useLocale();
   const navigate = useNavigate();
   const effectiveRuntime = useStore($effectiveRuntime);
   const clientOnly = effectiveRuntime === "client-only";
@@ -148,7 +150,7 @@ function Finish() {
           <button
             style={{ "--rise-delay": "350ms" } as React.CSSProperties}
             className="rise-in group flex w-full items-center justify-center gap-3 rounded-full bg-espresso px-6 py-3.5 font-display font-semibold text-cream transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-persimmon active:scale-[0.98]"
-            onClick={() => navigate({ to: "/report/$id", params: { id } })}
+            onClick={() => navigate({ href: withLocale(locale, `/report/${id}`) })}
           >
             <FormattedMessage id="finish.generateReport" />
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cream/15 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:scale-105">
@@ -156,7 +158,7 @@ function Finish() {
             </span>
           </button>
           <button
-            onClick={() => navigate({ to: "/history" })}
+            onClick={() => navigate({ href: withLocale(locale, "/history") })}
             className="text-sm text-espresso-soft underline decoration-hairline underline-offset-4 transition-fluid hover:text-persimmon"
           >
             <FormattedMessage id="finish.discard" />

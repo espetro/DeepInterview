@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { useLinkProps } from "@tanstack/react-router";
 import { FormattedMessage } from "react-intl";
 
 import { LOCALES } from "../stores/session";
@@ -16,26 +16,25 @@ export function LandingLocaleSwitcher() {
       <span className="sr-only">
         <FormattedMessage id="locale.label" />
       </span>
-      {LOCALES.map((l) =>
-        l === "en" ? (
-          <Link
-            key={l}
-            to="/"
-            className="rounded-full px-2 py-1 font-medium transition-fluid hover:text-espresso [&.active]:text-espresso [&.active]:underline"
-          >
-            {l}
-          </Link>
-        ) : (
-          <Link
-            key={l}
-            to="/$locale"
-            params={{ locale: l }}
-            className="rounded-full px-2 py-1 font-medium transition-fluid hover:text-espresso [&.active]:text-espresso [&.active]:underline"
-          >
-            {l}
-          </Link>
-        ),
-      )}
+      {LOCALES.map((l) => (
+        <LocaleLink key={l} locale={l} />
+      ))}
     </nav>
+  );
+}
+
+function LocaleLink({ locale }: { locale: string }) {
+  // href strings for locale landings are not typed route paths (the `{-$locale}`
+  // prefix is optional), so build the anchor through useLinkProps.
+  const linkProps = useLinkProps({
+    href: locale === "en" ? "/" : `/${locale}`,
+  } as Parameters<typeof useLinkProps>[0]);
+  return (
+    <a
+      {...linkProps}
+      className="rounded-full px-2 py-1 font-medium transition-fluid hover:text-espresso [&.active]:text-espresso [&.active]:underline"
+    >
+      {locale}
+    </a>
   );
 }

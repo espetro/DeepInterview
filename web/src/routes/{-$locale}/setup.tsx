@@ -1,28 +1,29 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useLocaleNav, withLocale } from "../../lib/locale-href";
 import { FormattedMessage, useIntl } from "react-intl";
 import * as React from "react";
 import { useStore } from "@nanostores/react";
-import { $draft } from "../stores/session";
-import { createSession, uploadDocuments } from "../lib/api";
+import { $draft } from "../../stores/session";
+import { createSession, uploadDocuments } from "../../lib/api";
 import * as v from "valibot";
 import { ProviderProfileSchema } from "@di/shared";
 import type { RuntimeMode } from "@di/shared";
-import { MicCheck } from "../components/mic-check";
+import { MicCheck } from "../../components/mic-check";
 import {
   $effectiveRuntime,
   $providerProfile,
   $runtimeMode,
   ensureRuntimeProbe,
   redactKey,
-} from "../lib/runtime";
-import { createClientSession } from "../lib/opfs-store";
-import { resetClientSession } from "../lib/agent/session-store";
+} from "../../lib/runtime";
+import { createClientSession } from "../../lib/opfs-store";
+import { resetClientSession } from "../../lib/agent/session-store";
 
 const MAX_FILES = 10;
 const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
 const ACCEPTED = [".pdf", ".md", ".markdown", ".txt", ".docx"];
 
-export const Route = createFileRoute("/setup")({
+export const Route = createFileRoute("/{-$locale}/setup")({
   head: () => ({ meta: [{ title: "setup — di" }] }),
   component: Setup,
 });
@@ -49,6 +50,7 @@ const PRESETS = [
 const DURATIONS = [20, 30, 45, 60];
 
 function Setup() {
+  const { locale } = useLocaleNav();
   const intl = useIntl();
   const draft = useStore($draft);
   const runtimeMode = useStore($runtimeMode);
@@ -138,8 +140,10 @@ function Setup() {
         });
         // no ingestion pipeline client-side: uploaded files are dropped.
         navigate({
-          to: validate ? "/validate/$id" : "/interview/$id",
-          params: { id: session.id },
+          href: withLocale(
+            locale,
+            validate ? `/validate/${session.id}` : `/interview/${session.id}`,
+          ),
         });
         return;
       }
@@ -157,8 +161,7 @@ function Setup() {
         }
       }
       navigate({
-        to: validate ? "/validate/$id" : "/interview/$id",
-        params: { id: session.id },
+        href: withLocale(locale, validate ? `/validate/${session.id}` : `/interview/${session.id}`),
       });
     } finally {
       setBusy(false);

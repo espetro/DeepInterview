@@ -9,201 +9,215 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as LocaleRouteImport } from './routes/$locale'
-import { Route as HistoryRouteImport } from './routes/history'
-import { Route as SetupRouteImport } from './routes/setup'
-import { Route as FinishIdRouteImport } from './routes/finish.$id'
-import { Route as InterviewIdRouteImport } from './routes/interview.$id'
-import { Route as ReportIdRouteImport } from './routes/report.$id'
-import { Route as ValidateIdRouteImport } from './routes/validate.$id'
+import { Route as Char123LocaleChar125RouteImport } from './routes/{-$locale}'
+import { Route as Char123LocaleChar125IndexRouteImport } from './routes/{-$locale}/index'
+import { Route as Char123LocaleChar125HistoryRouteImport } from './routes/{-$locale}/history'
+import { Route as Char123LocaleChar125SetupRouteImport } from './routes/{-$locale}/setup'
+import { Route as Char123LocaleChar125FinishIdRouteImport } from './routes/{-$locale}/finish.$id'
+import { Route as Char123LocaleChar125InterviewIdRouteImport } from './routes/{-$locale}/interview.$id'
+import { Route as Char123LocaleChar125ReportIdRouteImport } from './routes/{-$locale}/report.$id'
+import { Route as Char123LocaleChar125ValidateIdRouteImport } from './routes/{-$locale}/validate.$id'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const Char123LocaleChar125Route = Char123LocaleChar125RouteImport.update({
+  id: '/{-$locale}',
+  path: '/{-$locale}',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LocaleRoute = LocaleRouteImport.update({
-  id: '/$locale',
-  path: '/$locale',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HistoryRoute = HistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SetupRoute = SetupRouteImport.update({
-  id: '/setup',
-  path: '/setup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FinishIdRoute = FinishIdRouteImport.update({
-  id: '/finish/$id',
-  path: '/finish/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InterviewIdRoute = InterviewIdRouteImport.update({
-  id: '/interview/$id',
-  path: '/interview/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReportIdRoute = ReportIdRouteImport.update({
-  id: '/report/$id',
-  path: '/report/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ValidateIdRoute = ValidateIdRouteImport.update({
-  id: '/validate/$id',
-  path: '/validate/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const Char123LocaleChar125IndexRoute =
+  Char123LocaleChar125IndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => Char123LocaleChar125Route,
+  } as any)
+const Char123LocaleChar125HistoryRoute =
+  Char123LocaleChar125HistoryRouteImport.update({
+    id: '/history',
+    path: '/history',
+    getParentRoute: () => Char123LocaleChar125Route,
+  } as any)
+const Char123LocaleChar125SetupRoute =
+  Char123LocaleChar125SetupRouteImport.update({
+    id: '/setup',
+    path: '/setup',
+    getParentRoute: () => Char123LocaleChar125Route,
+  } as any)
+const Char123LocaleChar125FinishIdRoute =
+  Char123LocaleChar125FinishIdRouteImport.update({
+    id: '/finish/$id',
+    path: '/finish/$id',
+    getParentRoute: () => Char123LocaleChar125Route,
+  } as any)
+const Char123LocaleChar125InterviewIdRoute =
+  Char123LocaleChar125InterviewIdRouteImport.update({
+    id: '/interview/$id',
+    path: '/interview/$id',
+    getParentRoute: () => Char123LocaleChar125Route,
+  } as any)
+const Char123LocaleChar125ReportIdRoute =
+  Char123LocaleChar125ReportIdRouteImport.update({
+    id: '/report/$id',
+    path: '/report/$id',
+    getParentRoute: () => Char123LocaleChar125Route,
+  } as any)
+const Char123LocaleChar125ValidateIdRoute =
+  Char123LocaleChar125ValidateIdRouteImport.update({
+    id: '/validate/$id',
+    path: '/validate/$id',
+    getParentRoute: () => Char123LocaleChar125Route,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/$locale': typeof LocaleRoute
-  '/history': typeof HistoryRoute
-  '/setup': typeof SetupRoute
-  '/finish/$id': typeof FinishIdRoute
-  '/interview/$id': typeof InterviewIdRoute
-  '/report/$id': typeof ReportIdRoute
-  '/validate/$id': typeof ValidateIdRoute
+  '/{-$locale}': typeof Char123LocaleChar125RouteWithChildren
+  '/{-$locale}/history': typeof Char123LocaleChar125HistoryRoute
+  '/{-$locale}/setup': typeof Char123LocaleChar125SetupRoute
+  '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
+  '/{-$locale}/finish/$id': typeof Char123LocaleChar125FinishIdRoute
+  '/{-$locale}/interview/$id': typeof Char123LocaleChar125InterviewIdRoute
+  '/{-$locale}/report/$id': typeof Char123LocaleChar125ReportIdRoute
+  '/{-$locale}/validate/$id': typeof Char123LocaleChar125ValidateIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/$locale': typeof LocaleRoute
-  '/history': typeof HistoryRoute
-  '/setup': typeof SetupRoute
-  '/finish/$id': typeof FinishIdRoute
-  '/interview/$id': typeof InterviewIdRoute
-  '/report/$id': typeof ReportIdRoute
-  '/validate/$id': typeof ValidateIdRoute
+  '/{-$locale}/history': typeof Char123LocaleChar125HistoryRoute
+  '/{-$locale}/setup': typeof Char123LocaleChar125SetupRoute
+  '/{-$locale}': typeof Char123LocaleChar125IndexRoute
+  '/{-$locale}/finish/$id': typeof Char123LocaleChar125FinishIdRoute
+  '/{-$locale}/interview/$id': typeof Char123LocaleChar125InterviewIdRoute
+  '/{-$locale}/report/$id': typeof Char123LocaleChar125ReportIdRoute
+  '/{-$locale}/validate/$id': typeof Char123LocaleChar125ValidateIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/$locale': typeof LocaleRoute
-  '/history': typeof HistoryRoute
-  '/setup': typeof SetupRoute
-  '/finish/$id': typeof FinishIdRoute
-  '/interview/$id': typeof InterviewIdRoute
-  '/report/$id': typeof ReportIdRoute
-  '/validate/$id': typeof ValidateIdRoute
+  '/{-$locale}': typeof Char123LocaleChar125RouteWithChildren
+  '/{-$locale}/history': typeof Char123LocaleChar125HistoryRoute
+  '/{-$locale}/setup': typeof Char123LocaleChar125SetupRoute
+  '/{-$locale}/': typeof Char123LocaleChar125IndexRoute
+  '/{-$locale}/finish/$id': typeof Char123LocaleChar125FinishIdRoute
+  '/{-$locale}/interview/$id': typeof Char123LocaleChar125InterviewIdRoute
+  '/{-$locale}/report/$id': typeof Char123LocaleChar125ReportIdRoute
+  '/{-$locale}/validate/$id': typeof Char123LocaleChar125ValidateIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
-    | '/$locale'
-    | '/history'
-    | '/setup'
-    | '/finish/$id'
-    | '/interview/$id'
-    | '/report/$id'
-    | '/validate/$id'
+    | '/{-$locale}'
+    | '/{-$locale}/history'
+    | '/{-$locale}/setup'
+    | '/{-$locale}/'
+    | '/{-$locale}/finish/$id'
+    | '/{-$locale}/interview/$id'
+    | '/{-$locale}/report/$id'
+    | '/{-$locale}/validate/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
-    | '/$locale'
-    | '/history'
-    | '/setup'
-    | '/finish/$id'
-    | '/interview/$id'
-    | '/report/$id'
-    | '/validate/$id'
+    | '/{-$locale}/history'
+    | '/{-$locale}/setup'
+    | '/{-$locale}'
+    | '/{-$locale}/finish/$id'
+    | '/{-$locale}/interview/$id'
+    | '/{-$locale}/report/$id'
+    | '/{-$locale}/validate/$id'
   id:
     | '__root__'
-    | '/'
-    | '/$locale'
-    | '/history'
-    | '/setup'
-    | '/finish/$id'
-    | '/interview/$id'
-    | '/report/$id'
-    | '/validate/$id'
+    | '/{-$locale}'
+    | '/{-$locale}/history'
+    | '/{-$locale}/setup'
+    | '/{-$locale}/'
+    | '/{-$locale}/finish/$id'
+    | '/{-$locale}/interview/$id'
+    | '/{-$locale}/report/$id'
+    | '/{-$locale}/validate/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  LocaleRoute: typeof LocaleRoute
-  HistoryRoute: typeof HistoryRoute
-  SetupRoute: typeof SetupRoute
-  FinishIdRoute: typeof FinishIdRoute
-  InterviewIdRoute: typeof InterviewIdRoute
-  ReportIdRoute: typeof ReportIdRoute
-  ValidateIdRoute: typeof ValidateIdRoute
+  Char123LocaleChar125Route: typeof Char123LocaleChar125RouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/{-$locale}': {
+      id: '/{-$locale}'
+      path: '/{-$locale}'
+      fullPath: '/{-$locale}'
+      preLoaderRoute: typeof Char123LocaleChar125RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/{-$locale}/': {
+      id: '/{-$locale}/'
       path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/{-$locale}/'
+      preLoaderRoute: typeof Char123LocaleChar125IndexRouteImport
+      parentRoute: typeof Char123LocaleChar125Route
     }
-    '/$locale': {
-      id: '/$locale'
-      path: '/$locale'
-      fullPath: '/$locale'
-      preLoaderRoute: typeof LocaleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/history': {
-      id: '/history'
+    '/{-$locale}/history': {
+      id: '/{-$locale}/history'
       path: '/history'
-      fullPath: '/history'
-      preLoaderRoute: typeof HistoryRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/{-$locale}/history'
+      preLoaderRoute: typeof Char123LocaleChar125HistoryRouteImport
+      parentRoute: typeof Char123LocaleChar125Route
     }
-    '/setup': {
-      id: '/setup'
+    '/{-$locale}/setup': {
+      id: '/{-$locale}/setup'
       path: '/setup'
-      fullPath: '/setup'
-      preLoaderRoute: typeof SetupRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/{-$locale}/setup'
+      preLoaderRoute: typeof Char123LocaleChar125SetupRouteImport
+      parentRoute: typeof Char123LocaleChar125Route
     }
-    '/finish/$id': {
-      id: '/finish/$id'
+    '/{-$locale}/finish/$id': {
+      id: '/{-$locale}/finish/$id'
       path: '/finish/$id'
-      fullPath: '/finish/$id'
-      preLoaderRoute: typeof FinishIdRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/{-$locale}/finish/$id'
+      preLoaderRoute: typeof Char123LocaleChar125FinishIdRouteImport
+      parentRoute: typeof Char123LocaleChar125Route
     }
-    '/interview/$id': {
-      id: '/interview/$id'
+    '/{-$locale}/interview/$id': {
+      id: '/{-$locale}/interview/$id'
       path: '/interview/$id'
-      fullPath: '/interview/$id'
-      preLoaderRoute: typeof InterviewIdRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/{-$locale}/interview/$id'
+      preLoaderRoute: typeof Char123LocaleChar125InterviewIdRouteImport
+      parentRoute: typeof Char123LocaleChar125Route
     }
-    '/report/$id': {
-      id: '/report/$id'
+    '/{-$locale}/report/$id': {
+      id: '/{-$locale}/report/$id'
       path: '/report/$id'
-      fullPath: '/report/$id'
-      preLoaderRoute: typeof ReportIdRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/{-$locale}/report/$id'
+      preLoaderRoute: typeof Char123LocaleChar125ReportIdRouteImport
+      parentRoute: typeof Char123LocaleChar125Route
     }
-    '/validate/$id': {
-      id: '/validate/$id'
+    '/{-$locale}/validate/$id': {
+      id: '/{-$locale}/validate/$id'
       path: '/validate/$id'
-      fullPath: '/validate/$id'
-      preLoaderRoute: typeof ValidateIdRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/{-$locale}/validate/$id'
+      preLoaderRoute: typeof Char123LocaleChar125ValidateIdRouteImport
+      parentRoute: typeof Char123LocaleChar125Route
     }
   }
 }
 
+interface Char123LocaleChar125RouteChildren {
+  Char123LocaleChar125HistoryRoute: typeof Char123LocaleChar125HistoryRoute
+  Char123LocaleChar125SetupRoute: typeof Char123LocaleChar125SetupRoute
+  Char123LocaleChar125IndexRoute: typeof Char123LocaleChar125IndexRoute
+  Char123LocaleChar125FinishIdRoute: typeof Char123LocaleChar125FinishIdRoute
+  Char123LocaleChar125InterviewIdRoute: typeof Char123LocaleChar125InterviewIdRoute
+  Char123LocaleChar125ReportIdRoute: typeof Char123LocaleChar125ReportIdRoute
+  Char123LocaleChar125ValidateIdRoute: typeof Char123LocaleChar125ValidateIdRoute
+}
+
+const Char123LocaleChar125RouteChildren: Char123LocaleChar125RouteChildren = {
+  Char123LocaleChar125HistoryRoute: Char123LocaleChar125HistoryRoute,
+  Char123LocaleChar125SetupRoute: Char123LocaleChar125SetupRoute,
+  Char123LocaleChar125IndexRoute: Char123LocaleChar125IndexRoute,
+  Char123LocaleChar125FinishIdRoute: Char123LocaleChar125FinishIdRoute,
+  Char123LocaleChar125InterviewIdRoute: Char123LocaleChar125InterviewIdRoute,
+  Char123LocaleChar125ReportIdRoute: Char123LocaleChar125ReportIdRoute,
+  Char123LocaleChar125ValidateIdRoute: Char123LocaleChar125ValidateIdRoute,
+}
+
+const Char123LocaleChar125RouteWithChildren =
+  Char123LocaleChar125Route._addFileChildren(Char123LocaleChar125RouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  LocaleRoute: LocaleRoute,
-  HistoryRoute: HistoryRoute,
-  SetupRoute: SetupRoute,
-  FinishIdRoute: FinishIdRoute,
-  InterviewIdRoute: InterviewIdRoute,
-  ReportIdRoute: ReportIdRoute,
-  ValidateIdRoute: ValidateIdRoute,
+  Char123LocaleChar125Route: Char123LocaleChar125RouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

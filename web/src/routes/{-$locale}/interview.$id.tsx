@@ -1,23 +1,30 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useLocale, withLocale } from "../../lib/locale-href";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@nanostores/react";
 import * as React from "react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { useVoice } from "../lib/voice/use-voice";
+import { useVoice } from "../../lib/voice/use-voice";
 import { FormattedMessage, useIntl } from "react-intl";
-import { getSession, getTurns, postTextTurn, pushToolState } from "../lib/api";
-import { getClientSession } from "../lib/opfs-store";
-import { $clientTurns } from "../lib/agent/session-store";
-import { $effectiveRuntime } from "../lib/runtime";
-import { $editorBuffer, $muted, $question, $transcriptOpen, $whiteboard } from "../stores/session";
+import { getSession, getTurns, postTextTurn, pushToolState } from "../../lib/api";
+import { getClientSession } from "../../lib/opfs-store";
+import { $clientTurns } from "../../lib/agent/session-store";
+import { $effectiveRuntime } from "../../lib/runtime";
+import {
+  $editorBuffer,
+  $muted,
+  $question,
+  $transcriptOpen,
+  $whiteboard,
+} from "../../stores/session";
 
 const WhiteboardPanel = lazy(() =>
-  import("../components/whiteboard-panel").then((m) => ({
+  import("../../components/whiteboard-panel").then((m) => ({
     default: m.WhiteboardPanel,
   })),
 );
 
-export const Route = createFileRoute("/interview/$id")({
+export const Route = createFileRoute("/{-$locale}/interview/$id")({
   component: Interview,
 });
 
@@ -46,6 +53,7 @@ const phaseKeys: Record<string, string> = {
 function Interview() {
   const intl = useIntl();
   const { id } = Route.useParams();
+  const locale = useLocale();
   const navigate = useNavigate();
   const effectiveRuntime = useStore($effectiveRuntime);
   const clientOnly = effectiveRuntime === "client-only";
@@ -98,7 +106,7 @@ function Interview() {
   const wrapping = secsLeft <= 120;
 
   useEffect(() => {
-    if (secsLeft === 0) navigate({ to: "/finish/$id", params: { id } });
+    if (secsLeft === 0) navigate({ href: withLocale(locale, `/finish/${id}`) });
   }, [secsLeft, id, navigate]);
 
   // browser-driver fallback: read new agent turns aloud as turns polling finds
@@ -248,7 +256,7 @@ function Interview() {
               <FormattedMessage id={muted ? "interview.unmute" : "interview.mute"} />
             </button>
             <button
-              onClick={() => navigate({ to: "/finish/$id", params: { id } })}
+              onClick={() => navigate({ href: withLocale(locale, `/finish/${id}`) })}
               className="rounded-full bg-espresso px-5 py-2.5 text-sm font-medium text-cream transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-persimmon active:scale-[0.97]"
             >
               <FormattedMessage id="interview.endEarly" />
