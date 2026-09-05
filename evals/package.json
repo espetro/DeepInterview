@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "bun run --bun vitest run"
+    "test": "bun run --bun vitest run",
+    "typecheck": "tsc --noEmit --checkers 1"
   },
   "dependencies": {
     "@aeriondyseti/drizzle-sqlite-vec": "^0.1.0",

@@ -15,6 +15,7 @@
     "valibot": "^1"
   },
   "scripts": {
-    "test": "bun run --bun vitest run"
+    "test": "bun run --bun vitest run",
+    "typecheck": "tsc --noEmit --checkers 1"
   }
 }

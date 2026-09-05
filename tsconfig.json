@@ -1,5 +1,9 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": { "types": ["bun", "node"] },
-  "include": ["**/*.ts"]
+  "compilerOptions": {
+    "types": ["bun", "node"],
+    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo"
+  },
+  "include": ["scripts/**/*.ts", "build/**/*.ts"],
+  "exclude": ["shared", "server", "web", "evals", "node_modules"]
 }
