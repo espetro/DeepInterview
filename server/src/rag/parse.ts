@@ -87,8 +87,13 @@ export async function parseDocument(
     case "md":
       return new TextDecoder().decode(bytes);
     case "pdf": {
-      const { default: PdfParse } = await import("pdf-parse");
-      return (await PdfParse(Buffer.from(bytes))).text;
+      const { PDFParse } = await import("pdf-parse");
+      const parser = new PDFParse({ data: Buffer.from(bytes) });
+      try {
+        return (await parser.getText()).text;
+      } finally {
+        await parser.destroy();
+      }
     }
     case "docx": {
       const mammoth = await import("mammoth");
