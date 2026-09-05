@@ -5,7 +5,7 @@ import * as React from "react";
 import { useStore } from "@nanostores/react";
 import { $draft } from "../../stores/session";
 import { createSession, uploadDocuments } from "../../lib/api";
-import { MicCheck } from "../../components/mic-check";
+import { MicSelector } from "../../components/vendor/mic-selector";
 import { $effectiveRuntime, $providerProfile, ensureRuntimeProbe } from "../../lib/runtime";
 import { openSettings } from "../../components/settings-dialog";
 import { createClientSession } from "../../lib/opfs-store";
@@ -246,8 +246,8 @@ function Setup() {
               <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
                 <FormattedMessage id="setup.mic" />
               </h2>
-              <div className="mt-3">
-                <MicCheck />
+              <div className="mt-3" data-testid="mic-check">
+                <MicSelector />
               </div>
             </section>
 
