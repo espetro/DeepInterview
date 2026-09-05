@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Tldraw, getSnapshot, type Editor } from "tldraw";
+import { Tldraw, getSnapshot } from "tldraw";
+import type { Editor } from "tldraw";
 import "tldraw/tldraw.css";
 import { pruneSnapshot, serializeSnapshot } from "../lib/whiteboard-store";
 import { $whiteboard } from "../stores/session";

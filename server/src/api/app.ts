@@ -1,14 +1,11 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { Hono } from "hono";
 import type { Config } from "@di/shared";
 import type { Db } from "../store/db";
 import { apiRoutes } from "./routes";
 import { embeddingsClientFromConfig } from "../rag/ingest";
-import {
-  tryUpgradeVoice,
-  voiceWebSocketHandler,
-  type VoiceDeps,
-} from "../voice/ws";
+import { tryUpgradeVoice, voiceWebSocketHandler } from "../voice/ws";
+import type { VoiceDeps } from "../voice/ws";
 
 export interface AppDeps {
   config: Config;

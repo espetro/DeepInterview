@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FormattedMessage, useIntl } from "react-intl";
-import { LocaleSwitcher } from "../components/locale-switcher";
+import { FormattedMessage } from "react-intl";
 import { getSession } from "../lib/api";
 
 export const Route = createFileRoute("/validate/$id")({

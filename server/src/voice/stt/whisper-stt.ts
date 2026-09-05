@@ -1,3 +1,6 @@
+import { encodeWav } from "./wav.ts";
+import { providerUrl } from "../provider-url.ts";
+
 /** Minimal in-process event sink the voice loop implements against the db. */
 export interface EventSink {
   postEvent(sessionId: string, type: string, payload?: unknown): Promise<void>;
@@ -104,9 +107,6 @@ export class WhisperStt {
     return text;
   }
 }
-
-import { encodeWav } from "./wav.ts";
-import { providerUrl } from "../provider-url.ts";
 
 /** Wrap raw PCM16LE mono bytes in a 16k mono WAV container. */
 export function encodePcmWav(pcm: Uint8Array): Buffer {

@@ -4,7 +4,6 @@ import {
   CreateSessionRequestSchema,
   DocumentSchema,
   ReportSchema,
-  RetrievedChunkSchema,
   SessionContextResponseSchema,
   SessionEventSchema,
   SessionSchema,

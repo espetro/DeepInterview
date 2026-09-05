@@ -11,8 +11,8 @@ import {
   $muted,
   $question,
   $transcriptOpen,
+  $whiteboard,
 } from "../stores/session";
-import { $whiteboard } from "../stores/session";
 
 const WhiteboardPanel = lazy(() =>
   import("../components/whiteboard-panel").then((m) => ({

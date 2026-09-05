@@ -1,15 +1,13 @@
 import * as v from "valibot";
-import {
-  AUDIO_HEADER_BYTES,
-  CAPTURE_SAMPLE_RATE,
-  type TtsMessage,
-  type VoiceServerMessage,
-  VoiceServerMessageSchema,
-} from "@di/shared/voice";
+import { AUDIO_HEADER_BYTES, VoiceServerMessageSchema } from "@di/shared/voice";
+import type { TtsMessage, VoiceServerMessage } from "@di/shared/voice";
 import type { Turn } from "@di/shared/session";
-import { startCapture, type MicCapture } from "./capture";
-import { createPcmPlayer, type PcmPlayer } from "./pcm-player";
-import { createVadGate, type VadGate } from "./vad";
+import { startCapture } from "./capture";
+import type { MicCapture } from "./capture";
+import { createPcmPlayer } from "./pcm-player";
+import type { PcmPlayer } from "./pcm-player";
+import { createVadGate } from "./vad";
+import type { VadGate } from "./vad";
 
 /**
  * SpeechDriver: the transport-facing voice interface. Both server-driver

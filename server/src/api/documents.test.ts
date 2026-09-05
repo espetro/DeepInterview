@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { Hono } from "hono";
 import { apiRoutes } from "./routes";
-import { createDatabase, migrate, type Db } from "../store/db";
+import { createDatabase, migrate } from "../store/db";
+import type { Db } from "../store/db";
 import { EmbeddingClient } from "../rag/embeddings";
 
 class StubEmbeddings extends EmbeddingClient {

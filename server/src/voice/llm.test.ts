@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { OpenAiChatClient, type ToolDef } from "./llm.ts";
+import { OpenAiChatClient } from "./llm.ts";
+import type { ToolDef } from "./llm.ts";
 
 function fetchStub(
   handler: (url: string, init?: RequestInit) => Response,

@@ -1,4 +1,5 @@
-import { CHUNK_OVERLAP, CHUNK_SIZE, type DocumentKind } from "@di/shared";
+import { CHUNK_OVERLAP, CHUNK_SIZE } from "@di/shared";
+import type { DocumentKind } from "@di/shared";
 
 /**
  * Deterministic paragraph-boundary chunker. Target ~CHUNK_SIZE chars with
