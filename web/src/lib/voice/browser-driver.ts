@@ -137,7 +137,7 @@ export class BrowserVoiceDriver implements SpeechDriver {
       this.events.onSpeechStart?.();
       this.events.onSpeechEnd?.(text);
       if (this.agent) {
-        void this.runAgentTurn(text);
+        void this.runAgentTurn(text, "voice");
       }
     }
   }
@@ -145,11 +145,14 @@ export class BrowserVoiceDriver implements SpeechDriver {
   /** Typed-input counterpart to speech recognition results (same agent turn path). */
   sendText(text: string): void {
     if (!text.trim() || !this.agent) return;
-    void this.runAgentTurn(text.trim());
+    void this.runAgentTurn(text.trim(), "text");
   }
 
   /** Stream the agent reply through sentence cutting into pipelined TTS. */
-  private async runAgentTurn(text: string): Promise<void> {
+  private async runAgentTurn(
+    text: string,
+    source: Turn["source"],
+  ): Promise<void> {
     const agent = this.agent;
     const tts = this.deps.tts ?? synthesizeSpeech;
     if (!agent) return;
@@ -166,7 +169,7 @@ export class BrowserVoiceDriver implements SpeechDriver {
       speaker: "user",
       text,
       created_at: new Date().toISOString(),
-      source: "voice",
+      source,
     };
     this.events.onUserTurn?.(userTurn);
 
@@ -208,18 +211,23 @@ export class BrowserVoiceDriver implements SpeechDriver {
         this.pending = "";
         await speak(rest);
       }
-      const agentTurn: Turn = {
-        id: crypto.randomUUID(),
-        session_id: this.sessionId,
-        seq: Date.now() + 1,
-        speaker: "agent",
-        text: full,
-        created_at: new Date().toISOString(),
-        source: "voice",
-      };
-      this.events.onAgentTurn?.(agentTurn);
-      // speechSynthesis fallback when no TTS endpoint is configured
-      if (!this.useTtsEndpoint && full.trim()) this.speakAgentTurn(full);
+      // full is empty when the LLM call failed: respond()'s onError sink
+      // reports the failure but resolves rather than rejecting, so guard
+      // here instead of persisting an empty agent turn.
+      if (full.trim()) {
+        const agentTurn: Turn = {
+          id: crypto.randomUUID(),
+          session_id: this.sessionId,
+          seq: Date.now() + 1,
+          speaker: "agent",
+          text: full,
+          created_at: new Date().toISOString(),
+          source,
+        };
+        this.events.onAgentTurn?.(agentTurn);
+        // speechSynthesis fallback when no TTS endpoint is configured
+        if (!this.useTtsEndpoint) this.speakAgentTurn(full);
+      }
       this.finishSpeaking();
     } catch (err) {
       if (!ctrl.signal.aborted) {
