@@ -360,5 +360,54 @@ describe("VoiceLoop", () => {
     expect(messages.some((m) => m.t === "agent_speaking" && m.on === false)).toBe(true);
     expect(messages.filter((m) => m.t === "metrics")).toHaveLength(0);
   });
+
+  it("streaming stt mode: frames are fed, finish() resolves the transcript, turn proceeds", async () => {
+    const fed: number[] = [];
+    let finishCalls = 0;
+    const db = createDatabase(":memory:");
+    await migrate(db);
+    await db.insertInto("sessions").values({
+      id: "s1",
+      title: "Stream",
+      mode: "interview",
+      created_at: new Date().toISOString(),
+      status: "created",
+      duration_min: 30,
+      plan: null,
+    }).execute();
+    const messages: VoiceServerMessage[] = [];
+    const loop = new VoiceLoop({
+      sessionId: "s1",
+      config: { ...testConfig(), stt: { base_url: "http://localhost:9000", model: "s", mode: "streaming" } },
+      db,
+      send: (m) => messages.push(m),
+      sendBinary: () => undefined,
+      stt: { transcribePcm: async () => { throw new Error("buffered stt must not run in streaming mode"); } },
+      streamingStt: {
+        feed: async (pcm) => void fed.push(pcm.byteLength),
+        finish: async () => {
+          finishCalls++;
+          return "streamed transcript";
+        },
+      },
+      tts: { synthesizeToPcm: async () => pcmBytes([0]) },
+      llm: { chat: async () => ({ content: "ok", toolCalls: [] }) },
+    });
+    await loop.start();
+    await loop.handleMessage(frame(0, pcmBytes([1, 2, 3, 4])));
+    await loop.handleMessage(frame(1, pcmBytes([5, 6])));
+    await loop.handleMessage({ t: "utterance_end" });
+
+    expect(fed).toEqual([8, 4]); // both frames fed (header-stripped)
+    expect(finishCalls).toBe(1);
+    expect(messages.map((m) => m.t)).toEqual(
+      expect.arrayContaining(["user_transcript", "agent_transcript", "metrics"]),
+    );
+    const turns = await db.selectFrom("turns").selectAll().orderBy("seq").execute();
+    expect(turns.map((t) => [t.speaker, t.text])).toEqual([
+      ["user", "streamed transcript"],
+      ["agent", "ok"],
+    ]);
+  });
 });
 
