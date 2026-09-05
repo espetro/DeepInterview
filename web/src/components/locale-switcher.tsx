@@ -3,6 +3,7 @@ import { Check, ChevronDown } from "lucide-react";
 
 import { LOCALES } from "../stores/session";
 import { replaceLocale, useLocale } from "../lib/locale-href";
+import { Button } from "./vendor/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,16 +45,19 @@ export function LocaleSwitcher({ className = "" }: { className?: string }) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label="Language"
-        className={
-          "inline-flex items-center gap-2 rounded-full border border-hairline bg-white px-3 py-1.5 text-xs font-medium text-espresso-soft transition-fluid hover:border-persimmon/50 hover:text-espresso focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-persimmon/50 focus-visible:ring-offset-2 " +
-          className
-        }
-      >
-        <span aria-hidden="true">{LOCALE_LABELS[locale].flag}</span>
-        {LOCALE_LABELS[locale].native}
-        <ChevronDown className="size-3.5 text-espresso-soft" aria-hidden="true" />
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          aria-label="Language"
+          className={
+            "gap-2 rounded-full border-hairline bg-white px-3 py-1.5 text-xs font-medium text-espresso-soft hover:border-persimmon/50 hover:bg-white hover:text-espresso " +
+            className
+          }
+        >
+          <span aria-hidden="true">{LOCALE_LABELS[locale].flag}</span>
+          {LOCALE_LABELS[locale].native}
+          <ChevronDown className="size-3.5 text-espresso-soft" aria-hidden="true" />
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-52 rounded-xl p-1.5">
         {LOCALES.map((l) => {
