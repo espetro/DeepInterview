@@ -6,6 +6,9 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useVoice } from "../lib/voice/use-voice";
 import { FormattedMessage, useIntl } from "react-intl";
 import { getSession, getTurns, postTextTurn, pushToolState } from "../lib/api";
+import { getClientSession } from "../lib/opfs-store";
+import { $clientTurns } from "../lib/agent/session-store";
+import { $effectiveRuntime } from "../lib/runtime";
 import {
   $editorBuffer,
   $muted,
@@ -54,15 +57,20 @@ function Interview() {
   const intl = useIntl();
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const effectiveRuntime = useStore($effectiveRuntime);
+  const clientOnly = effectiveRuntime === "client-only";
   const { data: session } = useQuery({
-    queryKey: ["session", id],
-    queryFn: () => getSession(id),
+    queryKey: ["session", id, effectiveRuntime],
+    queryFn: () => (clientOnly ? getClientSession(id) : getSession(id)),
   });
-  const { data: turns } = useQuery({
+  const { data: polledTurns } = useQuery({
     queryKey: ["turns", id],
     queryFn: () => getTurns(id),
     refetchInterval: 2000,
+    enabled: !clientOnly,
   });
+  const clientTurns = useStore($clientTurns);
+  const turns = clientOnly ? clientTurns : polledTurns;
   const question = useStore($question);
   const transcriptOpen = useStore($transcriptOpen);
   const muted = useStore($muted);
@@ -84,13 +92,16 @@ function Interview() {
           ? "interview.voiceConnecting"
           : "interview.voiceIdle";
 
-  // Mirror browser-held editor/whiteboard state to di so the voice agent can read it.
+  // Mirror browser-held editor/whiteboard state to di so the voice agent can
+  // read it. Client-only mode's tool executors read the stores in-process
+  // (see createStoreToolExecutors), so there is nothing to push.
   useEffect(() => {
+    if (clientOnly) return;
     const t = setTimeout(() => {
       pushToolState(id, { editor, whiteboard }).catch(() => {});
     }, 1000);
     return () => clearTimeout(t);
-  }, [id, editor, whiteboard]);
+  }, [id, editor, whiteboard, clientOnly]);
 
   const secsLeft = useCountdown(session?.duration_min ?? 30);
   const mm = String(Math.floor(secsLeft / 60)).padStart(2, "0");
@@ -114,7 +125,11 @@ function Interview() {
 
   async function sendText() {
     if (!text.trim()) return;
-    await postTextTurn(id, text.trim());
+    if (clientOnly) {
+      voice.sendText(text.trim());
+    } else {
+      await postTextTurn(id, text.trim());
+    }
     setText("");
   }
 

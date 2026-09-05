@@ -1,5 +1,8 @@
 import * as React from "react";
 import { createActor } from "xstate";
+import type { Turn } from "@di/shared/session";
+import { pushClientTurn } from "../agent/session-store";
+import { appendClientTurn } from "../opfs-store";
 import { BrowserVoiceDriver } from "./browser-driver";
 import { createDriver } from "./index";
 import { voiceMachine } from "./machine";
@@ -15,6 +18,8 @@ export interface VoiceState {
   muted: boolean;
   /** browser-driver only: read a new agent turn aloud (no-op for server driver) */
   speakAgentTurn(text: string): void;
+  /** browser-driver only: run a typed turn through the client agent (no-op for server driver) */
+  sendText(text: string): void;
 }
 
 interface VoiceCoreState {
@@ -45,6 +50,10 @@ export function useVoice(sessionId: string, muted: boolean): VoiceState {
   const speak = React.useCallback((text: string) => {
     const d = driverRef.current;
     if (d instanceof BrowserVoiceDriver) d.speakAgentTurn(text);
+  }, []);
+  const sendText = React.useCallback((text: string) => {
+    const d = driverRef.current;
+    if (d instanceof BrowserVoiceDriver) d.sendText(text);
   }, []);
 
   React.useEffect(() => {
@@ -81,8 +90,19 @@ export function useVoice(sessionId: string, muted: boolean): VoiceState {
       driver.events.onSpeechStart = () => actor.send({ type: "SPEECH_START" });
       driver.events.onSpeechEnd = (text) =>
         actor.send({ type: "SPEECH_END", text });
-      driver.events.onUserTurn = () => undefined; // transcript display via turns polling
-      driver.events.onAgentTurn = () => undefined;
+      // server driver: transcript display via turns polling instead (di
+      // already persisted the turn server-side when it emitted this event).
+      // browser driver: nothing else persists this turn, so do it here.
+      const onClientTurn = (turn: Turn) => {
+        pushClientTurn(turn);
+        void appendClientTurn(sessionId, turn);
+      };
+      driver.events.onUserTurn = (turn: Turn) => {
+        if (driver instanceof BrowserVoiceDriver) onClientTurn(turn);
+      };
+      driver.events.onAgentTurn = (turn: Turn) => {
+        if (driver instanceof BrowserVoiceDriver) onClientTurn(turn);
+      };
       driver.events.onAgentStart = () => actor.send({ type: "AGENT_START" });
       driver.events.onAgentDone = () => actor.send({ type: "AGENT_DONE" });
 
@@ -136,5 +156,5 @@ export function useVoice(sessionId: string, muted: boolean): VoiceState {
     setState((s) => ({ ...s, muted }));
   }, [muted]);
 
-  return { ...state, speakAgentTurn: speak };
+  return { ...state, speakAgentTurn: speak, sendText };
 }

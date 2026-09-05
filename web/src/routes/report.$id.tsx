@@ -2,7 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { FormattedMessage, useIntl } from "react-intl";
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useStore } from "@nanostores/react";
 import { getReport, getSession } from "../lib/api";
+import { $effectiveRuntime, $providerProfile } from "../lib/runtime";
+import {
+  getClientReport,
+  getClientSession,
+  getClientTurns,
+  saveClientReport,
+} from "../lib/opfs-store";
+import { generateReport } from "../lib/agent/report-generator";
 
 export const Route = createFileRoute("/report/$id")({
   component: Report,
@@ -24,21 +33,50 @@ const VERDICT_TONE: Record<string, string> = {
   drop: "bg-persimmon-soft text-persimmon-deep",
 };
 
+async function loadOrGenerateClientReport(id: string): Promise<ReportDto> {
+  const cached = await getClientReport(id);
+  if (cached) return cached;
+  const profile = $providerProfile.get();
+  const session = await getClientSession(id);
+  if (!profile || !session) throw new Error("no provider profile or session");
+  const turns = await getClientTurns(id);
+  const report = await generateReport(profile, {
+    sessionId: id,
+    title: session.title,
+    mode: session.mode,
+    turns,
+  });
+  await saveClientReport(id, report);
+  return report;
+}
+
 function Report() {
   const intl = useIntl();
   const { id } = Route.useParams();
-  const { data: session } = useQuery({
+  const effectiveRuntime = useStore($effectiveRuntime);
+  const clientOnly = effectiveRuntime === "client-only";
+  const { data: serverSession } = useQuery({
     queryKey: ["session", id],
     queryFn: () => getSession(id),
+    enabled: !clientOnly,
   });
+  const { data: clientSession } = useQuery({
+    queryKey: ["client-session", id],
+    queryFn: () => getClientSession(id),
+    enabled: clientOnly,
+  });
+  const session = clientOnly ? clientSession : serverSession;
   const {
     data: report,
     isLoading,
     isError,
     refetch,
   } = useQuery<ReportDto>({
-    queryKey: ["report", id],
-    queryFn: () => getReport(id) as Promise<ReportDto>,
+    queryKey: ["report", id, clientOnly],
+    queryFn: () =>
+      clientOnly
+        ? loadOrGenerateClientReport(id)
+        : (getReport(id) as Promise<ReportDto>),
     retry: 2,
     retryDelay: 1500,
   });

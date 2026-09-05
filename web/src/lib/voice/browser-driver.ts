@@ -142,6 +142,12 @@ export class BrowserVoiceDriver implements SpeechDriver {
     }
   }
 
+  /** Typed-input counterpart to speech recognition results (same agent turn path). */
+  sendText(text: string): void {
+    if (!text.trim() || !this.agent) return;
+    void this.runAgentTurn(text.trim());
+  }
+
   /** Stream the agent reply through sentence cutting into pipelined TTS. */
   private async runAgentTurn(text: string): Promise<void> {
     const agent = this.agent;
