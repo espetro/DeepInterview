@@ -125,6 +125,7 @@ describe("voice websocket endpoint", () => {
       "agent_speaking",
       "tts",
       "agent_speaking",
+      "metrics",
     ]);
     expect(binary).toHaveLength(1);
     expect(binary[0]!.length).toBe(4 + 960);

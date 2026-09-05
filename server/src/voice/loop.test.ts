@@ -94,7 +94,7 @@ describe("VoiceLoop", () => {
     await loop.handleMessage(frame(0, pcmBytes([1, 2, 3, 4])));
     await loop.handleMessage({ t: "utterance_end" });
     await loop.handleMessage({ t: "utterance_end" }); // empty buffer: no-op
-    expect(messages).toHaveLength(6);
+    expect(messages).toHaveLength(7);
 
     const types = messages.map((m) => m.t);
     expect(types).toEqual([
@@ -104,9 +104,10 @@ describe("VoiceLoop", () => {
       "tts",
       "tts",
       "agent_speaking",
+      "metrics",
     ]);
     expect(messages[2]).toMatchObject({ t: "agent_speaking", on: true });
-    expect(messages.at(-1)).toMatchObject({ t: "agent_speaking", on: false });
+    expect(messages.at(-2)).toMatchObject({ t: "agent_speaking", on: false });
     const ttsMsgs = messages.filter((m) => m.t === "tts") as Extract<VoiceServerMessage, { t: "tts" }>[];
     expect(ttsMsgs.map((m) => m.seq)).toEqual([0, 1]);
     expect(ttsMsgs[0]!.final).toBe(false);
@@ -131,6 +132,42 @@ describe("VoiceLoop", () => {
       expect.arrayContaining(["agent.started", "vad.speech_ended"]),
     );
     expect(JSON.parse(events[0]!.payload!)).toEqual({ transport: "ws" });
+  });
+
+  it("emits a metrics message after a full turn with sane fields, and mirrors it as turn.metrics", async () => {
+    const { loop, db, messages } = await makeLoop({
+      stt: stubStt("tell me about maps"),
+      tts: { synthesizeToPcm: async () => pcmBytes(new Array(CHUNK_BYTES / 2).fill(1)) },
+      llm: { chat: async () => ({ content: "Sure.", toolCalls: [] }) },
+    });
+    await loop.handleMessage(frame(0, pcmBytes([1, 2, 3, 4])));
+    await loop.handleMessage({ t: "utterance_end" });
+
+    const metricsMsg = messages.find((m) => m.t === "metrics") as Extract<VoiceServerMessage, { t: "metrics" }>;
+    expect(metricsMsg).toBeDefined();
+    const m = metricsMsg.metrics;
+    expect(m.total_ms).toBeGreaterThanOrEqual(0);
+    expect(m.stt_ms).toBeGreaterThanOrEqual(0);
+    expect(m.llm_ttft_ms).toBeGreaterThanOrEqual(0);
+    expect(m.first_audio_ms).toBeGreaterThanOrEqual(0);
+    expect(m.vad_ms).toBeGreaterThanOrEqual(0);
+    const events = await db.selectFrom("events").selectAll().execute();
+    const ev = events.find((e) => e.type === "turn.metrics");
+    expect(ev).toBeDefined();
+    expect(JSON.parse(ev!.payload!)).toEqual(m);
+  });
+
+  it("metrics on an empty-transcript turn omits optional stages but keeps total_ms", async () => {
+    const { loop, messages } = await makeLoop({
+      stt: stubStt(""),
+      tts: { synthesizeToPcm: async () => pcmBytes([0]) },
+      llm: { chat: async () => ({ content: "x", toolCalls: [] }) },
+    });
+    await loop.handleMessage(frame(0, pcmBytes([1])));
+    await loop.handleMessage({ t: "utterance_end" });
+    const metricsMsg = messages.find((m) => m.t === "metrics") as Extract<VoiceServerMessage, { t: "metrics" }>;
+    expect(metricsMsg.metrics).toEqual({ vad_ms: expect.any(Number), total_ms: expect.any(Number) });
+    expect(metricsMsg.metrics.stt_ms).toBeUndefined();
   });
 
   it("handles b64 JSON audio frames like binary ones", async () => {
@@ -184,7 +221,8 @@ describe("VoiceLoop", () => {
     await vi.waitFor(() => expect(releaseChat).toBeDefined());
     loop.handleMessage({ t: "interrupt" });
     await expect(pending).resolves.toBeUndefined(); // aborted turn ends quietly
-    expect(messages.at(-1)).toEqual({ t: "agent_speaking", on: false });
+    expect(messages.some((m) => m.t === "agent_speaking" && m.on === false)).toBe(true);
+    expect(messages.filter((m) => m.t === "metrics")).toHaveLength(0); // aborted: no metrics
     releaseChat?.();
   });
 
