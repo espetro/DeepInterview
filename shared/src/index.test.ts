@@ -88,9 +88,7 @@ describe("TurnSchema", () => {
       source: "text",
     };
     expect(v.safeParse(TurnSchema, t).success).toBe(true);
-    expect(
-      v.safeParse(TurnSchema, { ...t, created_at: "not-a-date" }).success,
-    ).toBe(false);
+    expect(v.safeParse(TurnSchema, { ...t, created_at: "not-a-date" }).success).toBe(false);
   });
 });
 

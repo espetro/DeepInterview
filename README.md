@@ -40,11 +40,11 @@ See [docs/setup.md](docs/setup.md) for the full step-by-step guide: download a r
 
 ## Stack
 
-| Path | What it owns |
-| --- | --- |
+| Path      | What it owns                                                  |
+| --------- | ------------------------------------------------------------- |
 | `shared/` | Contracts (`@di/shared`): config, session/turn/report schemas |
-| `server/` | Hono API on Bun, in-process WebSocket voice pipeline |
-| `web/` | TanStack Start SPA |
-| `evals/` | vitest suite + offline mock provider |
+| `server/` | Hono API on Bun, in-process WebSocket voice pipeline          |
+| `web/`    | TanStack Start SPA                                            |
+| `evals/`  | vitest suite + offline mock provider                          |
 
 Full config reference and API table: [`.agents/docs/config-reference.md`](.agents/docs/config-reference.md).

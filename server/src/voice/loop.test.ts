@@ -23,19 +23,14 @@ function pcmBytes(samples: number[]): Uint8Array {
 }
 
 /** Binary frame: 4-byte BE seq + PCM. */
-function frame(
-  seq: number,
-  pcm: Uint8Array,
-): { t: "binary"; data: Uint8Array } {
+function frame(seq: number, pcm: Uint8Array): { t: "binary"; data: Uint8Array } {
   const data = new Uint8Array(AUDIO_HEADER_BYTES + pcm.length);
   new DataView(data.buffer).setUint32(0, seq, false);
   data.set(pcm, AUDIO_HEADER_BYTES);
   return { t: "binary" as const, data };
 }
 
-async function makeLoop(
-  overrides?: Partial<{ stt: VoiceStt; tts: VoiceTts; llm: VoiceLlm }>,
-) {
+async function makeLoop(overrides?: Partial<{ stt: VoiceStt; tts: VoiceTts; llm: VoiceLlm }>) {
   const db = createDatabase(":memory:");
   await migrate(db);
   await db
@@ -132,25 +127,16 @@ describe("VoiceLoop", () => {
     expect(new DataView(binary[0]!.buffer).getUint32(0, false)).toBe(0);
     expect(new DataView(binary[1]!.buffer).getUint32(0, false)).toBe(1);
     expect(binary[0]!.length).toBe(AUDIO_HEADER_BYTES + CHUNK_BYTES);
-    expect(
-      Buffer.concat([Buffer.from(seenPcm[0]!), Buffer.from(seenPcm[1]!)])
-        .length,
-    ).toBe(ttsPcm.length);
+    expect(Buffer.concat([Buffer.from(seenPcm[0]!), Buffer.from(seenPcm[1]!)]).length).toBe(
+      ttsPcm.length,
+    );
 
-    const turns = await db
-      .selectFrom("turns")
-      .selectAll()
-      .orderBy("seq")
-      .execute();
+    const turns = await db.selectFrom("turns").selectAll().orderBy("seq").execute();
     expect(turns.map((t) => [t.speaker, t.text, t.source])).toEqual([
       ["user", "tell me about maps", "voice"],
       ["agent", "Sure, what is a map?", "voice"],
     ]);
-    const events = await db
-      .selectFrom("events")
-      .selectAll()
-      .orderBy("id")
-      .execute();
+    const events = await db.selectFrom("events").selectAll().orderBy("id").execute();
     // stub stt/tts/llm don't emit adapter telemetry (covered in their own
     // tests); the loop itself emits agent.started and vad.speech_ended.
     expect(events.map((e) => e.type)).toEqual(
@@ -163,8 +149,7 @@ describe("VoiceLoop", () => {
     const { loop, db, messages } = await makeLoop({
       stt: stubStt("tell me about maps"),
       tts: {
-        synthesizeToPcm: async () =>
-          pcmBytes(new Array(CHUNK_BYTES / 2).fill(1)),
+        synthesizeToPcm: async () => pcmBytes(new Array(CHUNK_BYTES / 2).fill(1)),
       },
       llm: { chat: async () => ({ content: "Sure.", toolCalls: [] }) },
     });
@@ -264,9 +249,7 @@ describe("VoiceLoop", () => {
     await vi.waitFor(() => expect(releaseChat).toBeDefined());
     loop.handleMessage({ t: "interrupt" });
     await expect(pending).resolves.toBeUndefined(); // aborted turn ends quietly
-    expect(
-      messages.some((m) => m.t === "agent_speaking" && m.on === false),
-    ).toBe(true);
+    expect(messages.some((m) => m.t === "agent_speaking" && m.on === false)).toBe(true);
     expect(messages.filter((m) => m.t === "metrics")).toHaveLength(0); // aborted: no metrics
     releaseChat?.();
   });
@@ -303,11 +286,7 @@ describe("VoiceLoop", () => {
     await loop.handleMessage(frame(0, pcmBytes([1])));
     await loop.handleMessage({ t: "utterance_end" });
 
-    const events = await db
-      .selectFrom("events")
-      .selectAll()
-      .orderBy("id")
-      .execute();
+    const events = await db.selectFrom("events").selectAll().orderBy("id").execute();
     const types = events.map((e) => e.type);
     expect(types).toContain("question.updated");
     expect(types).toContain("tool.read_editor");
@@ -346,16 +325,11 @@ describe("VoiceLoop", () => {
           throw new Error("chat must not be used when streamChat exists");
         },
         streamChat: async (_m, _t, opts) => {
-          for (const d of [
-            "One sentence here. ",
-            "Another sentence follows. ",
-            "trailing words",
-          ]) {
+          for (const d of ["One sentence here. ", "Another sentence follows. ", "trailing words"]) {
             opts?.onText?.(d);
           }
           return {
-            content:
-              "One sentence here. Another sentence follows. trailing words",
+            content: "One sentence here. Another sentence follows. trailing words",
             toolCalls: [],
           };
         },
@@ -366,10 +340,7 @@ describe("VoiceLoop", () => {
 
     // cutSentences minChars=24: the short first sentence merges with the
     // second into one cut sentence; the unpunctuated tail flushes as final.
-    expect(ttsCalls).toEqual([
-      "One sentence here. Another sentence follows.",
-      "trailing words",
-    ]);
+    expect(ttsCalls).toEqual(["One sentence here. Another sentence follows.", "trailing words"]);
     // agent_speaking on precedes the first tts chunk
     const firstOn = messages.findIndex((m) => m.t === "agent_speaking" && m.on);
     const firstTts = messages.findIndex((m) => m.t === "tts");
@@ -385,11 +356,7 @@ describe("VoiceLoop", () => {
     // exactly one final chunk, at the end
     expect(ttsMsgs.map((m) => m.final)).toEqual([false, false, false, true]);
     // transcript persisted with the full reply
-    const turns = await db
-      .selectFrom("turns")
-      .selectAll()
-      .orderBy("seq")
-      .execute();
+    const turns = await db.selectFrom("turns").selectAll().orderBy("seq").execute();
     expect(turns.at(-1)).toMatchObject({
       speaker: "agent",
       text: "One sentence here. Another sentence follows. trailing words",
@@ -427,9 +394,7 @@ describe("VoiceLoop", () => {
     await pending;
     expect(ttsCalls).toHaveLength(0); // no sentence was synthesized before abort
     expect(messages.some((m) => m.t === "tts")).toBe(false);
-    expect(
-      messages.some((m) => m.t === "agent_speaking" && m.on === false),
-    ).toBe(true);
+    expect(messages.some((m) => m.t === "agent_speaking" && m.on === false)).toBe(true);
     expect(messages.filter((m) => m.t === "metrics")).toHaveLength(0);
   });
 
@@ -487,17 +452,9 @@ describe("VoiceLoop", () => {
     expect(fed).toEqual([8, 4]); // both frames fed (header-stripped)
     expect(finishCalls).toBe(1);
     expect(messages.map((m) => m.t)).toEqual(
-      expect.arrayContaining([
-        "user_transcript",
-        "agent_transcript",
-        "metrics",
-      ]),
+      expect.arrayContaining(["user_transcript", "agent_transcript", "metrics"]),
     );
-    const turns = await db
-      .selectFrom("turns")
-      .selectAll()
-      .orderBy("seq")
-      .execute();
+    const turns = await db.selectFrom("turns").selectAll().orderBy("seq").execute();
     expect(turns.map((t) => [t.speaker, t.text])).toEqual([
       ["user", "streamed transcript"],
       ["agent", "ok"],

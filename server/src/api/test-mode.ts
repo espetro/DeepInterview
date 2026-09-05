@@ -135,10 +135,7 @@ export function testRoutes(db: Db): Hono {
         session_id: session.id,
       });
     } catch (err) {
-      return c.json(
-        { ok: false, error: err instanceof Error ? err.message : String(err) },
-        500,
-      );
+      return c.json({ ok: false, error: err instanceof Error ? err.message : String(err) }, 500);
     }
   });
 

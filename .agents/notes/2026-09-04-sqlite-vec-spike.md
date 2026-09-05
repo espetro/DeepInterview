@@ -25,23 +25,23 @@ of this matters.)
 `Database.setCustomSQLite()` must be called **before opening any Database**:
 
 ```ts
-import { Database } from 'bun:sqlite'
-import * as sqliteVec from 'sqlite-vec'
+import { Database } from "bun:sqlite";
+import * as sqliteVec from "sqlite-vec";
 
-Database.setCustomSQLite('/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib')
+Database.setCustomSQLite("/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib");
 // (existence-check the path first; an invalid path hard-crashes Bun)
 
-const db = new Database(':memory:')
-sqliteVec.load(db)
-db.exec('CREATE VIRTUAL TABLE items USING vec0(embedding float[4])')
-const ins = db.prepare('INSERT INTO items(rowid, embedding) VALUES (?, vec_f32(?))')
-ins.run(1, new Float32Array([1, 0, 0, 0]))
-ins.run(3, new Float32Array([0.9, 0.1, 0, 0]))
+const db = new Database(":memory:");
+sqliteVec.load(db);
+db.exec("CREATE VIRTUAL TABLE items USING vec0(embedding float[4])");
+const ins = db.prepare("INSERT INTO items(rowid, embedding) VALUES (?, vec_f32(?))");
+ins.run(1, new Float32Array([1, 0, 0, 0]));
+ins.run(3, new Float32Array([0.9, 0.1, 0, 0]));
 const rows = db
   .prepare(
-    'SELECT rowid, distance FROM items WHERE embedding MATCH vec_f32(?) ORDER BY distance LIMIT 2',
+    "SELECT rowid, distance FROM items WHERE embedding MATCH vec_f32(?) ORDER BY distance LIMIT 2",
   )
-  .all(new Float32Array([1, 0, 0, 0]))
+  .all(new Float32Array([1, 0, 0, 0]));
 // => [{ rowid: 1, distance: 0 }, { rowid: 3, distance: 0.141421377658844 }]
 ```
 

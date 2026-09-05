@@ -56,20 +56,14 @@ describe("describeWhiteboardSnapshot", () => {
   });
 
   it("handles empty, unparseable and shapeless snapshots", () => {
-    expect(describeWhiteboardSnapshot('{"shapes":[]}')).toBe(
-      "(empty whiteboard)",
-    );
-    expect(describeWhiteboardSnapshot("not json")).toBe(
-      "(unparseable whiteboard snapshot)",
-    );
+    expect(describeWhiteboardSnapshot('{"shapes":[]}')).toBe("(empty whiteboard)");
+    expect(describeWhiteboardSnapshot("not json")).toBe("(unparseable whiteboard snapshot)");
   });
 });
 
 describe("cutSentences", () => {
   it("cuts at terminal punctuation once min length is reached", () => {
-    const { sentences, rest } = cutSentences(
-      "Hello there, how are you doing today? I am fine.",
-    );
+    const { sentences, rest } = cutSentences("Hello there, how are you doing today? I am fine.");
     expect(sentences).toEqual(["Hello there, how are you doing today?"]);
     expect(rest).toBe(" I am fine.");
   });

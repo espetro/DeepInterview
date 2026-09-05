@@ -19,12 +19,7 @@ import { join, resolve } from "node:path";
 const ROOT = resolve(import.meta.dir, "..");
 const OUT = join(ROOT, "dist", "releases");
 
-const TARGETS = [
-  "bun-linux-x64",
-  "bun-linux-arm64",
-  "bun-darwin-arm64",
-  "bun-darwin-x64",
-] as const;
+const TARGETS = ["bun-linux-x64", "bun-linux-arm64", "bun-darwin-arm64", "bun-darwin-x64"] as const;
 
 type Target = (typeof TARGETS)[number];
 
@@ -46,13 +41,9 @@ const { values } = parseArgs({
 const version =
   values.version ??
   process.env.DI_VERSION ??
-  (
-    await $`git -C ${ROOT} describe --tags --always --dirty`.quiet().text()
-  ).trim();
+  (await $`git -C ${ROOT} describe --tags --always --dirty`.quiet().text()).trim();
 
-const targets = (
-  values.target?.length ? values.target : [...TARGETS]
-) as Target[];
+const targets = (values.target?.length ? values.target : [...TARGETS]) as Target[];
 for (const t of targets) {
   if (!TARGETS.includes(t)) {
     console.error(`unknown target: ${t} (valid: ${TARGETS.join(", ")})`);
@@ -158,6 +149,5 @@ console.log(`\nrelease archives in ${OUT}:`);
 for (const target of targets) {
   const p = join(OUT, `di-${version}-${TRIPLES[target]}.tar.gz`);
   const f = Bun.file(p);
-  if (await f.exists())
-    console.log(`  ${p} (${(f.size / 1024 / 1024).toFixed(1)} MB)`);
+  if (await f.exists()) console.log(`  ${p} (${(f.size / 1024 / 1024).toFixed(1)} MB)`);
 }

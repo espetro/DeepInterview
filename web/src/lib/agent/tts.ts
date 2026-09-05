@@ -18,8 +18,7 @@ export function decodeWav(bytes: Uint8Array): {
   channels: number;
 } {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  const tag = (off: number, len: number) =>
-    String.fromCharCode(...bytes.subarray(off, off + len));
+  const tag = (off: number, len: number) => String.fromCharCode(...bytes.subarray(off, off + len));
   if (bytes.byteLength < 44 || tag(0, 4) !== "RIFF" || tag(8, 4) !== "WAVE") {
     throw new Error("not a wav buffer");
   }
@@ -39,8 +38,7 @@ export function decodeWav(bytes: Uint8Array): {
     } else if (id === "data" && bits === 16) {
       const count = Math.min(size, bytes.byteLength - body) >> 1;
       data = new Int16Array(count);
-      for (let i = 0; i < count; i++)
-        data[i] = view.getInt16(body + i * 2, true);
+      for (let i = 0; i < count; i++) data[i] = view.getInt16(body + i * 2, true);
     }
     off = body + size + (size % 2);
   }
@@ -49,11 +47,7 @@ export function decodeWav(bytes: Uint8Array): {
 }
 
 /** Linear resample Int16 mono to the target rate. */
-export function resamplePcm16(
-  pcm: Int16Array,
-  from: number,
-  to: number,
-): Int16Array {
+export function resamplePcm16(pcm: Int16Array, from: number, to: number): Int16Array {
   if (from === to) return pcm;
   const out = new Int16Array(Math.round(pcm.length * (to / from)));
   for (let i = 0; i < out.length; i++) {

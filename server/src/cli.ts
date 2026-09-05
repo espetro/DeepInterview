@@ -141,12 +141,7 @@ function releaseAssetDir(rel: string): string {
   // `bun build --compile` binary it is a virtual path, so prefer cwd first.
   // In a repo checkout the assets live at the repo root, which may be one or
   // two levels above cwd (e.g. when run from server/).
-  const bases = [
-    process.cwd(),
-    import.meta.dir,
-    `${process.cwd()}/..`,
-    `${import.meta.dir}/..`,
-  ];
+  const bases = [process.cwd(), import.meta.dir, `${process.cwd()}/..`, `${import.meta.dir}/..`];
   for (const base of bases) {
     const candidate = join(base, rel);
     if (existsSync(candidate)) return candidate;

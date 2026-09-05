@@ -1,10 +1,5 @@
 import * as v from "valibot";
-import {
-  VOICE_TOOLS,
-  buildPrompt,
-  cutSentences,
-  describeWhiteboardSnapshot,
-} from "@di/shared";
+import { VOICE_TOOLS, buildPrompt, cutSentences, describeWhiteboardSnapshot } from "@di/shared";
 import type {
   Config,
   SessionContext,
@@ -30,16 +25,10 @@ import type { LlmMessage, LlmResult, ToolDef } from "./llm.ts";
 
 /** Injectable voice pipeline pieces (tests stub these). */
 export interface VoiceStt {
-  transcribePcm(
-    pcm: Uint8Array,
-    opts?: { signal?: AbortSignal },
-  ): Promise<string>;
+  transcribePcm(pcm: Uint8Array, opts?: { signal?: AbortSignal }): Promise<string>;
 }
 export interface VoiceTts {
-  synthesizeToPcm(
-    text: string,
-    opts?: { signal?: AbortSignal },
-  ): Promise<Uint8Array>;
+  synthesizeToPcm(text: string, opts?: { signal?: AbortSignal }): Promise<Uint8Array>;
 }
 export interface VoiceLlm {
   chat(
@@ -173,9 +162,7 @@ export class VoiceLoop {
 
   /** Handle one client WS message (already parsed) or a raw binary audio frame. */
   async handleMessage(
-    msg:
-      | v.InferOutput<typeof VoiceClientMessageSchema>
-      | { t: "binary"; data: Uint8Array },
+    msg: v.InferOutput<typeof VoiceClientMessageSchema> | { t: "binary"; data: Uint8Array },
   ): Promise<void> {
     if (this.closed) return;
     if (msg.t === "binary") {
@@ -214,12 +201,9 @@ export class VoiceLoop {
       return;
     }
     if (msg.t === "utterance_end") {
-      await this.postEvent(this.sessionId, "vad.speech_ended").catch(
-        () => undefined,
-      );
+      await this.postEvent(this.sessionId, "vad.speech_ended").catch(() => undefined);
       const t0 = Date.now();
-      const vadMs =
-        this.firstFrameAt === undefined ? 0 : t0 - this.firstFrameAt;
+      const vadMs = this.firstFrameAt === undefined ? 0 : t0 - this.firstFrameAt;
       this.firstFrameAt = undefined;
       const pcm = this.buffer.toPcm();
       this.buffer.clear();
@@ -246,11 +230,7 @@ export class VoiceLoop {
     this.buffer.clear();
   }
 
-  private async runTurn(
-    pcm: Uint8Array,
-    t0: number,
-    vadMs: number,
-  ): Promise<void> {
+  private async runTurn(pcm: Uint8Array, t0: number, vadMs: number): Promise<void> {
     if (this.closed) return;
     this.abort = new AbortController();
     const { signal } = this.abort;
@@ -282,19 +262,14 @@ export class VoiceLoop {
       if (reply.content.trim() === "") return;
       await this.streamSpeech(reply.content, signal, metrics);
     } catch (err) {
-      if (
-        err instanceof Error &&
-        (err.name === "AbortError" || String(err).includes("abort"))
-      )
+      if (err instanceof Error && (err.name === "AbortError" || String(err).includes("abort")))
         return;
       throw err;
     } finally {
       metrics.total_ms = Date.now() - t0;
       if (!signal.aborted) {
         this.send({ t: "metrics", metrics });
-        this.postEvent(this.sessionId, "turn.metrics", metrics).catch(
-          () => undefined,
-        );
+        this.postEvent(this.sessionId, "turn.metrics", metrics).catch(() => undefined);
       }
       if (this.abort?.signal === signal) this.abort = undefined;
     }
@@ -302,8 +277,7 @@ export class VoiceLoop {
 
   /** First frame of a fresh buffer marks the utterance's VAD start. */
   private trackFrame(pcm: Uint8Array): void {
-    if (this.firstFrameAt === undefined && pcm.byteLength > 0)
-      this.firstFrameAt = Date.now();
+    if (this.firstFrameAt === undefined && pcm.byteLength > 0) this.firstFrameAt = Date.now();
   }
 
   /** One LLM round-trip, executing tool calls until a plain reply comes back. */
@@ -318,8 +292,7 @@ export class VoiceLoop {
     const llmStart = Date.now();
     for (let hop = 0; hop < 4; hop++) {
       const result = await this.llm.chat(messages, VOICE_TOOLS, { signal });
-      if (metrics && metrics.llm_ttft_ms === undefined)
-        metrics.llm_ttft_ms = Date.now() - llmStart;
+      if (metrics && metrics.llm_ttft_ms === undefined) metrics.llm_ttft_ms = Date.now() - llmStart;
       if (result.toolCalls.length === 0) return { content: result.content };
       const toolResults: { name: string; output: string }[] = [];
       for (const call of result.toolCalls) {
@@ -355,10 +328,7 @@ export class VoiceLoop {
    * full reply once the stream completes. Tool-call hops drop any streamed
    * provisional speech and retry buffered (tools need the full result).
    */
-  private async runStreamingSpeechTurn(
-    signal: AbortSignal,
-    metrics?: TurnMetrics,
-  ): Promise<void> {
+  private async runStreamingSpeechTurn(signal: AbortSignal, metrics?: TurnMetrics): Promise<void> {
     const messages: LlmMessage[] = [
       { role: "system", content: buildPrompt(this.ctx) },
       ...this.history,
@@ -421,10 +391,7 @@ export class VoiceLoop {
     }
   }
 
-  private async executeTool(
-    name: string,
-    args: Record<string, unknown>,
-  ): Promise<string> {
+  private async executeTool(name: string, args: Record<string, unknown>): Promise<string> {
     if (name === "update_question") {
       const q = args as unknown as UpdateQuestionArgs;
       this.ctx.currentQuestion = q.question;
@@ -461,11 +428,7 @@ export class VoiceLoop {
     this.send({ t: "agent_speaking", on: true });
     try {
       const pcm = await this.tts.synthesizeToPcm(text, { signal });
-      for (
-        let off = 0, seq = 0;
-        off < pcm.length;
-        off += TTS_CHUNK_BYTES, seq++
-      ) {
+      for (let off = 0, seq = 0; off < pcm.length; off += TTS_CHUNK_BYTES, seq++) {
         if (off === 0 && metrics && metrics.first_audio_ms === undefined)
           metrics.first_audio_ms = Date.now();
         const chunk = pcm.subarray(off, off + TTS_CHUNK_BYTES);
@@ -488,15 +451,10 @@ export class VoiceLoop {
   }
 
   /** Same sequencing rule as POST /v1/sessions/:id/turns: max seq + 1. */
-  private async persistTurn(
-    speaker: "user" | "agent",
-    text: string,
-  ): Promise<Turn> {
+  private async persistTurn(speaker: "user" | "agent", text: string): Promise<Turn> {
     const { max_seq } = await this.db
       .selectFrom("turns")
-      .select((eb) =>
-        eb.fn.coalesce(eb.fn.max("seq"), eb.lit(-1)).as("max_seq"),
-      )
+      .select((eb) => eb.fn.coalesce(eb.fn.max("seq"), eb.lit(-1)).as("max_seq"))
       .where("session_id", "=", this.sessionId)
       .executeTakeFirstOrThrow();
     const turn: Turn = {
@@ -525,11 +483,7 @@ export class VoiceLoop {
   }
 
   /** In-process event write (replaces the worker's HTTP postEvent round-trip). */
-  private async postEvent(
-    sessionId: string,
-    type: string,
-    payload?: unknown,
-  ): Promise<void> {
+  private async postEvent(sessionId: string, type: string, payload?: unknown): Promise<void> {
     await this.db
       .insertInto("events")
       .values({
@@ -642,9 +596,7 @@ class SentenceSpeechPipeline {
       }
       const chunk = pcm.subarray(off, off + TTS_CHUNK_BYTES);
       const final =
-        off + TTS_CHUNK_BYTES >= pcm.length &&
-        this.done &&
-        sentence === this.lastSentence;
+        off + TTS_CHUNK_BYTES >= pcm.length && this.done && sentence === this.lastSentence;
       this.sendChunk(chunk, final);
     }
   }

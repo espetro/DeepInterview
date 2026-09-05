@@ -22,7 +22,7 @@ Tagged releases: [GitHub Releases](https://github.com/ngoanpv/DeepInterview/rele
 - **The Whisper default is `faster-whisper-base`, deliberately.** The OpenAI
   plugin hard-codes a 30s per-request timeout that no setting can raise, so an
   oversized model doesn't degrade — the turn dies with `failed to recognize
-  speech`. `small` needs ~3.4 GB resident and, in a memory-tight Docker VM, took
+speech`. `small` needs ~3.4 GB resident and, in a memory-tight Docker VM, took
   32s on a 3.6s clip; `base` needs ~220 MB, runs at ~0.09x realtime, and was just
   as accurate on interview speech. Sizes and per-model timings under concurrent
   LLM load are in [docs/LOCAL_MODELS.md](docs/LOCAL_MODELS.md).
@@ -63,7 +63,7 @@ Tagged releases: [GitHub Releases](https://github.com/ngoanpv/DeepInterview/rele
 - **Hardening release.** Opt-in shared-secret auth for the agent API and
   knowledge sidecar, locked-down Supabase row policies, and periodic transcript
   checkpointing so a killed process loses seconds of an interview, not all of it.
-- **The study coach grounds answers in *your* session.** Prep ingests the CV,
+- **The study coach grounds answers in _your_ session.** Prep ingests the CV,
   JD, and company research into the knowledge sidecar keyed by session — coach
   answers cite your own materials.
 - New logo family (outlined geometry — renders identically everywhere), README

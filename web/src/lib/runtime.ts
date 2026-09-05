@@ -15,10 +15,7 @@ import type { ProviderProfile, RuntimeMode } from "@di/shared";
  * used by driver/route wiring.
  */
 
-export const $runtimeMode = persistentAtom<RuntimeMode>(
-  RUNTIME_MODE_STORAGE_KEY,
-  "local-server",
-);
+export const $runtimeMode = persistentAtom<RuntimeMode>(RUNTIME_MODE_STORAGE_KEY, "local-server");
 
 const StoredProfileSchema = v.union([ProviderProfileSchema, v.null()]);
 
@@ -41,14 +38,10 @@ export function redactKey(key: string): string {
   return `${key.slice(0, 3)}${"•".repeat(Math.min(key.length - 5, 8))}${key.slice(-2)}`;
 }
 
-export const $serverReachable = persistentAtom<boolean | null>(
-  "di.server-reachable",
-  null,
-  {
-    encode: String,
-    decode: (raw) => (raw === "true" ? true : raw === "false" ? false : null),
-  },
-);
+export const $serverReachable = persistentAtom<boolean | null>("di.server-reachable", null, {
+  encode: String,
+  decode: (raw) => (raw === "true" ? true : raw === "false" ? false : null),
+});
 
 const API_BASE = (import.meta.env.VITE_DI_API_BASE as string | undefined) ?? "";
 
@@ -98,10 +91,7 @@ let probeStarted = false;
 export function ensureRuntimeProbe(): void {
   if (probeStarted) return;
   probeStarted = true;
-  if (
-    $runtimeMode.get() === "local-server" &&
-    $serverReachable.get() !== true
-  ) {
+  if ($runtimeMode.get() === "local-server" && $serverReachable.get() !== true) {
     void probeServer();
   }
 }

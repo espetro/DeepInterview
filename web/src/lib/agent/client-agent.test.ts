@@ -11,9 +11,7 @@ const PROFILE = {
 };
 
 function sse(chunks: unknown[]): Response {
-  const body =
-    chunks.map((c) => `data: ${JSON.stringify(c)}\n\n`).join("") +
-    "data: [DONE]\n\n";
+  const body = chunks.map((c) => `data: ${JSON.stringify(c)}\n\n`).join("") + "data: [DONE]\n\n";
   return new Response(body, {
     headers: { "content-type": "text/event-stream" },
   });
@@ -29,43 +27,36 @@ describe("ClientAgent.respond", () => {
       read_editor: vi.fn(async () => "(editor is empty)"),
       read_whiteboard: vi.fn(async () => "empty whiteboard"),
     };
-    const fetchMock = vi
-      .fn()
-      .mockImplementation(async (_u: string, init: any) => {
-        const body = JSON.parse(init.body);
-        const sawToolResult = body.messages.some((m: any) => m.role === "tool");
-        calls.push(body.messages.length);
-        if (!sawToolResult) {
-          return sse([
-            {
-              choices: [
-                {
-                  delta: {
-                    tool_calls: [
-                      {
-                        index: 0,
-                        id: "c1",
-                        function: { name: "read_editor", arguments: "{}" },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ]);
-        }
+    const fetchMock = vi.fn().mockImplementation(async (_u: string, init: any) => {
+      const body = JSON.parse(init.body);
+      const sawToolResult = body.messages.some((m: any) => m.role === "tool");
+      calls.push(body.messages.length);
+      if (!sawToolResult) {
         return sse([
-          { choices: [{ delta: { content: "Let me think. " } }] },
-          { choices: [{ delta: { content: "Here is my question." } }] },
+          {
+            choices: [
+              {
+                delta: {
+                  tool_calls: [
+                    {
+                      index: 0,
+                      id: "c1",
+                      function: { name: "read_editor", arguments: "{}" },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
         ]);
-      });
+      }
+      return sse([
+        { choices: [{ delta: { content: "Let me think. " } }] },
+        { choices: [{ delta: { content: "Here is my question." } }] },
+      ]);
+    });
 
-    const agent = new ClientAgent(
-      PROFILE,
-      executors,
-      CTX,
-      fetchMock as unknown as typeof fetch,
-    );
+    const agent = new ClientAgent(PROFILE, executors, CTX, fetchMock as unknown as typeof fetch);
     const deltas: string[] = [];
     const full = await agent.respond("hello", {
       onText: (d) => deltas.push(d),
@@ -85,16 +76,9 @@ describe("ClientAgent.respond", () => {
       read_editor: vi.fn(async () => ""),
       read_whiteboard: vi.fn(async () => ""),
     };
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(new Response("server exploded", { status: 500 }));
+    const fetchMock = vi.fn().mockResolvedValue(new Response("server exploded", { status: 500 }));
 
-    const agent = new ClientAgent(
-      PROFILE,
-      executors,
-      CTX,
-      fetchMock as unknown as typeof fetch,
-    );
+    const agent = new ClientAgent(PROFILE, executors, CTX, fetchMock as unknown as typeof fetch);
     const errors: unknown[] = [];
     const full = await agent.respond("hello", {
       onError: (err) => errors.push(err),
@@ -137,12 +121,7 @@ describe("ClientAgent.respond", () => {
       });
     });
 
-    const agent = new ClientAgent(
-      PROFILE,
-      executors,
-      CTX,
-      fetchMock as unknown as typeof fetch,
-    );
+    const agent = new ClientAgent(PROFILE, executors, CTX, fetchMock as unknown as typeof fetch);
     const deltas: string[] = [];
     await agent.respond("hello", {
       signal: ctrl.signal,
@@ -153,10 +132,7 @@ describe("ClientAgent.respond", () => {
   });
 });
 
-function wavBytes(
-  pcm: Int16Array,
-  sampleRate: number,
-): Uint8Array<ArrayBuffer> {
+function wavBytes(pcm: Int16Array, sampleRate: number): Uint8Array<ArrayBuffer> {
   const buf = new ArrayBuffer(44 + pcm.byteLength);
   const view = new DataView(buf);
   const str = (off: number, s: string) =>
@@ -197,9 +173,7 @@ describe("tts", () => {
   it("synthesizeSpeech posts to /v1/audio/speech and returns 24k pcm bytes", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(
-        new Response(wavBytes(Int16Array.from([100, -100]), 44100)),
-      );
+      .mockResolvedValue(new Response(wavBytes(Int16Array.from([100, -100]), 44100)));
     const bytes = await synthesizeSpeech(
       PROFILE,
       "hi",
@@ -221,16 +195,9 @@ describe("tts", () => {
   });
 
   it("synthesizeSpeech throws on error status", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(new Response("nope", { status: 401 }));
+    const fetchMock = vi.fn().mockResolvedValue(new Response("nope", { status: 401 }));
     await expect(
-      synthesizeSpeech(
-        PROFILE,
-        "hi",
-        undefined,
-        fetchMock as unknown as typeof fetch,
-      ),
+      synthesizeSpeech(PROFILE, "hi", undefined, fetchMock as unknown as typeof fetch),
     ).rejects.toThrow("401");
   });
 });

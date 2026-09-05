@@ -44,8 +44,7 @@ export async function createApp(deps: AppDeps): Promise<Hono> {
     // SPA fallback: any non-API GET serves the shell so deep links work.
     app.get("*", (c) => {
       const url = new URL(c.req.url);
-      if (url.pathname.startsWith("/v1") || url.pathname.startsWith("/api"))
-        return c.notFound();
+      if (url.pathname.startsWith("/v1") || url.pathname.startsWith("/api")) return c.notFound();
       return c.html(readFileSync(`${deps.webAssets!.root}/index.html`, "utf8"));
     });
   }
@@ -132,11 +131,7 @@ export function serveApp(
     port,
     websocket: ws as never,
     fetch: async (req, server) => {
-      const upgraded = await tryUpgradeVoice(
-        req,
-        server as UpgradeServer,
-        deps.db,
-      );
+      const upgraded = await tryUpgradeVoice(req, server as UpgradeServer, deps.db);
       return upgraded ?? app.fetch(req);
     },
   });

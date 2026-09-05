@@ -51,9 +51,7 @@ export class OpenAiChatClient {
         message_count: messages.length,
         tool_count: tools?.length ?? 0,
       })
-      .catch((err) =>
-        console.warn(`[voice] failed to log llm.request: ${err}`),
-      );
+      .catch((err) => console.warn(`[voice] failed to log llm.request: ${err}`));
     const startedAt = Date.now();
 
     const headers: Record<string, string> = {
@@ -136,9 +134,7 @@ export class OpenAiChatClient {
         tool_count: tools?.length ?? 0,
         stream: true,
       })
-      .catch((err) =>
-        console.warn(`[voice] failed to log llm.request: ${err}`),
-      );
+      .catch((err) => console.warn(`[voice] failed to log llm.request: ${err}`));
     const startedAt = Date.now();
 
     const headers: Record<string, string> = {
@@ -178,13 +174,8 @@ export class OpenAiChatClient {
     let content = "";
     let firstTokenAt: number | undefined;
     /** Tool calls keyed by delta index; arguments arrive as fragments. */
-    const toolAcc = new Map<
-      number,
-      { id: string; name: string; args: string }
-    >();
-    let sawSse = (res.headers.get("content-type") ?? "").includes(
-      "text/event-stream",
-    );
+    const toolAcc = new Map<number, { id: string; name: string; args: string }>();
+    let sawSse = (res.headers.get("content-type") ?? "").includes("text/event-stream");
 
     if (sawSse && res.body) {
       const reader = res.body.getReader();
@@ -285,8 +276,7 @@ export class OpenAiChatClient {
       .sort(([a], [b]) => a - b)
       .filter(([, tc]) => tc.name !== "")
       .map(([, tc]) => ({ name: tc.name, args: parseToolArgs(tc.args) }));
-    const ttft_ms =
-      firstTokenAt === undefined ? undefined : firstTokenAt - startedAt;
+    const ttft_ms = firstTokenAt === undefined ? undefined : firstTokenAt - startedAt;
     events
       ?.postEvent(sessionId!, "llm.result", {
         text_length: content.length,

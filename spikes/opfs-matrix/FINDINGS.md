@@ -10,15 +10,15 @@ Spike artifacts:
 
 Sources: MDN, caniuse (mdn-api_filesystemfilehandle_createsyncaccesshandle and friends).
 
-| Capability | Chrome/Edge | Firefox | Safari/WebKit |
-|---|---|---|---|
-| OPFS (`getDirectory`) | yes (102+) | yes (111+) | yes (15.2+) |
-| `createSyncAccessHandle` (dedicated worker only) | yes (102+ / Edge 102+) | yes (111+) | yes (15.2+) |
-| `createSyncAccessHandle` `mode: "readwrite-unsafe"` | no (flagged/behind flag as of FF 157, Chrome ~155) | no | no (unknown in TP) |
-| Web Locks API | yes (69+) | yes (96+) | yes (15.4+) |
-| `navigator.locks.query` | yes | yes | yes (15.4+) |
-| `storage.persist()` | yes | yes | yes |
-| OPFS inside WKWebView (ElectroBun macOS) | n/a | n/a | expected yes (WebKit 15.2+ engine), **must verify in Phase 3 wrapper spike** |
+| Capability                                          | Chrome/Edge                                        | Firefox    | Safari/WebKit                                                                |
+| --------------------------------------------------- | -------------------------------------------------- | ---------- | ---------------------------------------------------------------------------- |
+| OPFS (`getDirectory`)                               | yes (102+)                                         | yes (111+) | yes (15.2+)                                                                  |
+| `createSyncAccessHandle` (dedicated worker only)    | yes (102+ / Edge 102+)                             | yes (111+) | yes (15.2+)                                                                  |
+| `createSyncAccessHandle` `mode: "readwrite-unsafe"` | no (flagged/behind flag as of FF 157, Chrome ~155) | no         | no (unknown in TP)                                                           |
+| Web Locks API                                       | yes (69+)                                          | yes (96+)  | yes (15.4+)                                                                  |
+| `navigator.locks.query`                             | yes                                                | yes        | yes (15.4+)                                                                  |
+| `storage.persist()`                                 | yes                                                | yes        | yes                                                                          |
+| OPFS inside WKWebView (ElectroBun macOS)            | n/a                                                | n/a        | expected yes (WebKit 15.2+ engine), **must verify in Phase 3 wrapper spike** |
 
 Key docs facts:
 
@@ -32,14 +32,14 @@ Run `probe.html` in each browser and copy the table here.
 
 ### Chrome (version: ___ )
 
-| Capability | Result | Detail |
-|---|---|---|
-| OPFS | | |
-| createSyncAccessHandle (document) | | expected: unavailable/rejected (worker-only) |
-| createSyncAccessHandle (worker) | | |
-| Web Locks | | |
-| storage.estimate / persist | | |
-| SQLite WASM VFS flags (SAB/COOP+COEP) | | |
+| Capability                            | Result | Detail                                       |
+| ------------------------------------- | ------ | -------------------------------------------- |
+| OPFS                                  |        |                                              |
+| createSyncAccessHandle (document)     |        | expected: unavailable/rejected (worker-only) |
+| createSyncAccessHandle (worker)       |        |                                              |
+| Web Locks                             |        |                                              |
+| storage.estimate / persist            |        |                                              |
+| SQLite WASM VFS flags (SAB/COOP+COEP) |        |                                              |
 
 ### Firefox (version: ___ )
 

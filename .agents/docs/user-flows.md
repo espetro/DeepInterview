@@ -45,12 +45,13 @@ Steps:
 1. Setup posts the facts file plus difficulty, voice, and duration to
    `POST /api/prep?fast=true`. `run_fast_prep` (in
    `src/deepinterview_agent/prep/__init__.py`) ingests the facts into the KB
-   + context and marks the session ready immediately; no graph run, no
-   long-running prep wait.
+   - context and marks the session ready immediately; no graph run, no
+     long-running prep wait.
 2. `/session/{id}` renders the poll screen but passes through instantly
    (ready on first poll); the user proceeds straight to Start interview.
-4. Heavy prep/grounding continues asynchronously; the interview and report
+3. Heavy prep/grounding continues asynchronously; the interview and report
    read whatever context is available.
+
 ## Error / recovery paths
 
 ```mermaid

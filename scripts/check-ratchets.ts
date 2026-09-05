@@ -29,10 +29,11 @@ async function countTscErrors(): Promise<number> {
 }
 
 async function countOxlintErrors(): Promise<number> {
-  const proc = Bun.spawn(
-    ["bunx", "oxlint", "web/src", "shared/src", "server/src", "evals/src"],
-    { cwd: root, stdout: "pipe", stderr: "pipe" },
-  );
+  const proc = Bun.spawn(["bunx", "oxlint", "web/src", "shared/src", "server/src", "evals/src"], {
+    cwd: root,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [out, err] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -42,14 +43,11 @@ async function countOxlintErrors(): Promise<number> {
 }
 
 async function countCycles(): Promise<number> {
-  const proc = Bun.spawn(
-    ["bunx", "rev-dep", "circular", "web/src/router.tsx"],
-    {
-      cwd: root,
-      stdout: "pipe",
-      stderr: "pipe",
-    },
-  );
+  const proc = Bun.spawn(["bunx", "rev-dep", "circular", "web/src/router.tsx"], {
+    cwd: root,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const out = await new Response(proc.stdout).text();
   await proc.exited;
   const m = out.match(/Found (\d+) circular/);
@@ -64,10 +62,7 @@ function maxFileLoc(): number {
       const full = join(dir, entry);
       const st = statSync(full);
       if (st.isDirectory()) walk(full);
-      else if (
-        [".ts", ".tsx"].includes(extname(full)) &&
-        !full.endsWith(".gen.ts")
-      ) {
+      else if ([".ts", ".tsx"].includes(extname(full)) && !full.endsWith(".gen.ts")) {
         const loc = readFileSync(full, "utf8").split("\n").length;
         if (loc > max) max = loc;
       }
@@ -95,22 +90,14 @@ let regressed = false;
 for (const [key, baseline] of Object.entries(ratchets)) {
   if (key === "_comment") continue;
   const value = measured[key as keyof typeof measured];
-  if (
-    typeof value === "number" &&
-    typeof baseline === "number" &&
-    value > baseline
-  ) {
-    console.error(
-      `ratchet regression: ${key} = ${value} (baseline ${baseline})`,
-    );
+  if (typeof value === "number" && typeof baseline === "number" && value > baseline) {
+    console.error(`ratchet regression: ${key} = ${value} (baseline ${baseline})`);
     regressed = true;
   }
 }
 
 if (regressed) {
-  console.error(
-    "Update .ratchets.json in this commit if the increase is intentional.",
-  );
+  console.error("Update .ratchets.json in this commit if the increase is intentional.");
   process.exit(1);
 }
 console.log(`OK: ${JSON.stringify(measured)}`);

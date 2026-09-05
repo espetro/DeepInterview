@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as fc from "fast-check";
 import * as v from "valibot";
-import {
-  SessionSchema,
-  TurnSchema,
-  CreateSessionRequestSchema,
-  SessionIdSchema,
-} from "./session";
+import { SessionSchema, TurnSchema, CreateSessionRequestSchema, SessionIdSchema } from "./session";
 import { InterviewPlanSchema } from "./plan";
 import { ReportSchema, CompetencyScoreSchema } from "./report";
 import { ConfigSchema, describeConfigError } from "./config";
@@ -17,22 +12,14 @@ const isoDate = fc
   .integer({ min: Date.UTC(2020, 0, 1), max: Date.UTC(2035, 11, 31) })
   .map((ms) => new Date(ms).toISOString());
 const uuid = fc.uuid();
-const nonEmpty = fc
-  .string({ minLength: 1, maxLength: 40 })
-  .filter((s) => s.trim().length > 0);
+const nonEmpty = fc.string({ minLength: 1, maxLength: 40 }).filter((s) => s.trim().length > 0);
 
 const sessionArb = fc.record({
   id: uuid,
   title: nonEmpty,
   mode: fc.constantFrom("interview", "coach"),
   created_at: isoDate,
-  status: fc.constantFrom(
-    "created",
-    "interviewing",
-    "finished",
-    "reported",
-    "discarded",
-  ),
+  status: fc.constantFrom("created", "interviewing", "finished", "reported", "discarded"),
   duration_min: fc.integer({ min: 5, max: 120 }),
 });
 
@@ -86,10 +73,7 @@ describe("contract round-trip properties", () => {
       fc.property(reportArb, (r) => {
         if (!v.is(ReportSchema, r)) return false;
         const parsed = v.parse(ReportSchema, r);
-        return (
-          parsed.overall_score === r.overall_score &&
-          parsed.session_id === r.session_id
-        );
+        return parsed.overall_score === r.overall_score && parsed.session_id === r.session_id;
       }),
     );
   });
@@ -106,9 +90,7 @@ describe("contract round-trip properties", () => {
       mode: "interview",
       duration_min,
     });
-    expect(
-      boundaries.filter((d) => v.is(CreateSessionRequestSchema, mk(d))),
-    ).toEqual([5, 30, 120]);
+    expect(boundaries.filter((d) => v.is(CreateSessionRequestSchema, mk(d)))).toEqual([5, 30, 120]);
 
     fc.assert(
       fc.property(
@@ -119,12 +101,7 @@ describe("contract round-trip properties", () => {
   });
 
   it("session id schema rejects malformed uuids", () => {
-    const samples = [
-      "",
-      "not-a-uuid",
-      "123",
-      "zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz",
-    ];
+    const samples = ["", "not-a-uuid", "123", "zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz"];
     expect(samples.every((s) => !v.is(SessionIdSchema, s))).toBe(true);
   });
 
@@ -138,11 +115,7 @@ describe("contract round-trip properties", () => {
       created_at: over.created_at ?? new Date().toISOString(),
       source: "text",
     });
-    const cases = [
-      turn({ created_at: "yesterday" }),
-      turn({ seq: -1 }),
-      turn({ seq: 1.5 }),
-    ];
+    const cases = [turn({ created_at: "yesterday" }), turn({ seq: -1 }), turn({ seq: 1.5 })];
     expect(cases.every((t) => !v.is(TurnSchema, t))).toBe(true);
   });
 

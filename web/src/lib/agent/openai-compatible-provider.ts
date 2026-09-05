@@ -76,9 +76,7 @@ function chatUrl(baseUrl: string): string {
 }
 
 /** Map a v3 prompt to OpenAI wire messages. */
-function toOpenAiMessages(
-  prompt: LanguageModelV3Prompt,
-): Record<string, unknown>[] {
+function toOpenAiMessages(prompt: LanguageModelV3Prompt): Record<string, unknown>[] {
   return prompt.map((msg) => {
     if (msg.role === "system") return { role: "system", content: msg.content };
     if (msg.role === "user") {
@@ -110,10 +108,7 @@ function toOpenAiMessages(
     }
     // tool role
     const outputs = msg.content
-      .filter(
-        (p): p is Extract<typeof p, { type: "tool-result" }> =>
-          p.type === "tool-result",
-      )
+      .filter((p): p is Extract<typeof p, { type: "tool-result" }> => p.type === "tool-result")
       .map((p) => ({
         tool_call_id: p.toolCallId,
         role: "tool",
@@ -140,9 +135,7 @@ function isFunctionTool(
 }
 
 function toOpenAiTools(
-  tools:
-    | (LanguageModelV3FunctionTool | LanguageModelV3ProviderTool)[]
-    | undefined,
+  tools: (LanguageModelV3FunctionTool | LanguageModelV3ProviderTool)[] | undefined,
 ): OpenAiFunctionToolDef[] | undefined {
   const functionTools = tools?.filter(isFunctionTool);
   if (!functionTools?.length) return undefined;
@@ -188,8 +181,9 @@ function makeToolCallAccumulator() {
   };
 }
 
-export interface OpenAiCompatibleOptions
-  extends Partial<Pick<LanguageModelV3CallOptions, "abortSignal">> {
+export interface OpenAiCompatibleOptions extends Partial<
+  Pick<LanguageModelV3CallOptions, "abortSignal">
+> {
   fetchImpl?: typeof fetch;
 }
 
@@ -215,12 +209,8 @@ export function createOpenAiCompatibleModel(
           model: profile.llmModel,
           messages: toOpenAiMessages(options.prompt),
           stream: true,
-          ...(toOpenAiTools(options.tools)
-            ? { tools: toOpenAiTools(options.tools) }
-            : {}),
-          ...(options.toolChoice
-            ? { tool_choice: options.toolChoice.type }
-            : {}),
+          ...(toOpenAiTools(options.tools) ? { tools: toOpenAiTools(options.tools) } : {}),
+          ...(options.toolChoice ? { tool_choice: options.toolChoice.type } : {}),
         }),
         signal: options.abortSignal ?? opts.abortSignal,
       });
@@ -291,8 +281,7 @@ export function createOpenAiCompatibleModel(
                     if (tc.id) tools.start(tc.id, tc.function?.name ?? "");
                     else if (tc.function?.arguments) {
                       const last = [...tools.keys()].at(-1);
-                      if (last !== undefined)
-                        tools.delta(last, tc.function.arguments);
+                      if (last !== undefined) tools.delta(last, tc.function.arguments);
                     }
                   }
                 }
@@ -301,8 +290,7 @@ export function createOpenAiCompatibleModel(
           } finally {
             reader.releaseLock?.();
           }
-          if (sawTextStart)
-            controller.enqueue({ type: "text-end", id: textId });
+          if (sawTextStart) controller.enqueue({ type: "text-end", id: textId });
           const { calls: finished, hasTools } = tools.finish();
           for (const call of finished) {
             controller.enqueue({
@@ -351,9 +339,7 @@ export function createOpenAiCompatibleModel(
         body: JSON.stringify({
           model: profile.llmModel,
           messages: toOpenAiMessages(options.prompt),
-          ...(toOpenAiTools(options.tools)
-            ? { tools: toOpenAiTools(options.tools) }
-            : {}),
+          ...(toOpenAiTools(options.tools) ? { tools: toOpenAiTools(options.tools) } : {}),
         }),
         signal: options.abortSignal ?? opts.abortSignal,
       });
@@ -364,8 +350,7 @@ export function createOpenAiCompatibleModel(
       const data = (await res.json()) as OpenAiGenerateResponse;
       const message = data.choices?.[0]?.message;
       const content: LanguageModelV3Content[] = [];
-      if (message?.content)
-        content.push({ type: "text", text: message.content });
+      if (message?.content) content.push({ type: "text", text: message.content });
       for (const call of message?.tool_calls ?? []) {
         content.push({
           type: "tool-call",

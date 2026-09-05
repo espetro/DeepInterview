@@ -15,9 +15,7 @@ export class ConfigError extends Error {}
  * Deep-merge env overrides (DI_LLM__API_KEY style) onto the parsed yaml object
  * before validation, so fail-fast errors name the effective value's key.
  */
-function applyEnvOverrides(
-  raw: Record<string, unknown>,
-): Record<string, unknown> {
+function applyEnvOverrides(raw: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = structuredClone(raw);
   for (const [key, value] of Object.entries(process.env)) {
     if (!key.startsWith(CONFIG_ENV_PREFIX) || value === undefined) continue;
@@ -28,8 +26,7 @@ function applyEnvOverrides(
     if (path.length === 0 || path[0] === "") continue;
     let node = out;
     for (const part of path.slice(0, -1)) {
-      if (typeof node[part] !== "object" || node[part] === null)
-        node[part] = {};
+      if (typeof node[part] !== "object" || node[part] === null) node[part] = {};
       node = node[part] as Record<string, unknown>;
     }
     const leaf = path[path.length - 1]!;
@@ -51,16 +48,12 @@ export function loadConfig(path: string): Config {
   try {
     raw = parse(readFileSync(path, "utf8"));
   } catch (e) {
-    throw new ConfigError(
-      `config file is not valid yaml: ${path} (${String(e)})`,
-    );
+    throw new ConfigError(`config file is not valid yaml: ${path} (${String(e)})`);
   }
   const withEnv = applyEnvOverrides(raw as Record<string, unknown>);
   const result = v.safeParse(ConfigSchema, withEnv);
   if (!result.success) {
-    throw new ConfigError(
-      `invalid config:\n${describeConfigError(result.issues)}`,
-    );
+    throw new ConfigError(`invalid config:\n${describeConfigError(result.issues)}`);
   }
   return result.output;
 }

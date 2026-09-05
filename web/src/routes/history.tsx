@@ -12,17 +12,11 @@ export const Route = createFileRoute("/history")({
 function useRelative() {
   const intl = useIntl();
   return (iso: string) => {
-    const days = Math.floor(
-      (Date.now() - new Date(iso).getTime()) / 86_400_000,
-    );
+    const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
     if (days < 1) return intl.formatMessage({ id: "history.today" });
     if (days === 1) return intl.formatMessage({ id: "history.yesterday" });
-    if (days < 7)
-      return intl.formatMessage({ id: "history.daysAgo" }, { n: days });
-    return intl.formatMessage(
-      { id: "history.weeksAgo" },
-      { n: Math.floor(days / 7) },
-    );
+    if (days < 7) return intl.formatMessage({ id: "history.daysAgo" }, { n: days });
+    return intl.formatMessage({ id: "history.weeksAgo" }, { n: Math.floor(days / 7) });
   };
 }
 
@@ -75,8 +69,7 @@ function History() {
                 <div className="rounded-[calc(1.5rem-0.375rem)] bg-cream px-5 py-4">
                   <p className="font-display font-semibold">{s.title}</p>
                   <p className="text-xs text-espresso-soft">
-                    {s.mode} · {s.duration_min} min · {s.status} ·{" "}
-                    {relative(s.created_at)}
+                    {s.mode} · {s.duration_min} min · {s.status} · {relative(s.created_at)}
                   </p>
                 </div>
                 <span className="pr-4 text-espresso-soft">→</span>

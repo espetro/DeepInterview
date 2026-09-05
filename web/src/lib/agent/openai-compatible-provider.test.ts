@@ -10,9 +10,7 @@ const PROFILE = {
 };
 
 function sseResponse(chunks: unknown[]): Response {
-  const body =
-    chunks.map((c) => `data: ${JSON.stringify(c)}\n\n`).join("") +
-    "data: [DONE]\n\n";
+  const body = chunks.map((c) => `data: ${JSON.stringify(c)}\n\n`).join("") + "data: [DONE]\n\n";
   return new Response(body, {
     headers: { "content-type": "text/event-stream" },
   });
@@ -44,16 +42,12 @@ describe("openai-compatible provider", () => {
     const parts: any[] = [];
     for await (const p of stream) parts.push(p);
 
-    expect(fetchMock.mock.calls[0]![0]).toBe(
-      "http://t.local/v1/chat/completions",
-    );
+    expect(fetchMock.mock.calls[0]![0]).toBe("http://t.local/v1/chat/completions");
     const body = JSON.parse(fetchMock.mock.calls[0]![1].body);
     expect(body.stream).toBe(true);
     expect(body.messages[0]).toEqual({ role: "system", content: "sys" });
 
-    const deltas = parts
-      .filter((p) => p.type === "text-delta")
-      .map((p) => p.delta);
+    const deltas = parts.filter((p) => p.type === "text-delta").map((p) => p.delta);
     expect(deltas.join("")).toBe("Hello.");
     const finish = parts.find((p) => p.type === "finish");
     expect(finish.finishReason.unified).toBe("stop");
@@ -102,17 +96,13 @@ describe("openai-compatible provider", () => {
       toolName: "read_editor",
       input: "{}",
     });
-    expect(parts.find((p) => p.type === "finish").finishReason.unified).toBe(
-      "tool-calls",
-    );
+    expect(parts.find((p) => p.type === "finish").finishReason.unified).toBe("tool-calls");
   });
 
   it("sends tools with json schemas and auth header", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(
-        sseResponse([{ choices: [{ delta: { content: "ok" } }] }]),
-      );
+      .mockResolvedValue(sseResponse([{ choices: [{ delta: { content: "ok" } }] }]));
     const model = createOpenAiCompatibleModel(PROFILE, {
       fetchImpl: fetchMock as unknown as typeof fetch,
     });
@@ -133,15 +123,11 @@ describe("openai-compatible provider", () => {
   });
 
   it("throws on non-ok response", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(new Response("boom", { status: 500 }));
+    const fetchMock = vi.fn().mockResolvedValue(new Response("boom", { status: 500 }));
     const model = createOpenAiCompatibleModel(PROFILE, {
       fetchImpl: fetchMock as unknown as typeof fetch,
     });
-    await expect(model.doStream({ prompt: PROMPT } as never)).rejects.toThrow(
-      "500",
-    );
+    await expect(model.doStream({ prompt: PROMPT } as never)).rejects.toThrow("500");
   });
 
   it("doGenerate parses a buffered completion", async () => {
@@ -195,19 +181,15 @@ describe("openai-compatible provider", () => {
     });
     const out = await model.doGenerate({ prompt: PROMPT } as never);
     expect(out.finishReason.unified).toBe("tool-calls");
-    expect(
-      (out.content as any[]).find((c) => c.type === "tool-call"),
-    ).toBeTruthy();
+    expect((out.content as any[]).find((c) => c.type === "tool-call")).toBeTruthy();
   });
 
   it("maps assistant tool results back to tool role messages", async () => {
     let seen: any;
-    const fetchMock = vi
-      .fn()
-      .mockImplementation(async (_url: string, init: any) => {
-        seen = JSON.parse(init.body);
-        return sseResponse([{ choices: [{ delta: { content: "ok" } }] }]);
-      });
+    const fetchMock = vi.fn().mockImplementation(async (_url: string, init: any) => {
+      seen = JSON.parse(init.body);
+      return sseResponse([{ choices: [{ delta: { content: "ok" } }] }]);
+    });
     const model = createOpenAiCompatibleModel(PROFILE, {
       fetchImpl: fetchMock as unknown as typeof fetch,
     });

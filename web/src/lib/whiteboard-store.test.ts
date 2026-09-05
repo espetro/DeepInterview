@@ -32,9 +32,7 @@ describe("pruneSnapshot", () => {
     expect(snap.shapeCount).toBe(3);
     const arrow = snap.shapes.find((s) => s.id === "shape:c");
     expect(arrow?.to).toBe("shape:a");
-    expect(snap.shapes.find((s) => s.id === "shape:a")?.text).toBe(
-      "API Gateway",
-    );
+    expect(snap.shapes.find((s) => s.id === "shape:a")?.text).toBe("API Gateway");
   });
 
   it("handles garbage input", () => {
@@ -45,10 +43,7 @@ describe("pruneSnapshot", () => {
 
 describe("serializeSnapshot", () => {
   it("emits compact json under budget", () => {
-    const snap = pruneSnapshot(
-      doc({ s1: shape("shape:a", "text", { text: "hello" }) }),
-      1,
-    );
+    const snap = pruneSnapshot(doc({ s1: shape("shape:a", "text", { text: "hello" }) }), 1);
     const json = serializeSnapshot(snap);
     expect(json).toContain("hello");
     expect(new TextEncoder().encode(json).byteLength).toBeLessThan(8 * 1024);
@@ -62,9 +57,7 @@ describe("serializeSnapshot", () => {
       });
     }
     const json = serializeSnapshot(pruneSnapshot(doc(store), 1));
-    expect(new TextEncoder().encode(json).byteLength).toBeLessThanOrEqual(
-      8 * 1024,
-    );
+    expect(new TextEncoder().encode(json).byteLength).toBeLessThanOrEqual(8 * 1024);
     expect(JSON.parse(json).truncated).toBe(true);
   });
 });

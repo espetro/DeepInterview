@@ -14,28 +14,19 @@ describe("chunkText", () => {
   });
 
   it("splits on paragraph boundaries near the size target", () => {
-    const paragraphs = Array.from(
-      { length: 20 },
-      (_, i) => `Paragraph ${i} ${"x".repeat(120)}`,
-    );
+    const paragraphs = Array.from({ length: 20 }, (_, i) => `Paragraph ${i} ${"x".repeat(120)}`);
     const chunks = chunkText(paragraphs.join("\n\n"));
     expect(chunks.length).toBeGreaterThan(1);
     for (const c of chunks) expect(c.length).toBeLessThanOrEqual(1200);
   });
 
   it("is deterministic", () => {
-    const text = Array.from(
-      { length: 30 },
-      (_, i) => `para ${i} ${"y".repeat(200)}`,
-    ).join("\n\n");
+    const text = Array.from({ length: 30 }, (_, i) => `para ${i} ${"y".repeat(200)}`).join("\n\n");
     expect(chunkText(text)).toEqual(chunkText(text));
   });
 
   it("splits a single oversized paragraph by sentence", () => {
-    const long = Array.from(
-      { length: 40 },
-      (_, i) => `Sentence number ${i} is here.`,
-    ).join(" ");
+    const long = Array.from({ length: 40 }, (_, i) => `Sentence number ${i} is here.`).join(" ");
     const chunks = chunkText(long);
     expect(chunks.length).toBeGreaterThan(1);
     expect(chunks.every((c) => c.length <= 1200)).toBe(true);

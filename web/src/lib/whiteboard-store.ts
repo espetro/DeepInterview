@@ -43,28 +43,13 @@ function asString(value: unknown): string | undefined {
 }
 
 function isTextProp(key: string): boolean {
-  return (
-    key === "text" ||
-    key === "rich_text" ||
-    key === "labelText" ||
-    key === "rawText"
-  );
+  return key === "text" || key === "rich_text" || key === "labelText" || key === "rawText";
 }
 
-export function pruneSnapshot(
-  document: unknown,
-  now = Date.now(),
-): WhiteboardSnapshot {
+export function pruneSnapshot(document: unknown, now = Date.now()): WhiteboardSnapshot {
   let store: Record<string, unknown> | undefined;
-  for (const obj of [
-    document,
-    (document as { document?: unknown } | null)?.document,
-  ]) {
-    if (
-      obj &&
-      typeof obj === "object" &&
-      "store" in (obj as Record<string, unknown>)
-    ) {
+  for (const obj of [document, (document as { document?: unknown } | null)?.document]) {
+    if (obj && typeof obj === "object" && "store" in (obj as Record<string, unknown>)) {
       store = (obj as Record<string, unknown>).store as Record<string, unknown>;
       break;
     }
@@ -130,8 +115,7 @@ export function serializeSnapshot(snapshot: WhiteboardSnapshot): string {
       truncated: true,
       shapes,
     });
-    if (new TextEncoder().encode(json).byteLength <= MAX_JSON_BYTES)
-      return json;
+    if (new TextEncoder().encode(json).byteLength <= MAX_JSON_BYTES) return json;
   }
   return JSON.stringify({
     at: snapshot.at,

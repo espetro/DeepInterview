@@ -1,8 +1,12 @@
 {
   "name": "dits",
   "private": true,
-  "packageManager": "bun@1.4.1",
-  "workspaces": ["shared", "server", "web", "evals"],
+  "workspaces": [
+    "shared",
+    "server",
+    "web",
+    "evals"
+  ],
   "type": "module",
   "scripts": {
     "prepare": "lefthook install"
@@ -25,5 +29,6 @@
     "turbo": "^2.10.12",
     "typescript": "^7.0.2",
     "vitest": "^5"
-  }
+  },
+  "packageManager": "bun@1.4.1"
 }

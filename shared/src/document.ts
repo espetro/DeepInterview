@@ -7,12 +7,7 @@ export type DocumentId = v.InferOutput<typeof DocumentIdSchema>;
 export const DocumentKindSchema = v.picklist(["pdf", "md", "txt", "docx"]);
 export type DocumentKind = v.InferOutput<typeof DocumentKindSchema>;
 
-export const DocumentStatusSchema = v.picklist([
-  "pending",
-  "processing",
-  "ready",
-  "failed",
-]);
+export const DocumentStatusSchema = v.picklist(["pending", "processing", "ready", "failed"]);
 export type DocumentStatus = v.InferOutput<typeof DocumentStatusSchema>;
 
 export const DocumentSchema = v.object({
@@ -61,9 +56,7 @@ export type RetrievedChunk = v.InferOutput<typeof RetrievedChunkSchema>;
 export const SessionContextResponseSchema = v.object({
   chunks: v.array(RetrievedChunkSchema),
 });
-export type SessionContextResponse = v.InferOutput<
-  typeof SessionContextResponseSchema
->;
+export type SessionContextResponse = v.InferOutput<typeof SessionContextResponseSchema>;
 
 /** OpenAI-compatible /v1/embeddings response shapes we depend on. */
 export const EmbeddingResponseSchema = v.object({

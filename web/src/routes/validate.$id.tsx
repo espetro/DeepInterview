@@ -22,10 +22,7 @@ function Validate() {
           di<span className="text-persimmon">.</span>
         </a>
         <span className="text-sm text-espresso-soft">
-          <FormattedMessage
-            id="validate.header"
-            values={{ title: session?.title ?? "…" }}
-          />
+          <FormattedMessage id="validate.header" values={{ title: session?.title ?? "…" }} />
         </span>
       </header>
 

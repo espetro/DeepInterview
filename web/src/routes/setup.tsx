@@ -30,23 +30,19 @@ export const Route = createFileRoute("/setup")({
 const PRESETS = [
   {
     id: "sysDesign",
-    prompt:
-      "Run a system design interview. Focus on scaling, caching and tradeoff reasoning.",
+    prompt: "Run a system design interview. Focus on scaling, caching and tradeoff reasoning.",
   },
   {
     id: "behavioral",
-    prompt:
-      "Run a behavioral interview using the STAR method. Probe for specifics.",
+    prompt: "Run a behavioral interview using the STAR method. Probe for specifics.",
   },
   {
     id: "frontend",
-    prompt:
-      "Run a frontend interview. Mix of component design and JS fundamentals.",
+    prompt: "Run a frontend interview. Mix of component design and JS fundamentals.",
   },
   {
     id: "ml",
-    prompt:
-      "Run a machine learning interview. Model choice, evaluation, and data hygiene.",
+    prompt: "Run a machine learning interview. Model choice, evaluation, and data hygiene.",
   },
 ];
 
@@ -81,9 +77,7 @@ function Setup() {
     for (const f of incoming) {
       const ext = `.${f.name.split(".").pop()?.toLowerCase()}`;
       if (!ACCEPTED.includes(ext)) {
-        setError(
-          intl.formatMessage({ id: "setup.filesBadType" }, { name: f.name }),
-        );
+        setError(intl.formatMessage({ id: "setup.filesBadType" }, { name: f.name }));
         continue;
       }
       accepted.push(f);
@@ -91,9 +85,7 @@ function Setup() {
     setFiles((prev) => {
       const next = [...prev, ...accepted];
       if (next.length > MAX_FILES) {
-        setError(
-          intl.formatMessage({ id: "setup.filesTooMany" }, { max: MAX_FILES }),
-        );
+        setError(intl.formatMessage({ id: "setup.filesTooMany" }, { max: MAX_FILES }));
         return next.slice(0, MAX_FILES);
       }
       if (next.reduce((n, f) => n + f.size, 0) > MAX_TOTAL_BYTES) {
@@ -123,8 +115,7 @@ function Setup() {
       const field = String(issue?.path?.[0]?.key ?? "");
       if (field === "baseUrl")
         setProfileError(intl.formatMessage({ id: "setup.profile.invalidUrl" }));
-      else
-        setProfileError(intl.formatMessage({ id: "setup.profile.required" }));
+      else setProfileError(intl.formatMessage({ id: "setup.profile.required" }));
       return;
     }
     setProfileError(null);
@@ -137,9 +128,7 @@ function Setup() {
     setError(null);
     try {
       const title =
-        draft.title ||
-        PRESETS.find((p) => draft.prompt === p.prompt)?.id ||
-        "practice session";
+        draft.title || PRESETS.find((p) => draft.prompt === p.prompt)?.id || "practice session";
       if (effectiveRuntime === "client-only") {
         resetClientSession();
         const session = await createClientSession({
@@ -190,10 +179,7 @@ function Setup() {
       <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-10 md:px-8">
         <div className="rounded-shell bg-paper p-2 ring-1 ring-hairline">
           <div className="rounded-[calc(2rem-0.375rem)] bg-cream p-6 md:p-10">
-            <section
-              className="rise-in"
-              style={{ "--rise-delay": "0ms" } as React.CSSProperties}
-            >
+            <section className="rise-in" style={{ "--rise-delay": "0ms" } as React.CSSProperties}>
               <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
                 <FormattedMessage id="setup.presets" />
               </h2>
@@ -201,9 +187,7 @@ function Setup() {
                 {PRESETS.map((p) => (
                   <button
                     key={p.id}
-                    onClick={() =>
-                      $draft.set({ ...draft, prompt: p.prompt, title: p.id })
-                    }
+                    onClick={() => $draft.set({ ...draft, prompt: p.prompt, title: p.id })}
                     className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] ${
                       draft.prompt === p.prompt
                         ? "bg-persimmon text-cream"
@@ -225,9 +209,7 @@ function Setup() {
               </h2>
               <textarea
                 value={draft.prompt}
-                onChange={(e) =>
-                  $draft.set({ ...draft, prompt: e.target.value })
-                }
+                onChange={(e) => $draft.set({ ...draft, prompt: e.target.value })}
                 placeholder={intl.formatMessage({
                   id: "setup.promptPlaceholder",
                 })}
@@ -263,8 +245,7 @@ function Setup() {
                 aria-label={intl.formatMessage({ id: "setup.dropHint" })}
                 onClick={() => fileInput.current?.click()}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ")
-                    fileInput.current?.click();
+                  if (e.key === "Enter" || e.key === " ") fileInput.current?.click();
                 }}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
@@ -290,9 +271,7 @@ function Setup() {
                             { id: "setup.fileRemove" },
                             { name: f.name },
                           )}
-                          onClick={() =>
-                            setFiles((prev) => prev.filter((_, j) => j !== i))
-                          }
+                          onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
                           className="text-espresso-soft transition-fluid hover:text-persimmon"
                         >
                           ×
@@ -408,8 +387,7 @@ function Setup() {
               </div>
             </section>
 
-            {(runtimeMode === "client-only" ||
-              effectiveRuntime === "client-only") && (
+            {(runtimeMode === "client-only" || effectiveRuntime === "client-only") && (
               <form
                 onSubmit={saveProfile}
                 className="rise-in mt-8"

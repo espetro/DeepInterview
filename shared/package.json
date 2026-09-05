@@ -11,11 +11,11 @@
     "./report": "./src/report.ts",
     "./voice": "./src/voice.ts"
   },
-  "dependencies": {
-    "valibot": "^1"
-  },
   "scripts": {
     "test": "bun run --bun vitest run",
     "typecheck": "tsc --noEmit --checkers 1"
+  },
+  "dependencies": {
+    "valibot": "^1"
   }
 }

@@ -15,8 +15,7 @@ const EXTS = [".ts", ".tsx", ".d.ts"];
 function listSourceFiles(dir: string): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir)) {
-    if (entry === "node_modules" || entry === "dist" || entry.startsWith("."))
-      continue;
+    if (entry === "node_modules" || entry === "dist" || entry.startsWith(".")) continue;
     const full = join(dir, entry);
     const st = statSync(full);
     if (st.isDirectory()) out.push(...listSourceFiles(full));
@@ -51,9 +50,7 @@ for (const file of files) {
     const specifier = match[1]!;
     if (!specifier.startsWith(".")) continue;
     if (!resolves(file, specifier)) {
-      offenders.push(
-        `${file.replace(root, "")}: unresolved import "${specifier}"`,
-      );
+      offenders.push(`${file.replace(root, "")}: unresolved import "${specifier}"`);
     }
   }
 }

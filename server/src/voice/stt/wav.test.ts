@@ -88,10 +88,7 @@ describe("WavBuffer round-trip (property-based)", () => {
           }));
           for (const frame of pushed) buf.pushFrame(frame);
 
-          const expectedByteLength = frames.reduce(
-            (sum, f) => sum + f.length * 2,
-            0,
-          );
+          const expectedByteLength = frames.reduce((sum, f) => sum + f.length * 2, 0);
           expect(buf.byteLength).toBe(expectedByteLength);
           expect(buf.isEmpty()).toBe(expectedByteLength === 0);
 
@@ -144,9 +141,7 @@ describe("WhisperStt", () => {
       model: "whisper-1",
       fetchImpl,
     });
-    const text = await sttImpl.transcribePcm(
-      new Uint8Array([1, 0, 2, 0, 3, 0, 4, 0]),
-    );
+    const text = await sttImpl.transcribePcm(new Uint8Array([1, 0, 2, 0, 3, 0, 4, 0]));
     expect(text).toBe("hi mom");
     expect(calls).toHaveLength(1);
     expect(calls[0]!.url).toBe("http://fake.local/v1/audio/transcriptions");
@@ -160,11 +155,8 @@ describe("WhisperStt", () => {
     const sttImpl = new WhisperStt({
       baseUrl: "http://fake.local",
       model: "whisper-1",
-      fetchImpl: (async () =>
-        new Response("nope", { status: 502 })) as unknown as typeof fetch,
+      fetchImpl: (async () => new Response("nope", { status: 502 })) as unknown as typeof fetch,
     });
-    await expect(
-      sttImpl.transcribePcm(new Uint8Array([1, 0, 2, 0])),
-    ).rejects.toThrow(/502/);
+    await expect(sttImpl.transcribePcm(new Uint8Array([1, 0, 2, 0]))).rejects.toThrow(/502/);
   });
 });

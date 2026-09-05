@@ -57,16 +57,11 @@ export async function createClientSession(input: {
   return session;
 }
 
-export async function getClientSession(
-  id: string,
-): Promise<Session | undefined> {
+export async function getClientSession(id: string): Promise<Session | undefined> {
   return (await readRecord(id))?.session;
 }
 
-export async function setClientSessionStatus(
-  id: string,
-  status: Session["status"],
-): Promise<void> {
+export async function setClientSessionStatus(id: string, status: Session["status"]): Promise<void> {
   const record = await readRecord(id);
   if (!record) return;
   record.session.status = status;
@@ -100,10 +95,7 @@ export async function getClientReport(id: string): Promise<Report | undefined> {
   return (await readRecord(id))?.report;
 }
 
-export async function saveClientReport(
-  id: string,
-  report: Report,
-): Promise<void> {
+export async function saveClientReport(id: string, report: Report): Promise<void> {
   const record = await readRecord(id);
   if (!record) return;
   record.report = report;

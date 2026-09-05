@@ -13,6 +13,7 @@ exists.
 
 <!-- TODO: no verified security contact exists yet for this fork. Replace
      with a real, monitored address before relying on this policy. -->
+
 Instead, email **TODO-security-contact@example.invalid** with:
 
 - a description of the issue and the impact you believe it has;
@@ -39,10 +40,10 @@ the default branch (`main`) only; there are no maintained back-ports. Always run
 the latest `main` (or the latest tagged pre-release, once tags exist) to receive
 fixes.
 
-| Version          | Supported                          |
-| ---------------- | ---------------------------------- |
-| `main` (pre-v0.1) | ✅ Fixes land here                  |
-| Older checkouts  | ❌ Please update to latest `main`   |
+| Version           | Supported                         |
+| ----------------- | --------------------------------- |
+| `main` (pre-v0.1) | ✅ Fixes land here                |
+| Older checkouts   | ❌ Please update to latest `main` |
 
 This table will be replaced with a real version matrix once we cut `v0.1`.
 
@@ -66,4 +67,3 @@ codebase and out of git history:
 - The offline / mock-first path runs the full prep → live → post loop **with no
   API keys at all**. Prefer it for local development and CI so you are not
   handling real credentials unless you need to.
-

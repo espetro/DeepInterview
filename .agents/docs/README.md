@@ -4,13 +4,13 @@ Agent-facing operational documentation for the deep-interview monorepo.
 
 ## Index
 
-| Doc | Contents |
-| --- | --- |
-| [screens/](screens/) | One file per screen: ASCII mockup, section inventory, CTAs, states, nav, key files |
-| [user-flows.md](user-flows.md) | Mermaid diagrams + step lists: main flow, fast flow, error/recovery, coach loop |
-| [stack.md](stack.md) | Native stack runbook: ports, start order, env files, config, tests |
-| [config-reference.md](config-reference.md) | Full `config.yaml` key table, env override rules, `/v1/*` API summary |
-| [setup-prompt.md](setup-prompt.md) | Agent-drivable clone-to-interview walkthrough over the `/v1/test/*` HTTP API |
+| Doc                                        | Contents                                                                           |
+| ------------------------------------------ | ---------------------------------------------------------------------------------- |
+| [screens/](screens/)                       | One file per screen: ASCII mockup, section inventory, CTAs, states, nav, key files |
+| [user-flows.md](user-flows.md)             | Mermaid diagrams + step lists: main flow, fast flow, error/recovery, coach loop    |
+| [stack.md](stack.md)                       | Native stack runbook: ports, start order, env files, config, tests                 |
+| [config-reference.md](config-reference.md) | Full `config.yaml` key table, env override rules, `/v1/*` API summary              |
+| [setup-prompt.md](setup-prompt.md)         | Agent-drivable clone-to-interview walkthrough over the `/v1/test/*` HTTP API       |
 
 ## Screen docs
 

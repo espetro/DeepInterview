@@ -60,14 +60,11 @@ describe("tool state routes", () => {
       body: JSON.stringify({ editor: 42 }),
     });
     expect(bad.status).toBe(400);
-    const missing = await app.request(
-      `/v1/sessions/${crypto.randomUUID()}/tools`,
-      {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ editor: "", whiteboard: "" }),
-      },
-    );
+    const missing = await app.request(`/v1/sessions/${crypto.randomUUID()}/tools`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ editor: "", whiteboard: "" }),
+    });
     expect(missing.status).toBe(404);
   });
 });

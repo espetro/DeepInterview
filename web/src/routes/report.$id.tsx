@@ -74,9 +74,7 @@ function Report() {
   } = useQuery<ReportDto>({
     queryKey: ["report", id, clientOnly],
     queryFn: () =>
-      clientOnly
-        ? loadOrGenerateClientReport(id)
-        : (getReport(id) as Promise<ReportDto>),
+      clientOnly ? loadOrGenerateClientReport(id) : (getReport(id) as Promise<ReportDto>),
     retry: 2,
     retryDelay: 1500,
   });
@@ -137,10 +135,7 @@ function Report() {
           di<span className="text-persimmon">.</span>
         </a>
         <span className="text-sm text-espresso-soft">
-          <FormattedMessage
-            id="report.header"
-            values={{ title: session?.title ?? "" }}
-          />
+          <FormattedMessage id="report.header" values={{ title: session?.title ?? "" }} />
         </span>
       </header>
 
@@ -211,10 +206,7 @@ function Report() {
                 </div>
                 <ul className="mt-4 space-y-2">
                   {c.evidence.map((e, ei) => (
-                    <li
-                      key={ei}
-                      className="flex flex-wrap items-baseline gap-2 text-sm"
-                    >
+                    <li key={ei} className="flex flex-wrap items-baseline gap-2 text-sm">
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${VERDICT_TONE[e.verdict] ?? ""}`}
                       >
@@ -222,10 +214,7 @@ function Report() {
                       </span>
                       <span className="text-espresso-soft">“{e.quote}”</span>
                       <span className="text-xs text-espresso-soft">
-                        <FormattedMessage
-                          id="report.turn"
-                          values={{ n: e.turn_seq }}
-                        />
+                        <FormattedMessage id="report.turn" values={{ n: e.turn_seq }} />
                       </span>
                     </li>
                   ))}

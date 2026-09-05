@@ -7,18 +7,14 @@ Bun.serve({
   async fetch(req) {
     const url = new URL(req.url);
     if (url.pathname === "/health") return new Response("ok");
-    if (url.pathname !== "/v1/audio/speech")
-      return new Response("not found", { status: 404 });
+    if (url.pathname !== "/v1/audio/speech") return new Response("not found", { status: 404 });
     const body = (await req.json()) as { input: string };
     const form = new FormData();
     form.set("text", body.input);
-    const upstream = await fetch(
-      `${process.env.POCKET_URL ?? "http://localhost:9004"}/tts`,
-      {
-        method: "POST",
-        body: form,
-      },
-    );
+    const upstream = await fetch(`${process.env.POCKET_URL ?? "http://localhost:9004"}/tts`, {
+      method: "POST",
+      body: form,
+    });
     if (!upstream.ok) {
       return new Response(await upstream.text(), { status: upstream.status });
     }

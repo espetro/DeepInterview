@@ -25,13 +25,7 @@ const quick = process.argv.includes("--quick");
 const full = process.argv.includes("--full");
 
 function stagedSourceFiles(): string[] {
-  const { stdout } = Bun.spawnSync([
-    "git",
-    "diff",
-    "--cached",
-    "--name-only",
-    "--diff-filter=ACM",
-  ]);
+  const { stdout } = Bun.spawnSync(["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"]);
   return stdout
     .toString()
     .split("\n")
@@ -72,14 +66,7 @@ const t2: Step[] = [
   {
     title: "typecheck + test (affected)",
     cmd: "bunx",
-    args: [
-      "turbo",
-      "run",
-      "typecheck",
-      "test",
-      "--filter=...[origin/main]",
-      "--concurrency=1",
-    ],
+    args: ["turbo", "run", "typecheck", "test", "--filter=...[origin/main]", "--concurrency=1"],
   },
 ];
 
@@ -110,10 +97,7 @@ if (staged) {
   heavy = true;
 }
 
-function run(
-  cmd: string,
-  args: string[],
-): Promise<{ code: number; output: string }> {
+function run(cmd: string, args: string[]): Promise<{ code: number; output: string }> {
   const { promise, resolve } = Promise.withResolvers<{
     code: number;
     output: string;
@@ -137,9 +121,7 @@ function hasTaskSpooler(): boolean {
   }
 }
 
-async function runHeavy(
-  steps: Step[],
-): Promise<{ code: number; output: string }[]> {
+async function runHeavy(steps: Step[]): Promise<{ code: number; output: string }[]> {
   // Serialize T2/T3 across concurrent agents/invocations via the task-spooler
   // one-slot queue: `ts -S 1` caps the server at one running job, `ts -f`
   // runs synchronously in this process (enqueues and blocks here, rather
@@ -181,10 +163,7 @@ for (let i = 0; i < cheapResults.length; i++) {
   }
 }
 
-if (
-  heavySteps.length > 0 &&
-  (!failed || process.argv.includes("--always-heavy"))
-) {
+if (heavySteps.length > 0 && (!failed || process.argv.includes("--always-heavy"))) {
   const heavyResults = await runHeavy(heavySteps);
   for (let i = 0; i < heavyResults.length; i++) {
     const { code, output } = heavyResults[i]!;

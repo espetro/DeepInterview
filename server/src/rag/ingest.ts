@@ -104,10 +104,7 @@ export async function ingestDocuments(
   return out;
 }
 
-export async function listDocuments(
-  db: Db,
-  sessionId: string,
-): Promise<Document[]> {
+export async function listDocuments(db: Db, sessionId: string): Promise<Document[]> {
   const rows = await db
     .selectFrom("documents")
     .selectAll()
@@ -132,10 +129,7 @@ export async function deleteDocument(
     .executeTakeFirst();
   if (!doc) return false;
   await db.transaction().execute(async (tx) => {
-    await tx
-      .deleteFrom("chunks")
-      .where("document_id", "=", documentId)
-      .execute();
+    await tx.deleteFrom("chunks").where("document_id", "=", documentId).execute();
     await tx.deleteFrom("documents").where("id", "=", documentId).execute();
   });
   return true;
@@ -179,9 +173,7 @@ export async function loadVectors(
 export function embeddingsClientFromConfig(
   cfg: { base_url: string; api_key?: string; model: string } | undefined,
 ): EmbeddingClient | undefined {
-  return cfg
-    ? new EmbeddingClient(cfg.base_url, cfg.model, cfg.api_key)
-    : undefined;
+  return cfg ? new EmbeddingClient(cfg.base_url, cfg.model, cfg.api_key) : undefined;
 }
 
 export type { DocumentKind };

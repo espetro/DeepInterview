@@ -106,9 +106,7 @@ export class StreamingWhisperStt implements StreamingSttPort {
         bytes: first.byteLength,
         stream: true,
       })
-      .catch((err) =>
-        console.warn(`[voice] failed to log stt.request: ${err}`),
-      );
+      .catch((err) => console.warn(`[voice] failed to log stt.request: ${err}`));
 
     const settleFallback = async (why: string) => {
       console.warn(`[voice] streaming stt fell back to buffered: ${why}`);
@@ -133,10 +131,7 @@ export class StreamingWhisperStt implements StreamingSttPort {
       } as RequestInit & { duplex: "half" },
     )
       .then(async (res) => {
-        if (
-          !res.ok ||
-          !(res.headers.get("content-type") ?? "").includes("text/event-stream")
-        ) {
+        if (!res.ok || !(res.headers.get("content-type") ?? "").includes("text/event-stream")) {
           await settleFallback(`non-SSE response (${res.status})`);
           return;
         }
@@ -194,11 +189,7 @@ export class StreamingWhisperStt implements StreamingSttPort {
       })
       .catch(() => undefined);
     const form = new FormData();
-    form.append(
-      "file",
-      new Blob([new Uint8Array(wav)], { type: "audio/wav" }),
-      "audio.wav",
-    );
+    form.append("file", new Blob([new Uint8Array(wav)], { type: "audio/wav" }), "audio.wav");
     form.append("model", this.opts.model);
     if (this.opts.language) form.append("language", this.opts.language);
     const headers: Record<string, string> = {};

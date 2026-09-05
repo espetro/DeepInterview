@@ -58,15 +58,15 @@ mock provider so the offline path stays green.
 Bun workspaces, `mise` tasks. See [AGENTS.md](AGENTS.md) for the authoritative,
 kept-up-to-date layout; summary:
 
-| Path | What it owns | Language |
-|---|---|---|
-| `shared/` | **The contract.** `@di/shared` — valibot schemas for config, session/turn/report/tool-state/event. Any API change starts here. | TS (valibot) |
-| `server/` | Hono API on Bun, `bun:sqlite` storage via Kysely. `src/cli.ts` is the entry; `src/supervisor/` spawns worker + LiveKit children. Serves the built web SPA from `web/dist/client`. | TS (Bun) |
-| `worker/` | `@livekit/agents` voice worker. Tools: `read_editor`, `read_whiteboard`, `update_question`. STT/TTS/LLM all speak OpenAI-compatible HTTP. | TS |
-| `web/` | TanStack Start SPA — `/`, `/setup`, `/validate/$id`, `/interview/$id`, `/finish/$id`, `/report/$id`, `/history`. | TS (TanStack Start) |
-| `evals/` | vitest eval suite plus `mock-provider/main.ts`, the OpenAI-compatible mock server. | TS |
-| `tests/e2e/` | Playwright spec executing scenarios from `specs/*.md`. Needs a running test-mode server (`DI_URL` to target it). | TS |
-| `docs/` | Architecture + setup docs. | Markdown |
+| Path         | What it owns                                                                                                                                                                      | Language            |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `shared/`    | **The contract.** `@di/shared` — valibot schemas for config, session/turn/report/tool-state/event. Any API change starts here.                                                    | TS (valibot)        |
+| `server/`    | Hono API on Bun, `bun:sqlite` storage via Kysely. `src/cli.ts` is the entry; `src/supervisor/` spawns worker + LiveKit children. Serves the built web SPA from `web/dist/client`. | TS (Bun)            |
+| `worker/`    | `@livekit/agents` voice worker. Tools: `read_editor`, `read_whiteboard`, `update_question`. STT/TTS/LLM all speak OpenAI-compatible HTTP.                                         | TS                  |
+| `web/`       | TanStack Start SPA — `/`, `/setup`, `/validate/$id`, `/interview/$id`, `/finish/$id`, `/report/$id`, `/history`.                                                                  | TS (TanStack Start) |
+| `evals/`     | vitest eval suite plus `mock-provider/main.ts`, the OpenAI-compatible mock server.                                                                                                | TS                  |
+| `tests/e2e/` | Playwright spec executing scenarios from `specs/*.md`. Needs a running test-mode server (`DI_URL` to target it).                                                                  | TS                  |
+| `docs/`      | Architecture + setup docs.                                                                                                                                                        | Markdown            |
 
 **Cross-cutting rule:** `shared/` is the single source of truth for request/response
 shapes. Server routes validate against it with `@hono/valibot-validator`; never
@@ -119,6 +119,7 @@ hand-roll request shapes in `server/` or `web/`.
   This certifies you wrote the change (or have the right to submit it) under the
   project's license. Forgot it on an existing commit? `git commit --amend -s` (or
   `git rebase --signoff` for a range), then force-push your branch.
+
 - **Never commit secrets.** Keys live in `.env` only (gitignored). See
   [SECURITY.md](SECURITY.md).
 
