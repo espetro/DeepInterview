@@ -65,7 +65,7 @@ export function buildPrompt(ctx: SessionContext): string {
 }
 
 /** Tools the interview agent may call in either loop (server or browser). */
-export const VOICE_TOOLS: ToolDef[] = [
+export const VOICE_TOOLS = [
   {
     name: "update_question",
     description:
@@ -98,11 +98,13 @@ export const VOICE_TOOLS: ToolDef[] = [
       "Read the candidate's shared whiteboard (drawn shapes and their text/connections). Call when you need to see what they sketched.",
     parameters: { type: "object", properties: {} },
   },
-];
+] as const satisfies readonly ToolDef[];
 
 /** Tool names, for validation without pulling the full defs. */
-export const VOICE_TOOL_NAMES = VOICE_TOOLS.map((t) => t.name) as const;
-export type VoiceToolName = (typeof VOICE_TOOL_NAMES)[number];
+export const VOICE_TOOL_NAMES = VOICE_TOOLS.map(
+  (t) => t.name,
+) as VoiceToolName[];
+export type VoiceToolName = (typeof VOICE_TOOLS)[number]["name"];
 
 export interface WhiteboardShape {
   type?: string;
