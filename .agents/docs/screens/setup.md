@@ -55,7 +55,13 @@
 - Link **proceed without validation** routes straight to `/interview/[id]`.
 - Coach mode button is disabled but animated, with an explanatory tooltip ("available after your first report") until a report exists.
 
-- **Client-only runtime** (ADR-0003, `$effectiveRuntime === "client-only"`):
+- The provider profile form and the runtime selector moved out of setup into
+  the settings dialog's AI provider pane (B4). When the effective runtime is
+  not `server` and no profile with an llm section exists, setup shows a muted
+  notice (setup.needsProvider) with a button that opens the settings dialog at
+  the AI provider pane.
+
+- **Custom runtime** (ADR-0003, `$effectiveRuntime !== "server"`):
   the start action creates the session via `web/src/lib/opfs-store.ts#createClientSession`
   instead of `POST /v1/sessions`, and skips `uploadDocuments` entirely — no
   ingestion pipeline exists client-side, so files picked in this mode are
