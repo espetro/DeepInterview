@@ -14,6 +14,7 @@ import { OpenAiChatClient, type LlmMessage, type ToolDef } from "./llm.ts";
 import {
   VOICE_TOOLS,
   buildPrompt,
+  cutSentences,
   describeWhiteboardSnapshot,
   type SessionContext,
   type UpdateQuestionArgs,
@@ -193,6 +194,10 @@ export class VoiceLoop {
       this.send({ t: "user_transcript", turn: userTurn });
       this.history.push({ role: "user", content: text });
 
+      if (this.llm.streamChat) {
+        await this.runStreamingSpeechTurn(signal, metrics);
+        return;
+      }
       const reply = await this.runLlmTurn(signal, metrics);
 
       const agentTurn = await this.persistTurn("agent", reply.content);
@@ -252,6 +257,68 @@ export class VoiceLoop {
       }
     }
     return { content: "" };
+  }
+
+  /**
+   * Streaming turn: pipes LLM text deltas through the shared sentence cutter
+   * into pipelined per-sentence TTS, so synthesis of sentence N+1 overlaps
+   * with sending sentence N's audio. The agent turn is persisted with the
+   * full reply once the stream completes. Tool-call hops drop any streamed
+   * provisional speech and retry buffered (tools need the full result).
+   */
+  private async runStreamingSpeechTurn(signal: AbortSignal, metrics?: TurnMetrics): Promise<void> {
+    const messages: LlmMessage[] = [
+      { role: "system", content: buildPrompt(this.ctx) },
+      ...this.history,
+    ];
+    for (let hop = 0; hop < 4; hop++) {
+      const llmStart = Date.now();
+      const pipe = new SentenceSpeechPipeline({
+        tts: this.tts,
+        send: this.send.bind(this),
+        sendBinary: this.sendBinary.bind(this),
+        signal,
+        metrics,
+      });
+      const result = await this.llm.streamChat!(messages, VOICE_TOOLS, {
+        signal,
+        onFirstToken: () => {
+          if (metrics && metrics.llm_ttft_ms === undefined) metrics.llm_ttft_ms = Date.now() - llmStart;
+        },
+        onText: (delta) => pipe.push(delta),
+      });
+      if (result.toolCalls.length === 0) {
+        pipe.flush();
+        try {
+          await pipe.drain();
+        } finally {
+          pipe.finishSpeaking();
+        }
+        if (result.content.trim() === "") return;
+        const agentTurn = await this.persistTurn("agent", result.content);
+        this.history.push({ role: "assistant", content: result.content });
+        this.send({ t: "agent_transcript", turn: agentTurn });
+        return;
+      }
+      // Tool hop: text streamed alongside tool calls is provisional; drop it.
+      pipe.abandon();
+      const toolResults: { name: string; output: string }[] = [];
+      for (const call of result.toolCalls) {
+        toolResults.push({ name: call.name, output: await this.executeTool(call.name, call.args) });
+      }
+      messages.push({
+        role: "assistant",
+        content: result.content,
+        tool_calls: result.toolCalls.map((c, i) => ({
+          id: `call_${hop}_${i}`,
+          name: c.name,
+          arguments: JSON.stringify(c.args),
+        })),
+      });
+      for (const [i, tr] of toolResults.entries()) {
+        messages.push({ role: "tool", content: tr.output, tool_call_id: `call_${hop}_${i}` });
+      }
+    }
   }
 
   private async executeTool(name: string, args: Record<string, unknown>): Promise<string> {
@@ -347,4 +414,119 @@ export class VoiceLoop {
 
 function truncate(text: string, max = MAX_TOOL_OUTPUT): string {
   return text.length <= max ? text : `${text.slice(0, max)}… [truncated]`;
+}
+
+/**
+ * Pipes streamed LLM text into pipelined per-sentence TTS. Each completed
+ * sentence is synthesized and its chunks are sent by a chained promise, so
+ * sentence N+1 synthesis starts while sentence N's audio is still being sent
+ * while chunk ordering (monotonic seq) is preserved. `agent_speaking on`
+ * precedes the first tts chunk; `off` is sent via finishSpeaking().
+ */
+class SentenceSpeechPipeline {
+  private pending = "";
+  private seq = 0;
+  private speaking = false;
+  private done = false;
+  /** Tail of the send chain: all synthesis/sends are appended behind this. */
+  private tail: Promise<void> = Promise.resolve();
+  /** Last enqueued sentence: its final chunk carries final: true. */
+  private lastSentence = "";
+  private readonly opts: {
+    tts: VoiceTts;
+    send: (msg: VoiceServerMessage) => void;
+    sendBinary: (data: Uint8Array) => void;
+    signal: AbortSignal;
+    metrics?: TurnMetrics;
+  };
+
+  constructor(opts: {
+    tts: VoiceTts;
+    send: (msg: VoiceServerMessage) => void;
+    sendBinary: (data: Uint8Array) => void;
+    signal: AbortSignal;
+    metrics?: TurnMetrics;
+  }) {
+    this.opts = opts;
+  }
+
+  /** Feed one LLM text delta; cut and enqueue complete sentences. */
+  push(delta: string): void {
+    if (this.done || this.opts.signal.aborted) return;
+    this.pending += delta;
+    const { sentences, rest } = cutSentences(this.pending);
+    this.pending = rest;
+    for (const s of sentences) this.enqueue(s);
+  }
+
+  /** End-of-stream: flush the remainder as the final sentence. */
+  flush(): void {
+    if (this.done) return;
+    this.done = true;
+    const rest = this.pending.trim();
+    if (rest !== "") this.enqueue(rest);
+  }
+
+  /** Drop any pending speech (e.g. a tool-call hop after streamed text). */
+  abandon(): void {
+    this.done = true;
+    this.pending = "";
+    this.finishSpeaking();
+  }
+
+  /** Wait for all enqueued synthesis/send work to settle. */
+  drain(): Promise<void> {
+    return this.tail;
+  }
+
+  finishSpeaking(): void {
+    if (this.speaking) {
+      this.speaking = false;
+      this.opts.send({ t: "agent_speaking", on: false });
+    }
+  }
+
+  private enqueue(sentence: string): void {
+    if (this.opts.signal.aborted) return;
+    if (!this.speaking) {
+      this.speaking = true;
+      this.opts.send({ t: "agent_speaking", on: true });
+    }
+    // Chain behind previous sends; synthesis starts as soon as the chain
+    // reaches it, concurrently with LLM stream consumption. Ordering holds
+    // because each sentence's sends are appended to the same promise chain.
+    const task = this.tail.then(() => this.speakSentence(sentence));
+    this.tail = task;
+    this.lastSentence = sentence;
+  }
+
+  private async speakSentence(sentence: string): Promise<void> {
+    if (this.opts.signal.aborted) return;
+    const pcm = await this.opts.tts.synthesizeToPcm(sentence, { signal: this.opts.signal });
+    for (let off = 0; off < pcm.length; off += TTS_CHUNK_BYTES) {
+      if (this.opts.signal.aborted) return;
+      if (this.opts.metrics && this.opts.metrics.first_audio_ms === undefined) {
+        this.opts.metrics.first_audio_ms = Date.now();
+      }
+      const chunk = pcm.subarray(off, off + TTS_CHUNK_BYTES);
+      const final =
+        off + TTS_CHUNK_BYTES >= pcm.length && this.done && sentence === this.lastSentence;
+      this.sendChunk(chunk, final);
+    }
+  }
+
+  private sendChunk(chunk: Uint8Array, final: boolean): void {
+    const seq = this.seq++;
+    const frame = new Uint8Array(AUDIO_HEADER_BYTES + chunk.length);
+    new DataView(frame.buffer).setUint32(0, seq, false); // BE seq
+    frame.set(chunk, AUDIO_HEADER_BYTES);
+    this.opts.sendBinary(frame);
+    // JSON fallback carries the same chunk so b64-only clients still play.
+    this.opts.send({
+      t: "tts",
+      seq,
+      pcm: Buffer.from(chunk).toString("base64"),
+      final,
+    });
+  }
 }

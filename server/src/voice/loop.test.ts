@@ -277,5 +277,88 @@ describe("VoiceLoop", () => {
     await loop.handleMessage({ t: "utterance_end" });
     expect(messages).toHaveLength(0);
   });
+
+  it("streaming llm: per-sentence tts, agent_speaking on before first chunk, monotonic seq, final chunk", async () => {
+    const ttsCalls: string[] = [];
+    const chunkPcm = pcmBytes(new Array(CHUNK_BYTES / 2 + 5).fill(7)); // 2 chunks per sentence
+    const { loop, db, messages } = await makeLoop({
+      stt: stubStt("hello there"),
+      tts: {
+        synthesizeToPcm: async (text) => {
+          ttsCalls.push(text);
+          return chunkPcm;
+        },
+      },
+      llm: {
+        chat: async () => { throw new Error("chat must not be used when streamChat exists"); },
+        streamChat: async (_m, _t, opts) => {
+          for (const d of ["One sentence here. ", "Another sentence follows. ", "trailing words"]) {
+            opts?.onText?.(d);
+          }
+          return { content: "One sentence here. Another sentence follows. trailing words", toolCalls: [] };
+        },
+      },
+    });
+    await loop.handleMessage(frame(0, pcmBytes([1])));
+    await loop.handleMessage({ t: "utterance_end" });
+
+    // cutSentences minChars=24: the short first sentence merges with the
+    // second into one cut sentence; the unpunctuated tail flushes as final.
+    expect(ttsCalls).toEqual(["One sentence here. Another sentence follows.", "trailing words"]);
+    // agent_speaking on precedes the first tts chunk
+    const firstOn = messages.findIndex((m) => m.t === "agent_speaking" && m.on);
+    const firstTts = messages.findIndex((m) => m.t === "tts");
+    expect(firstOn).toBeGreaterThanOrEqual(0);
+    expect(firstOn).toBeLessThan(firstTts);
+    const ttsMsgs = messages.filter((m) => m.t === "tts") as Extract<VoiceServerMessage, { t: "tts" }>[];
+    expect(ttsMsgs).toHaveLength(4); // 2 sentences x 2 chunks
+    // seq monotonic across sentences
+    expect(ttsMsgs.map((m) => m.seq)).toEqual([0, 1, 2, 3]);
+    // exactly one final chunk, at the end
+    expect(ttsMsgs.map((m) => m.final)).toEqual([false, false, false, true]);
+    // transcript persisted with the full reply
+    const turns = await db.selectFrom("turns").selectAll().orderBy("seq").execute();
+    expect(turns.at(-1)).toMatchObject({
+      speaker: "agent",
+      text: "One sentence here. Another sentence follows. trailing words",
+    });
+    // metrics still emitted
+    expect(messages.some((m) => m.t === "metrics")).toBe(true);
+  });
+
+  it("streaming llm: abort mid-stream stops further tts synthesis", async () => {
+    const ttsCalls: string[] = [];
+    let releaseStt: (() => void) | undefined;
+    let seenSignal: AbortSignal | undefined;
+    const { loop, messages } = await makeLoop({
+      stt: stubStt("go"),
+      tts: {
+        synthesizeToPcm: async (text) => {
+          ttsCalls.push(text);
+          return pcmBytes([1, 2, 3, 4, 5, 6]);
+        },
+      },
+      llm: {
+        chat: async () => ({ content: "x", toolCalls: [] }),
+        streamChat: (_m, _t, opts) =>
+          new Promise((resolve) => {
+            seenSignal = opts?.signal;
+            seenSignal?.addEventListener("abort", () =>
+              resolve({ content: "partial sentence", toolCalls: [] }),
+            );
+          }),
+      },
+    });
+    void releaseStt;
+    await loop.handleMessage(frame(0, pcmBytes([1])));
+    const pending = loop.handleMessage({ t: "utterance_end" });
+    await vi.waitFor(() => expect(seenSignal).toBeDefined());
+    loop.handleMessage({ t: "interrupt" });
+    await pending;
+    expect(ttsCalls).toHaveLength(0); // no sentence was synthesized before abort
+    expect(messages.some((m) => m.t === "tts")).toBe(false);
+    expect(messages.some((m) => m.t === "agent_speaking" && m.on === false)).toBe(true);
+    expect(messages.filter((m) => m.t === "metrics")).toHaveLength(0);
+  });
 });
 
