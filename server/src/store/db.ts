@@ -1,4 +1,5 @@
 import { Kysely, SqliteDialect, sql } from "kysely";
+import type { Generated } from "kysely";
 import { Database } from "bun:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
@@ -23,7 +24,7 @@ export interface DbSchema {
     source: "voice" | "text";
   };
   events: {
-    id: number;
+    id: Generated<number>;
     session_id: string;
     type: string;
     payload: string | null;
@@ -35,6 +36,12 @@ export interface DbSchema {
     coverage_pct: number;
     data: string;
     generated_at: string;
+  };
+  tool_state: {
+    id: string;
+    editor: string;
+    whiteboard: string;
+    updated_at: string;
   };
   documents: {
     id: string;
