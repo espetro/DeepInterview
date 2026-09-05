@@ -5,17 +5,9 @@ import * as React from "react";
 import { useStore } from "@nanostores/react";
 import { $draft } from "../../stores/session";
 import { createSession, uploadDocuments } from "../../lib/api";
-import * as v from "valibot";
-import { ProviderProfileSchema } from "@di/shared";
-import type { RuntimeMode } from "@di/shared";
 import { MicCheck } from "../../components/mic-check";
-import {
-  $effectiveRuntime,
-  $providerProfile,
-  $runtimeMode,
-  ensureRuntimeProbe,
-  redactKey,
-} from "../../lib/runtime";
+import { $effectiveRuntime, $providerProfile, ensureRuntimeProbe } from "../../lib/runtime";
+import { openSettings } from "../../components/settings-dialog";
 import { createClientSession } from "../../lib/opfs-store";
 import { resetClientSession } from "../../lib/agent/session-store";
 
@@ -53,19 +45,11 @@ function Setup() {
   const { locale } = useLocaleNav();
   const intl = useIntl();
   const draft = useStore($draft);
-  const runtimeMode = useStore($runtimeMode);
   const effectiveRuntime = useStore($effectiveRuntime);
   const profile = useStore($providerProfile);
   React.useEffect(() => {
     ensureRuntimeProbe();
   }, []);
-  const [baseUrl, setBaseUrl] = React.useState(profile?.baseUrl ?? "");
-  const [apiKey, setApiKey] = React.useState(profile?.apiKey ?? "");
-  const [llmModel, setLlmModel] = React.useState(profile?.llmModel ?? "");
-  const [ttsVoice, setTtsVoice] = React.useState(profile?.ttsVoice ?? "");
-  const [ttsModel, setTtsModel] = React.useState(profile?.ttsModel ?? "");
-  const [profileError, setProfileError] = React.useState<string | null>(null);
-  const [profileSaved, setProfileSaved] = React.useState(false);
   const navigate = useNavigate();
   const [files, setFiles] = React.useState<File[]>([]);
   const [error, setError] = React.useState<string | null>(null);
@@ -98,40 +82,13 @@ function Setup() {
     });
   }
 
-  function setMode(mode: RuntimeMode) {
-    $runtimeMode.set(mode);
-  }
-
-  function saveProfile(e: React.FormEvent) {
-    e.preventDefault();
-    setProfileSaved(false);
-    const parsed = v.safeParse(ProviderProfileSchema, {
-      baseUrl: baseUrl.trim(),
-      apiKey: apiKey.trim(),
-      llmModel: llmModel.trim(),
-      ttsVoice: ttsVoice.trim(),
-      ttsModel: ttsModel.trim(),
-    });
-    if (!parsed.success) {
-      const issue = parsed.issues[0];
-      const field = String(issue?.path?.[0]?.key ?? "");
-      if (field === "baseUrl")
-        setProfileError(intl.formatMessage({ id: "setup.profile.invalidUrl" }));
-      else setProfileError(intl.formatMessage({ id: "setup.profile.required" }));
-      return;
-    }
-    setProfileError(null);
-    $providerProfile.set(parsed.output);
-    setProfileSaved(true);
-  }
-
   async function start(validate: boolean) {
     setBusy(true);
     setError(null);
     try {
       const title =
         draft.title || PRESETS.find((p) => draft.prompt === p.prompt)?.id || "practice session";
-      if (effectiveRuntime === "client-only") {
+      if (effectiveRuntime !== "server") {
         resetClientSession();
         const session = await createClientSession({
           title,
@@ -344,140 +301,21 @@ function Setup() {
               </div>
             </section>
 
-            <section
-              className="rise-in mt-8"
-              style={{ "--rise-delay": "300ms" } as React.CSSProperties}
-            >
-              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
-                <FormattedMessage id="setup.runtime" />
-              </h2>
-              <div className="mt-3 flex gap-2">
-                <button
-                  onClick={() => setMode("local-server")}
-                  title={intl.formatMessage({
-                    id: "setup.runtime.localServerHint",
-                  })}
-                  className={`flex-1 rounded-full py-2 text-sm font-medium transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] ${
-                    runtimeMode === "local-server"
-                      ? "bg-espresso text-cream"
-                      : "bg-white ring-1 ring-hairline text-espresso-soft"
-                  }`}
-                >
-                  <FormattedMessage id="setup.runtime.localServer" />
-                </button>
-                <button
-                  onClick={() => setMode("client-only")}
-                  title={intl.formatMessage({
-                    id: "setup.runtime.clientOnlyHint",
-                  })}
-                  className={`flex-1 rounded-full py-2 text-sm font-medium transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] ${
-                    runtimeMode === "client-only"
-                      ? "bg-espresso text-cream"
-                      : "bg-white ring-1 ring-hairline text-espresso-soft"
-                  }`}
-                >
-                  <FormattedMessage id="setup.runtime.clientOnly" />
-                </button>
-              </div>
-            </section>
-
-            {(runtimeMode === "client-only" || effectiveRuntime === "client-only") && (
-              <form
-                onSubmit={saveProfile}
-                className="rise-in mt-8"
-                style={{ "--rise-delay": "320ms" } as React.CSSProperties}
+            {effectiveRuntime !== "server" && !profile?.llm && (
+              <section
+                className="rise-in mt-8 rounded-card bg-white/70 p-4 ring-1 ring-hairline"
+                style={{ "--rise-delay": "300ms" } as React.CSSProperties}
               >
-                <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
-                  <FormattedMessage id="setup.profile" />
-                </h2>
-                <div className="mt-3 space-y-3">
-                  <label className="block">
-                    <span className="text-xs text-espresso-soft">
-                      <FormattedMessage id="setup.profile.baseUrl" />
-                    </span>
-                    <input
-                      value={baseUrl}
-                      onChange={(e) => setBaseUrl(e.target.value)}
-                      placeholder={intl.formatMessage({
-                        id: "setup.profile.baseUrlPlaceholder",
-                      })}
-                      className="mt-1 w-full rounded-card bg-white px-4 py-2.5 text-sm ring-1 ring-hairline outline-none placeholder:text-espresso-soft focus:ring-2 focus:ring-persimmon/50"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-xs text-espresso-soft">
-                      <FormattedMessage id="setup.profile.apiKey" />
-                    </span>
-                    <input
-                      type="password"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      placeholder={
-                        profile
-                          ? intl.formatMessage(
-                              { id: "setup.profile.apiKeySaved" },
-                              { key: redactKey(profile.apiKey) },
-                            )
-                          : intl.formatMessage({
-                              id: "setup.profile.apiKeyPlaceholder",
-                            })
-                      }
-                      className="mt-1 w-full rounded-card bg-white px-4 py-2.5 text-sm ring-1 ring-hairline outline-none placeholder:text-espresso-soft focus:ring-2 focus:ring-persimmon/50"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-xs text-espresso-soft">
-                      <FormattedMessage id="setup.profile.llmModel" />
-                    </span>
-                    <input
-                      value={llmModel}
-                      onChange={(e) => setLlmModel(e.target.value)}
-                      placeholder={intl.formatMessage({
-                        id: "setup.profile.llmModelPlaceholder",
-                      })}
-                      className="mt-1 w-full rounded-card bg-white px-4 py-2.5 text-sm ring-1 ring-hairline outline-none placeholder:text-espresso-soft focus:ring-2 focus:ring-persimmon/50"
-                    />
-                  </label>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <label className="block">
-                      <span className="text-xs text-espresso-soft">
-                        <FormattedMessage id="setup.profile.ttsVoice" />
-                      </span>
-                      <input
-                        value={ttsVoice}
-                        onChange={(e) => setTtsVoice(e.target.value)}
-                        className="mt-1 w-full rounded-card bg-white px-4 py-2.5 text-sm ring-1 ring-hairline outline-none placeholder:text-espresso-soft focus:ring-2 focus:ring-persimmon/50"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-xs text-espresso-soft">
-                        <FormattedMessage id="setup.profile.ttsModel" />
-                      </span>
-                      <input
-                        value={ttsModel}
-                        onChange={(e) => setTtsModel(e.target.value)}
-                        className="mt-1 w-full rounded-card bg-white px-4 py-2.5 text-sm ring-1 ring-hairline outline-none placeholder:text-espresso-soft focus:ring-2 focus:ring-persimmon/50"
-                      />
-                    </label>
-                  </div>
-                  {profileError && (
-                    <p role="alert" className="text-sm text-persimmon-deep">
-                      {profileError}
-                    </p>
-                  )}
-                  {profileSaved && (
-                    <p className="text-sm text-sage">
-                      <FormattedMessage id="setup.profile.saved" />
-                    </p>
-                  )}
-                  <button
-                    type="submit"
-                    className="rounded-full bg-white px-6 py-2.5 text-sm font-medium ring-1 ring-hairline transition-fluid hover:ring-persimmon/50"
-                  >
-                    <FormattedMessage id="setup.profile.save" />
-                  </button>
-                </div>
-              </form>
+                <p className="text-sm text-espresso-soft">
+                  <FormattedMessage id="setup.needsProvider" />
+                </p>
+                <button
+                  onClick={() => openSettings("aiProvider")}
+                  className="mt-3 rounded-full bg-white px-5 py-2 text-sm font-medium ring-1 ring-hairline transition-fluid hover:ring-persimmon/50"
+                >
+                  <FormattedMessage id="setup.openProviderSettings" />
+                </button>
+              </section>
             )}
 
             <section
