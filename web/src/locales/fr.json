@@ -126,5 +126,12 @@
   "error.home": "retour à l'accueil",
   "notfound.title": "404",
   "notfound.message": "cette page n'existe pas — le lien est peut-être périmé ou l'adresse mal tapée.",
-  "notfound.home": "retour à l'accueil"
+  "notfound.home": "retour à l'accueil",
+  "account.language": "langue",
+  "account.history": "historique",
+  "account.settings": "paramètres",
+  "account.guest": "Invité",
+  "account.guestEmail": "session locale · sans compte",
+  "settings.title": "paramètres",
+  "settings.comingSoon": "configuration du fournisseur d'IA bientôt disponible"
 }

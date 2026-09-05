@@ -126,5 +126,12 @@
   "error.home": "العودة إلى الرئيسية",
   "notfound.title": "404",
   "notfound.message": "هذه الصفحة غير موجودة — قد يكون الرابط قديمًا أو العنوان مكتوبًا بشكل خاطئ.",
-  "notfound.home": "العودة إلى الرئيسية"
+  "notfound.home": "العودة إلى الرئيسية",
+  "account.language": "اللغة",
+  "account.history": "السجل",
+  "account.settings": "الإعدادات",
+  "account.guest": "زائر",
+  "account.guestEmail": "جلسة محلية · بدون حساب",
+  "settings.title": "الإعدادات",
+  "settings.comingSoon": "إعداد مزود الذكاء الاصطناعي قريبًا"
 }

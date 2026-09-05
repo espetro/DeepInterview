@@ -126,5 +126,12 @@
   "error.home": "voltar ao início",
   "notfound.title": "404",
   "notfound.message": "esta página não existe — o link pode estar desatualizado ou o endereço digitado errado.",
-  "notfound.home": "voltar ao início"
+  "notfound.home": "voltar ao início",
+  "account.language": "idioma",
+  "account.history": "histórico",
+  "account.settings": "configurações",
+  "account.guest": "Convidado",
+  "account.guestEmail": "sessão local · sem conta",
+  "settings.title": "configurações",
+  "settings.comingSoon": "configuração do provedor de IA em breve"
 }

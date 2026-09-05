@@ -126,5 +126,12 @@
   "error.home": "홈으로 돌아가기",
   "notfound.title": "404",
   "notfound.message": "이 페이지는 존재하지 않습니다. 링크가 오래되었거나 주소가 잘못 입력되었을 수 있습니다.",
-  "notfound.home": "홈으로 돌아가기"
+  "notfound.home": "홈으로 돌아가기",
+  "account.language": "언어",
+  "account.history": "기록",
+  "account.settings": "설정",
+  "account.guest": "게스트",
+  "account.guestEmail": "로컬 세션 · 계정 없음",
+  "settings.title": "설정",
+  "settings.comingSoon": "AI 공급자 설정이 곧 제공될 예정입니다"
 }

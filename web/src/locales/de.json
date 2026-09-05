@@ -126,5 +126,12 @@
   "error.home": "zurück zur Startseite",
   "notfound.title": "404",
   "notfound.message": "diese Seite existiert nicht — vielleicht ist der Link veraltet oder die Adresse war vertippt.",
-  "notfound.home": "zurück zur Startseite"
+  "notfound.home": "zurück zur Startseite",
+  "account.language": "Sprache",
+  "account.history": "Verlauf",
+  "account.settings": "Einstellungen",
+  "account.guest": "Gast",
+  "account.guestEmail": "lokale Sitzung · kein Konto",
+  "settings.title": "Einstellungen",
+  "settings.comingSoon": "KI-Anbieter-Konfiguration folgt in Kürze"
 }
