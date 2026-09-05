@@ -13,7 +13,12 @@ import { $providerProfile, redactKey } from "../lib/runtime";
 import { synthesizeSpeech } from "../lib/agent/tts";
 import { createOpenAiCompatibleModel } from "../lib/agent/openai-compatible-provider";
 import { useStore } from "@nanostores/react";
+import { Button } from "./vendor/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./vendor/dialog";
+import { Input } from "./vendor/input";
+import { Label } from "./vendor/label";
+import { RadioGroup, RadioGroupItem } from "./vendor/radio-group";
+import { Tabs, TabsList, TabsTrigger } from "./vendor/tabs";
 
 /**
  * Centered settings dialog, brioso-style: glass panel with a left nav
@@ -178,11 +183,7 @@ function draftFromEndpoint(endpoint: ProviderEndpoint | TtsEndpoint | undefined)
 type SectionKey = "stt" | "tts" | "llm";
 type TestState = { status: "idle" | "running" | "ok" | "err"; message?: string };
 
-const inputClass =
-  "mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring";
 const fieldClass = "block text-xs text-muted-foreground";
-const testButtonClass =
-  "rounded-md border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted disabled:opacity-50";
 
 /** /models probe shared by all sections: the endpoint class is the same. */
 async function probeModels(draft: SectionDraft): Promise<void> {
@@ -321,46 +322,31 @@ function AiProviderPane() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-1.5">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setTab(t.key)}
-            className={
-              "rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
-              (tab === t.key
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted")
-            }
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs value={tab} onValueChange={(value) => setTab(value as SectionKey)}>
+        <TabsList className="rounded-full">
+          {tabs.map((t) => (
+            <TabsTrigger key={t.key} value={t.key} className="rounded-full px-3 text-xs">
+              {t.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       <div className="space-y-3 rounded-lg border border-border p-3">
-        <div className="flex gap-4">
-          <label className="flex items-center gap-1.5 text-sm">
-            <input
-              type="radio"
-              name={`${tab}-mode`}
-              checked={!draft.enabled}
-              onChange={() => update({ enabled: false })}
-              disabled={tab === "llm"}
-            />
+        <RadioGroup
+          value={draft.enabled ? "custom" : "browser"}
+          onValueChange={(value) => update({ enabled: value === "custom" })}
+          className="flex gap-4"
+        >
+          <Label className="flex items-center gap-1.5 text-sm font-normal">
+            <RadioGroupItem value="browser" disabled={tab === "llm"} />
             <FormattedMessage id="settings.inBrowser" />
-          </label>
-          <label className="flex items-center gap-1.5 text-sm">
-            <input
-              type="radio"
-              name={`${tab}-mode`}
-              checked={draft.enabled}
-              onChange={() => update({ enabled: true })}
-            />
+          </Label>
+          <Label className="flex items-center gap-1.5 text-sm font-normal">
+            <RadioGroupItem value="custom" />
             <FormattedMessage id="settings.customEndpoint" />
-          </label>
-        </div>
+          </Label>
+        </RadioGroup>
         {tab === "llm" && !draft.enabled && (
           <p className="text-xs text-muted-foreground">
             <FormattedMessage id="settings.llmRequired" />
@@ -373,18 +359,18 @@ function AiProviderPane() {
               <span className={fieldClass}>
                 <FormattedMessage id="settings.baseUrl" />
               </span>
-              <input
+              <Input
                 value={draft.baseUrl}
                 onChange={(e) => update({ baseUrl: e.target.value })}
                 placeholder="https://api.openai.com/v1"
-                className={inputClass}
+                className="mt-1"
               />
             </label>
             <label className="block">
               <span className={fieldClass}>
                 <FormattedMessage id="settings.apiKey" />
               </span>
-              <input
+              <Input
                 type="password"
                 value={draft.apiKey}
                 onChange={(e) => update({ apiKey: e.target.value })}
@@ -396,17 +382,17 @@ function AiProviderPane() {
                       )
                     : ""
                 }
-                className={inputClass}
+                className="mt-1"
               />
             </label>
             <label className="block">
               <span className={fieldClass}>
                 <FormattedMessage id="settings.model" />
               </span>
-              <input
+              <Input
                 value={draft.model}
                 onChange={(e) => update({ model: e.target.value })}
-                className={inputClass}
+                className="mt-1"
               />
             </label>
             {tab === "tts" && (
@@ -414,10 +400,10 @@ function AiProviderPane() {
                 <span className={fieldClass}>
                   <FormattedMessage id="settings.voice" />
                 </span>
-                <input
+                <Input
                   value={draft.voice}
                   onChange={(e) => update({ voice: e.target.value })}
-                  className={inputClass}
+                  className="mt-1"
                 />
               </label>
             )}
@@ -425,14 +411,15 @@ function AiProviderPane() {
         )}
 
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => void runTest()}
             disabled={!draft.enabled || testing === tab}
-            className={testButtonClass}
           >
             {testing === tab ? "…" : <FormattedMessage id="settings.test" />}
-          </button>
+          </Button>
           {state?.status === "ok" && (
             <span className="text-xs text-emerald-600">
               ok{state.message ? `: ${state.message}` : ""}
@@ -452,14 +439,9 @@ function AiProviderPane() {
           <FormattedMessage id="settings.saved" />
         </p>
       )}
-      <button
-        type="button"
-        onClick={save}
-        disabled={!canSave}
-        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity disabled:opacity-50"
-      >
+      <Button type="button" onClick={save} disabled={!canSave}>
         <FormattedMessage id="settings.save" />
-      </button>
+      </Button>
     </div>
   );
 }
@@ -503,20 +485,20 @@ export function SettingsDialog({ open, onOpenChange, pane, onPaneChange }: Setti
         </DialogDescription>
         <nav className="flex w-44 shrink-0 flex-col gap-0.5 border-r border-border p-3">
           {tabs.map((tab) => (
-            <button
+            <Button
               key={tab.id}
-              type="button"
-              onClick={() => onPaneChange(tab.id)}
+              variant="ghost"
               className={
-                "flex items-center gap-2 rounded-lg px-2.5 py-2.5 text-left text-sm transition-colors " +
+                "justify-start gap-2 px-2.5 py-2.5 text-sm font-normal " +
                 (pane === tab.id
                   ? "bg-accent font-medium text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground")
+                  : "text-muted-foreground")
               }
+              onClick={() => onPaneChange(tab.id)}
             >
               {tab.icon}
               {tab.label}
-            </button>
+            </Button>
           ))}
         </nav>
         <div className="m-2 ml-0 flex-1 overflow-y-auto rounded-xl bg-card p-5 ring-1 ring-hairline">
