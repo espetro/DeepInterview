@@ -7,7 +7,7 @@
     "di": "./src/cli.ts"
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "bun run --bun vitest run",
     "typecheck": "tsc --noEmit --checkers 1"
   },
   "dependencies": {
