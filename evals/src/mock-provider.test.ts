@@ -25,8 +25,10 @@ describe("mock provider", () => {
       }),
     });
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.choices[0].message.content).toBe(fixture.chat[0].content);
+    const body = (await res.json()) as {
+      choices: { message: { content: string } }[];
+    };
+    expect(body.choices[0]?.message.content).toBe(fixture.chat[0]?.content);
   });
 
   it("POST /v1/audio/transcriptions returns fixture text", async () => {
@@ -60,7 +62,7 @@ describe("mock provider", () => {
   it("GET /v1/models lists fixture models", async () => {
     const res = await fetch(`${base}/v1/models`);
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data.map((m: { id: string }) => m.id)).toEqual(fixture.models);
+    const body = (await res.json()) as { data: { id: string }[] };
+    expect(body.data.map((m) => m.id)).toEqual(fixture.models);
   });
 });
