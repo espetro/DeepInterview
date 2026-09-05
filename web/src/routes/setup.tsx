@@ -15,6 +15,8 @@ import {
   ensureRuntimeProbe,
   redactKey,
 } from "../lib/runtime";
+import { createClientSession } from "../lib/opfs-store";
+import { resetClientSession } from "../lib/agent/session-store";
 
 const MAX_FILES = 10;
 const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
@@ -134,11 +136,26 @@ function Setup() {
     setBusy(true);
     setError(null);
     try {
+      const title =
+        draft.title ||
+        PRESETS.find((p) => draft.prompt === p.prompt)?.id ||
+        "practice session";
+      if (effectiveRuntime === "client-only") {
+        resetClientSession();
+        const session = await createClientSession({
+          title,
+          mode: draft.mode,
+          duration_min: draft.durationMin,
+        });
+        // no ingestion pipeline client-side: uploaded files are dropped.
+        navigate({
+          to: validate ? "/validate/$id" : "/interview/$id",
+          params: { id: session.id },
+        });
+        return;
+      }
       const session = await createSession({
-        title:
-          draft.title ||
-          PRESETS.find((p) => draft.prompt === p.prompt)?.id ||
-          "practice session",
+        title,
         mode: draft.mode,
         duration_min: draft.durationMin,
       });

@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useStore } from "@nanostores/react";
 import { FormattedMessage } from "react-intl";
 import { getSession, getTurns } from "../lib/api";
 import type { TurnDto } from "../lib/api";
+import { $effectiveRuntime } from "../lib/runtime";
+import { getClientSession, getClientTurns } from "../lib/opfs-store";
 
 function formatTimestamp(createdAt: string) {
   const d = new Date(createdAt);
@@ -33,14 +36,30 @@ export const Route = createFileRoute("/finish/$id")({
 function Finish() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { data: session } = useQuery({
+  const effectiveRuntime = useStore($effectiveRuntime);
+  const clientOnly = effectiveRuntime === "client-only";
+  const { data: serverSession } = useQuery({
     queryKey: ["session", id],
     queryFn: () => getSession(id),
+    enabled: !clientOnly,
   });
-  const { data: turns } = useQuery({
+  const { data: serverTurns } = useQuery({
     queryKey: ["turns", id],
     queryFn: () => getTurns(id),
+    enabled: !clientOnly,
   });
+  const { data: clientSession } = useQuery({
+    queryKey: ["client-session", id],
+    queryFn: () => getClientSession(id),
+    enabled: clientOnly,
+  });
+  const { data: clientTurns } = useQuery({
+    queryKey: ["client-turns", id],
+    queryFn: () => getClientTurns(id),
+    enabled: clientOnly,
+  });
+  const session = clientOnly ? clientSession : serverSession;
+  const turns = clientOnly ? clientTurns : serverTurns;
 
   function downloadMarkdown() {
     if (!session) return;
