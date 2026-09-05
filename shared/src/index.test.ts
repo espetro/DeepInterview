@@ -36,9 +36,9 @@ describe("ConfigSchema", () => {
       server: { port: 0 },
     });
     expect(r.success).toBe(false);
-    expect(describeConfigError((r as v.FailureOutput).issues)).toContain(
-      "server.port",
-    );
+    if (!r.success) {
+      expect(describeConfigError(r.issues)).toContain("server.port");
+    }
   });
 
   it("rejects an invalid stt mode", () => {
