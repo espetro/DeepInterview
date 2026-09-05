@@ -1,12 +1,25 @@
 import { useEffect } from "react";
-import { Outlet, createRootRoute, HeadContent, Scripts, useLocation } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+import {
+  Link,
+  Outlet,
+  createRootRoute,
+  HeadContent,
+  Scripts,
+  useLocation,
+  useRouter,
+} from "@tanstack/react-router";
 import { FormattedMessage } from "react-intl";
+import { AlertTriangle } from "lucide-react";
 import { AppIntlProvider, useIsRtl } from "../locales/i18n";
 import { AppHeader } from "../components/app-header";
+import { localeFromPathname, withLocale } from "../lib/locale-href";
 import "../theme.css";
 
 export const Route = createRootRoute({
   component: RootDocument,
+  errorComponent: RouteError,
+  notFoundComponent: NotFound,
 });
 
 function RootDocument() {
@@ -30,6 +43,84 @@ function RootDocument() {
         <Scripts />
       </body>
     </html>
+  );
+}
+
+/**
+ * Root-route fallback screens. They render in place of the tree, so they
+ * cannot rely on AppIntlProvider being mounted; each wraps itself in
+ * ErrorShell, which mounts its own IntlProvider bound to the URL locale.
+ */
+function RouteError({ error, reset }: { error: unknown; reset?: () => void }) {
+  const router = useRouter();
+  const message = error instanceof Error ? error.message : "an unexpected error occurred";
+  const retry = () => {
+    if (reset) reset();
+    else void router.invalidate();
+  };
+  return (
+    <ErrorShell>
+      <div className="flex flex-col items-center gap-4 text-center">
+        <AlertTriangle className="h-10 w-10 text-persimmon" aria-hidden="true" />
+        <h1 className="font-display text-3xl font-semibold">
+          <FormattedMessage id="error.title" />
+        </h1>
+        <p className="max-w-md rounded-card bg-cream-deep px-5 py-3 font-mono text-xs break-words text-espresso-soft">
+          {message}
+        </p>
+        <div className="mt-2 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={retry}
+            className="rounded-full bg-gradient-to-br from-persimmon to-persimmon-deep px-5 py-2 text-sm font-medium text-white ring-1 ring-hairline transition-fluid hover:brightness-110 active:scale-[0.98]"
+          >
+            <FormattedMessage id="error.retry" />
+          </button>
+          <ErrorHomeLink />
+        </div>
+      </div>
+    </ErrorShell>
+  );
+}
+
+function NotFound() {
+  return (
+    <ErrorShell>
+      <div className="flex flex-col items-center gap-4 text-center">
+        <p className="font-display text-8xl font-bold tracking-tight text-espresso">
+          4<span className="text-persimmon">0</span>4
+        </p>
+        <p className="max-w-md text-sm text-espresso-soft">
+          <FormattedMessage id="notfound.message" />
+        </p>
+        <div className="mt-2">
+          <ErrorHomeLink />
+        </div>
+      </div>
+    </ErrorShell>
+  );
+}
+
+function ErrorHomeLink() {
+  const locale = localeFromPathname(useLocation({ select: (l) => l.pathname }));
+  return (
+    <Link
+      to={withLocale(locale, "/") as "/{-$locale}"}
+      className="text-sm text-espresso-soft underline decoration-hairline underline-offset-4 transition-fluid hover:text-espresso"
+    >
+      <FormattedMessage id="error.home" />
+    </Link>
+  );
+}
+
+/** Full-page shell with its own IntlProvider (URL-derived locale, en fallback). */
+function ErrorShell({ children }: { children: ReactNode }) {
+  return (
+    <AppIntlProvider>
+      <div className="ambient grain flex min-h-[100dvh] flex-col items-center justify-center bg-cream px-4">
+        {children}
+      </div>
+    </AppIntlProvider>
   );
 }
 

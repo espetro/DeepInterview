@@ -119,5 +119,12 @@
   "setup.profile.saved": "تم حفظ ملف المزود",
   "setup.profile.missing": "اضبط ملف المزود لإجراء المقابلات في المتصفح",
   "setup.profile.invalidUrl": "يجب أن يكون عنوان URL الأساسي صالحًا",
-  "setup.profile.required": "هذا الحقل مطلوب"
+  "setup.profile.required": "هذا الحقل مطلوب",
+  "error.title": "حدث خطأ ما",
+  "error.message": "حدث خطأ غير متوقع أثناء عرض هذه الصفحة.",
+  "error.retry": "حاول مجددًا",
+  "error.home": "العودة إلى الرئيسية",
+  "notfound.title": "404",
+  "notfound.message": "هذه الصفحة غير موجودة — قد يكون الرابط قديمًا أو العنوان مكتوبًا بشكل خاطئ.",
+  "notfound.home": "العودة إلى الرئيسية"
 }

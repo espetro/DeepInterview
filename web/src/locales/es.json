@@ -119,5 +119,12 @@
   "setup.profile.saved": "perfil de proveedor guardado",
   "setup.profile.missing": "configura un perfil de proveedor para entrevistas en el navegador",
   "setup.profile.invalidUrl": "la URL base debe ser una URL válida",
-  "setup.profile.required": "este campo es obligatorio"
+  "setup.profile.required": "este campo es obligatorio",
+  "error.title": "algo salió mal",
+  "error.message": "ocurrió un error inesperado al mostrar esta página.",
+  "error.retry": "intentar de nuevo",
+  "error.home": "volver al inicio",
+  "notfound.title": "404",
+  "notfound.message": "esta página no existe — puede que el enlace esté caducado o la dirección mal escrita.",
+  "notfound.home": "volver al inicio"
 }

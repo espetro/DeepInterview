@@ -119,5 +119,12 @@
   "setup.profile.saved": "Provider-Profil gespeichert",
   "setup.profile.missing": "konfiguriere ein Provider-Profil für Interviews im Browser",
   "setup.profile.invalidUrl": "die Basis-URL muss eine gültige URL sein",
-  "setup.profile.required": "dieses Feld ist erforderlich"
+  "setup.profile.required": "dieses Feld ist erforderlich",
+  "error.title": "etwas ist schiefgelaufen",
+  "error.message": "beim Rendern dieser Seite ist ein unerwarteter Fehler aufgetreten.",
+  "error.retry": "erneut versuchen",
+  "error.home": "zurück zur Startseite",
+  "notfound.title": "404",
+  "notfound.message": "diese Seite existiert nicht — vielleicht ist der Link veraltet oder die Adresse war vertippt.",
+  "notfound.home": "zurück zur Startseite"
 }
