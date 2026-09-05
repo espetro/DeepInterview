@@ -61,7 +61,10 @@ export const CONFIG_ENV_PREFIX = "DI_";
 export const CONFIG_ENV_SEPARATOR = "__";
 
 export function describeConfigError(
-  issues: v.InferIssue<typeof ConfigSchema>,
+  issues: [
+    v.InferIssue<typeof ConfigSchema>,
+    ...v.InferIssue<typeof ConfigSchema>[],
+  ],
 ): string {
   return issues
     .map((i) => {
