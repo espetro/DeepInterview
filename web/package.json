@@ -24,8 +24,6 @@
     "@formisch/react": "^1",
     "@nanostores/persistent": "^1",
     "@nanostores/react": "^1",
-    "@radix-ui/react-avatar": "^1.2.6",
-    "@radix-ui/react-dialog": "^1.1.23",
     "@ricky0123/vad-web": "^0.0.30",
     "@tanstack/react-query": "^5",
     "@tanstack/react-router": "^1",
