@@ -44,6 +44,29 @@
   /* radii */
   --radius-card: 1.5rem;
   --radius-shell: 2rem;
+
+  /* shadcn semantic tokens, mapped to the di palette so vendor primitives
+     (bg-popover, focus:bg-accent, border, ring…) resolve. Opaque surfaces
+     per the reference design; borders are solid warm neutrals. */
+  --color-background: #fdfbf9; /* cream */
+  --color-foreground: #2b2118; /* espresso */
+  --color-card: #fffdfb; /* paper */
+  --color-card-foreground: #2b2118;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #2b2118;
+  --color-primary: #2b2118; /* espresso, like the reference's dark pill */
+  --color-primary-foreground: #fdfbf9;
+  --color-secondary: #f7f1ea; /* cream-deep */
+  --color-secondary-foreground: #2b2118;
+  --color-muted: #f4eee6;
+  --color-muted-foreground: #6b5d4f; /* espresso-soft */
+  --color-accent: #f4eee6;
+  --color-accent-foreground: #2b2118;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #ece3d8;
+  --color-input: #ece3d8;
+  --color-ring: #ff6f1e; /* persimmon */
 }
 
 /* base */
