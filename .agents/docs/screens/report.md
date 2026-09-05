@@ -43,6 +43,16 @@
 - **Practice weak areas ->** coach CTA seeds a coach session (M5; rendered disabled with tooltip in M1).
 - Scoring is async (ScoringPoll pattern): if report not ready, show pending state and poll.
 
+- **Client-only runtime** (ADR-0003, `$effectiveRuntime === "client-only"`):
+  no server-side scoring exists to poll. This screen first checks
+  `web/src/lib/opfs-store.ts#getClientReport`; on a miss it scores the OPFS
+  transcript itself via `web/src/lib/agent/report-generator.ts#generateReport`
+  (one `generateObject` call against the BYO provider, constrained to
+  `ReportSchema` from `shared/src/report.ts`) and persists the result with
+  `saveClientReport` before rendering — same "pending -> scored" UI either
+  way, just a different producer.
+
 ## URL / state
 
-- `id` path param: session id. Report via TanStack Query (GET /v1/sessions/[id]/report).
+- `id` path param: session id. Report via TanStack Query (GET /v1/sessions/[id]/report,
+  or the client-only path above when there is no server).
