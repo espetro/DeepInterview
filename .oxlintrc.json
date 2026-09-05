@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error"
+  },
+  "plugins": ["import", "typescript"],
+  "rules": {
+    "typescript/consistent-type-definitions": ["error", "interface"],
+    "import/no-cycle": "error",
+    "import/first": "error",
+    "import/no-duplicates": "error",
+    "import/newline-after-import": "error",
+    "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
+    "sort-imports": ["warn", { "ignoreDeclarationSort": true }]
+  }
+}

@@ -1,6 +1,8 @@
 [tools]
 bun = "latest"
 node = "24"
+lefthook = "latest"
+turbo = "latest"
 
 [env]
 _.file = ".env"
@@ -32,27 +34,21 @@ echo "== web =="
 (cd web && bunx vitest run)
 """
 
-[tasks.check]
-description = "Heavy verification lane: full vitest + web typecheck, serialized to avoid stacked memory pressure"
-run = """
-set -e
-LOCK=/tmp/.di-check.lock
-# shlock is stock macOS; stale locks from dead pids are auto-removed by shlock -p
-shlock -f "$LOCK" -p $$ || {
-  echo "another check is running (pid $(cat "$LOCK" 2>/dev/null)); waiting..."
-  i=0
-  while ! shlock -f "$LOCK" -p $$; do
-    i=$((i+1)); [ $i -gt 240 ] && { echo "timed out waiting for lock"; exit 1; }
-    sleep 5
-  done
-}
-trap 'rm -f "$LOCK"' EXIT
-# cap runaway type-checker RSS (tsgo/tsc are the heavy part); skip GOGC tuning
-export GOMEMLIMIT=2GiB
-mise run test
-echo "== web typecheck =="
-cd web && bunx tsc --noEmit
-"""
+[tasks."validate:staged"]
+description = "T0: staged-file-scale gate (<2s) — oxfmt/oxlint/import-paths/agents-md-length. Runs in pre-commit."
+run = "bun scripts/validate.ts --staged"
+
+[tasks."validate:quick"]
+description = "T1: fast in-loop gate (~10s, no test/typecheck) — T0 + ast-grep scan + ratchets. Safe to run freely per change."
+run = "bun scripts/validate.ts --quick"
+
+[tasks.validate]
+description = "T2: T1 + turbo typecheck/test for files affected since origin/main, queued through task-spooler (ts -S 1) so concurrent invocations never stack tsgo processes. Runs in pre-push."
+run = "bun scripts/validate.ts"
+
+[tasks."validate:full"]
+description = "T3: milestone gate — T2 + full-repo turbo typecheck/test + knip. Slow; run before merging a batch of work, not per-commit. CI equivalent."
+run = "bun scripts/validate.ts --full"
 
 [tasks.release]
 description = "Build per-OS release archives into dist/releases/ (requires mise run build first)"
@@ -69,7 +65,7 @@ run = "bun run --bun vitest run"
 dir = "evals"
 
 [tasks.logs]
-description = "Tail .di/logs/*.log with pino pretty printing via jq"
+description = "Tail .di/logs/*.log, pretty-printing JSON lines via jq (no logger dependency — the server just writes ndjson)"
 run = '''
 tail -n 100 -f .di/logs/*.log | jq -rR --unbuffered '
   fromjson? | "\(.time // .timestamp // "") [\(.level // "")] \(.msg // .)" // .]'
