@@ -43,7 +43,9 @@ export async function main(argv: string[]): Promise<number> {
 
   const app = await createApp({ config, db, testMode, webAssets });
   const server = serveApp(app, config.server.port, { config, db });
-  console.log(`[di] listening on http://localhost:${config.server.port}${testMode ? " (test mode)" : ""}`);
+  console.log(
+    `[di] listening on http://localhost:${config.server.port}${testMode ? " (test mode)" : ""}`,
+  );
 
   const shutdown = async () => {
     console.log("\n[di] shutting down");
@@ -82,7 +84,10 @@ export async function main(argv: string[]): Promise<number> {
   return 0; // unreachable, satisfies noImplicitReturns
 }
 
-async function check(config: Awaited<ReturnType<typeof loadConfig>>, configPath: string): Promise<number> {
+async function check(
+  config: Awaited<ReturnType<typeof loadConfig>>,
+  configPath: string,
+): Promise<number> {
   const results: Array<[string, boolean, string]> = [];
 
   // Config was already loaded by main() before reaching here.
@@ -136,7 +141,12 @@ function releaseAssetDir(rel: string): string {
   // `bun build --compile` binary it is a virtual path, so prefer cwd first.
   // In a repo checkout the assets live at the repo root, which may be one or
   // two levels above cwd (e.g. when run from server/).
-  const bases = [process.cwd(), import.meta.dir, `${process.cwd()}/..`, `${import.meta.dir}/..`];
+  const bases = [
+    process.cwd(),
+    import.meta.dir,
+    `${process.cwd()}/..`,
+    `${import.meta.dir}/..`,
+  ];
   for (const base of bases) {
     const candidate = join(base, rel);
     if (existsSync(candidate)) return candidate;

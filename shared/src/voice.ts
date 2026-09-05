@@ -30,7 +30,9 @@ export type AudioFrameMessage = v.InferOutput<typeof AudioFrameMessageSchema>;
 export const UtteranceEndMessageSchema = v.object({
   t: v.literal("utterance_end"),
 });
-export type UtteranceEndMessage = v.InferOutput<typeof UtteranceEndMessageSchema>;
+export type UtteranceEndMessage = v.InferOutput<
+  typeof UtteranceEndMessageSchema
+>;
 
 export const MuteMessageSchema = v.object({
   t: v.literal("mute"),
@@ -48,19 +50,25 @@ export const AgentSpeakingMessageSchema = v.object({
   t: v.literal("agent_speaking"),
   on: v.boolean(),
 });
-export type AgentSpeakingMessage = v.InferOutput<typeof AgentSpeakingMessageSchema>;
+export type AgentSpeakingMessage = v.InferOutput<
+  typeof AgentSpeakingMessageSchema
+>;
 
 export const UserTranscriptMessageSchema = v.object({
   t: v.literal("user_transcript"),
   turn: TurnSchema,
 });
-export type UserTranscriptMessage = v.InferOutput<typeof UserTranscriptMessageSchema>;
+export type UserTranscriptMessage = v.InferOutput<
+  typeof UserTranscriptMessageSchema
+>;
 
 export const AgentTranscriptMessageSchema = v.object({
   t: v.literal("agent_transcript"),
   turn: TurnSchema,
 });
-export type AgentTranscriptMessage = v.InferOutput<typeof AgentTranscriptMessageSchema>;
+export type AgentTranscriptMessage = v.InferOutput<
+  typeof AgentTranscriptMessageSchema
+>;
 
 export const TtsMessageSchema = v.object({
   t: v.literal("tts"),

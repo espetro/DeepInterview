@@ -51,10 +51,14 @@ export class OpenAiChatClient {
         message_count: messages.length,
         tool_count: tools?.length ?? 0,
       })
-      .catch((err) => console.warn(`[voice] failed to log llm.request: ${err}`));
+      .catch((err) =>
+        console.warn(`[voice] failed to log llm.request: ${err}`),
+      );
     const startedAt = Date.now();
 
-    const headers: Record<string, string> = { "content-type": "application/json" };
+    const headers: Record<string, string> = {
+      "content-type": "application/json",
+    };
     if (this.opts.apiKey) {
       headers.authorization = `Bearer ${this.opts.apiKey}`;
     }
@@ -77,12 +81,24 @@ export class OpenAiChatClient {
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       events
-        ?.postEvent(sessionId!, "llm.failed", { status: res.status, body, latency_ms })
+        ?.postEvent(sessionId!, "llm.failed", {
+          status: res.status,
+          body,
+          latency_ms,
+        })
         .catch(() => undefined);
       throw new Error(`llm chat failed: ${res.status} ${body}`);
     }
     const json = (await res.json()) as {
-      choices?: { message?: { content?: string; tool_calls?: { id: string; function: { name: string; arguments: string } }[] } }[];
+      choices?: {
+        message?: {
+          content?: string;
+          tool_calls?: {
+            id: string;
+            function: { name: string; arguments: string };
+          }[];
+        };
+      }[];
     };
     const message = json.choices?.[0]?.message;
     const toolCalls = (message?.tool_calls ?? []).map((tc) => ({
@@ -120,10 +136,14 @@ export class OpenAiChatClient {
         tool_count: tools?.length ?? 0,
         stream: true,
       })
-      .catch((err) => console.warn(`[voice] failed to log llm.request: ${err}`));
+      .catch((err) =>
+        console.warn(`[voice] failed to log llm.request: ${err}`),
+      );
     const startedAt = Date.now();
 
-    const headers: Record<string, string> = { "content-type": "application/json" };
+    const headers: Record<string, string> = {
+      "content-type": "application/json",
+    };
     if (this.opts.apiKey) {
       headers.authorization = `Bearer ${this.opts.apiKey}`;
     }
@@ -146,7 +166,11 @@ export class OpenAiChatClient {
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       events
-        ?.postEvent(sessionId!, "llm.failed", { status: res.status, body, latency_ms: Date.now() - startedAt })
+        ?.postEvent(sessionId!, "llm.failed", {
+          status: res.status,
+          body,
+          latency_ms: Date.now() - startedAt,
+        })
         .catch(() => undefined);
       throw new Error(`llm chat failed: ${res.status} ${body}`);
     }
@@ -154,8 +178,13 @@ export class OpenAiChatClient {
     let content = "";
     let firstTokenAt: number | undefined;
     /** Tool calls keyed by delta index; arguments arrive as fragments. */
-    const toolAcc = new Map<number, { id: string; name: string; args: string }>();
-    let sawSse = (res.headers.get("content-type") ?? "").includes("text/event-stream");
+    const toolAcc = new Map<
+      number,
+      { id: string; name: string; args: string }
+    >();
+    let sawSse = (res.headers.get("content-type") ?? "").includes(
+      "text/event-stream",
+    );
 
     if (sawSse && res.body) {
       const reader = res.body.getReader();
@@ -167,7 +196,11 @@ export class OpenAiChatClient {
         if (data === "" || data === "[DONE]") return;
         let delta: {
           content?: string;
-          tool_calls?: { index: number; id?: string; function?: { name?: string; arguments?: string } }[];
+          tool_calls?: {
+            index: number;
+            id?: string;
+            function?: { name?: string; arguments?: string };
+          }[];
         };
         try {
           delta = JSON.parse(data).choices?.[0]?.delta ?? {};
@@ -209,7 +242,11 @@ export class OpenAiChatClient {
         // A stream error after headers may still carry partial content.
         if (content === "" && toolAcc.size === 0) {
           events
-            ?.postEvent(sessionId!, "llm.failed", { status: res.status, error: String(err), latency_ms: Date.now() - startedAt })
+            ?.postEvent(sessionId!, "llm.failed", {
+              status: res.status,
+              error: String(err),
+              latency_ms: Date.now() - startedAt,
+            })
             .catch(() => undefined);
           throw err;
         }
@@ -218,7 +255,15 @@ export class OpenAiChatClient {
       // Gateway ignored stream:true: parse as a normal completion.
       sawSse = false;
       const json = (await res.json()) as {
-        choices?: { message?: { content?: string; tool_calls?: { id: string; function: { name: string; arguments: string } }[] } }[];
+        choices?: {
+          message?: {
+            content?: string;
+            tool_calls?: {
+              id: string;
+              function: { name: string; arguments: string };
+            }[];
+          };
+        }[];
       };
       const message = json.choices?.[0]?.message;
       content = message?.content ?? "";
@@ -228,7 +273,11 @@ export class OpenAiChatClient {
         opts?.onText?.(content);
       }
       for (const [i, tc] of (message?.tool_calls ?? []).entries()) {
-        toolAcc.set(i, { id: tc.id, name: tc.function.name, args: tc.function.arguments });
+        toolAcc.set(i, {
+          id: tc.id,
+          name: tc.function.name,
+          args: tc.function.arguments,
+        });
       }
     }
 
@@ -236,7 +285,8 @@ export class OpenAiChatClient {
       .sort(([a], [b]) => a - b)
       .filter(([, tc]) => tc.name !== "")
       .map(([, tc]) => ({ name: tc.name, args: parseToolArgs(tc.args) }));
-    const ttft_ms = firstTokenAt === undefined ? undefined : firstTokenAt - startedAt;
+    const ttft_ms =
+      firstTokenAt === undefined ? undefined : firstTokenAt - startedAt;
     events
       ?.postEvent(sessionId!, "llm.result", {
         text_length: content.length,

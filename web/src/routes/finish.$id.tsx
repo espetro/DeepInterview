@@ -10,7 +10,10 @@ function formatTimestamp(createdAt: string) {
 }
 
 function transcriptToMarkdown(session: { title: string }, turns: TurnDto[]) {
-  const lines = turns.map((t) => `**${t.speaker}** (${t.source}, ${formatTimestamp(t.created_at)}): ${t.text}`);
+  const lines = turns.map(
+    (t) =>
+      `**${t.speaker}** (${t.source}, ${formatTimestamp(t.created_at)}): ${t.text}`,
+  );
   return `# ${session.title}\n\n${lines.join("\n\n")}\n`;
 }
 
@@ -29,17 +32,33 @@ export const Route = createFileRoute("/finish/$id")({
 function Finish() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { data: session } = useQuery({ queryKey: ["session", id], queryFn: () => getSession(id) });
-  const { data: turns } = useQuery({ queryKey: ["turns", id], queryFn: () => getTurns(id) });
+  const { data: session } = useQuery({
+    queryKey: ["session", id],
+    queryFn: () => getSession(id),
+  });
+  const { data: turns } = useQuery({
+    queryKey: ["turns", id],
+    queryFn: () => getTurns(id),
+  });
 
   function downloadMarkdown() {
     if (!session) return;
-    download(`transcript-${id}.md`, new Blob([transcriptToMarkdown(session, turns ?? [])], { type: "text/markdown" }));
+    download(
+      `transcript-${id}.md`,
+      new Blob([transcriptToMarkdown(session, turns ?? [])], {
+        type: "text/markdown",
+      }),
+    );
   }
 
   function downloadJson() {
     setMenuOpen(false);
-    download(`transcript-${id}.json`, new Blob([JSON.stringify(turns ?? [], null, 2)], { type: "application/json" }));
+    download(
+      `transcript-${id}.json`,
+      new Blob([JSON.stringify(turns ?? [], null, 2)], {
+        type: "application/json",
+      }),
+    );
   }
 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -47,7 +66,8 @@ function Finish() {
   useEffect(() => {
     if (!menuOpen) return;
     const onClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target as Node))
+        setMenuOpen(false);
     };
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
@@ -56,12 +76,30 @@ function Finish() {
   return (
     <div className="ambient grain flex min-h-[100dvh] items-center justify-center bg-cream px-4">
       <main className="w-full max-w-md text-center">
-        <div className="rise-in"><p className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft"><FormattedMessage id="finish.complete" /></p>
-        <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight">{session?.title ?? "session"}</h1>
-        <p className="mt-2 text-sm text-espresso-soft"><FormattedMessage id="finish.summary" values={{ duration: session?.duration_min ?? 0, turns: turns?.length ?? 0 }} /></p></div>
+        <div className="rise-in">
+          <p className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
+            <FormattedMessage id="finish.complete" />
+          </p>
+          <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight">
+            {session?.title ?? "session"}
+          </h1>
+          <p className="mt-2 text-sm text-espresso-soft">
+            <FormattedMessage
+              id="finish.summary"
+              values={{
+                duration: session?.duration_min ?? 0,
+                turns: turns?.length ?? 0,
+              }}
+            />
+          </p>
+        </div>
 
         <div className="mt-10 space-y-3">
-          <div ref={menuRef} className="rise-in relative" style={{ "--rise-delay": "200ms" } as React.CSSProperties}>
+          <div
+            ref={menuRef}
+            className="rise-in relative"
+            style={{ "--rise-delay": "200ms" } as React.CSSProperties}
+          >
             <button
               onClick={downloadMarkdown}
               className="w-full rounded-full bg-white px-6 py-3.5 font-display font-semibold ring-1 ring-hairline transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:ring-persimmon/50 active:scale-[0.98]"
@@ -95,7 +133,9 @@ function Finish() {
             onClick={() => navigate({ to: "/report/$id", params: { id } })}
           >
             <FormattedMessage id="finish.generateReport" />
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cream/15 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:scale-105">→</span>
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cream/15 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:scale-105">
+              →
+            </span>
           </button>
           <button
             onClick={() => navigate({ to: "/history" })}

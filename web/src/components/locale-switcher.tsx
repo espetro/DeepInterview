@@ -13,7 +13,9 @@ export function LocaleSwitcher() {
   const locale = useStore($locale);
   return (
     <label className="flex items-center gap-1.5 text-sm text-espresso-soft">
-      <span className="sr-only"><FormattedMessage id="locale.label" /></span>
+      <span className="sr-only">
+        <FormattedMessage id="locale.label" />
+      </span>
       <select
         value={locale}
         onChange={(e) => $locale.set(e.target.value)}
@@ -21,7 +23,9 @@ export function LocaleSwitcher() {
         className="cursor-pointer rounded-full bg-white px-3 py-1.5 text-sm font-medium text-espresso-soft ring-1 ring-hairline outline-none transition-fluid hover:ring-persimmon/40 focus:ring-2 focus:ring-persimmon/50"
       >
         {LOCALES.map((l) => (
-          <option key={l} value={l}>{l}</option>
+          <option key={l} value={l}>
+            {l}
+          </option>
         ))}
       </select>
     </label>

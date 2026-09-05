@@ -102,8 +102,13 @@ export class StreamingWhisperStt implements StreamingSttPort {
     if (this.opts.apiKey) headers.authorization = `Bearer ${this.opts.apiKey}`;
 
     events
-      ?.postEvent(sessionId!, "stt.request", { bytes: first.byteLength, stream: true })
-      .catch((err) => console.warn(`[voice] failed to log stt.request: ${err}`));
+      ?.postEvent(sessionId!, "stt.request", {
+        bytes: first.byteLength,
+        stream: true,
+      })
+      .catch((err) =>
+        console.warn(`[voice] failed to log stt.request: ${err}`),
+      );
 
     const settleFallback = async (why: string) => {
       console.warn(`[voice] streaming stt fell back to buffered: ${why}`);
@@ -117,10 +122,19 @@ export class StreamingWhisperStt implements StreamingSttPort {
 
     void (this.opts.fetchImpl ?? fetch)(
       `${providerUrl(this.opts.baseUrl)}/v1/audio/transcriptions?stream=true&model=${encodeURIComponent(this.opts.model)}`,
-      { method: "POST", headers, body, signal, duplex: "half" as RequestDuplex },
+      {
+        method: "POST",
+        headers,
+        body,
+        signal,
+        duplex: "half" as RequestDuplex,
+      },
     )
       .then(async (res) => {
-        if (!res.ok || !(res.headers.get("content-type") ?? "").includes("text/event-stream")) {
+        if (
+          !res.ok ||
+          !(res.headers.get("content-type") ?? "").includes("text/event-stream")
+        ) {
           await settleFallback(`non-SSE response (${res.status})`);
           return;
         }
@@ -172,10 +186,17 @@ export class StreamingWhisperStt implements StreamingSttPort {
     const wav = encodePcmWav(all);
     const startedAt = Date.now();
     events
-      ?.postEvent(sessionId!, "stt.request", { bytes: wav.byteLength, buffered_fallback: true })
+      ?.postEvent(sessionId!, "stt.request", {
+        bytes: wav.byteLength,
+        buffered_fallback: true,
+      })
       .catch(() => undefined);
     const form = new FormData();
-    form.append("file", new Blob([new Uint8Array(wav)], { type: "audio/wav" }), "audio.wav");
+    form.append(
+      "file",
+      new Blob([new Uint8Array(wav)], { type: "audio/wav" }),
+      "audio.wav",
+    );
     form.append("model", this.opts.model);
     if (this.opts.language) form.append("language", this.opts.language);
     const headers: Record<string, string> = {};

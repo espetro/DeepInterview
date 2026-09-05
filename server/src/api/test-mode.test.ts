@@ -9,9 +9,17 @@ import { deriveStalledAt } from "./test-mode.ts";
 // table actually returned it in — a caller bug upstream, not something this
 // function is meant to detect, which the tests pin down explicitly).
 describe("deriveStalledAt", () => {
-  const cases: Array<{ name: string; stages: string[]; expected: string | null }> = [
+  const cases: Array<{
+    name: string;
+    stages: string[];
+    expected: string | null;
+  }> = [
     { name: "no stages yet", stages: [], expected: null },
-    { name: "only agent.started", stages: ["agent.started"], expected: "agent.started" },
+    {
+      name: "only agent.started",
+      stages: ["agent.started"],
+      expected: "agent.started",
+    },
     {
       name: "stuck after vad.speech_ended (stt never fired)",
       stages: ["agent.started", "vad.speech_ended"],
@@ -24,7 +32,12 @@ describe("deriveStalledAt", () => {
     },
     {
       name: "stt failed: chain ends at stt.failed",
-      stages: ["agent.started", "vad.speech_ended", "stt.request", "stt.failed"],
+      stages: [
+        "agent.started",
+        "vad.speech_ended",
+        "stt.request",
+        "stt.failed",
+      ],
       expected: "stt.failed",
     },
     {
@@ -54,7 +67,16 @@ describe("deriveStalledAt", () => {
     },
     {
       name: "reached terminal stage: not stalled",
-      stages: ["agent.started", "vad.speech_ended", "stt.request", "stt.result", "llm.request", "llm.result", "tts.request", "tts.result"],
+      stages: [
+        "agent.started",
+        "vad.speech_ended",
+        "stt.request",
+        "stt.result",
+        "llm.request",
+        "llm.result",
+        "tts.request",
+        "tts.result",
+      ],
       expected: null,
     },
     {

@@ -42,7 +42,10 @@ describe("runtime stores", () => {
   });
 
   it("drops an invalid stored profile", () => {
-    localStorage.setItem("di.provider-profile", JSON.stringify({ baseUrl: "not a url" }));
+    localStorage.setItem(
+      "di.provider-profile",
+      JSON.stringify({ baseUrl: "not a url" }),
+    );
     // decode runs on read at construction; emulate by re-reading via a fresh set
     const bad = JSON.parse(localStorage.getItem("di.provider-profile") ?? "");
     expect(v.safeParse(ProviderProfileSchema, bad).success).toBe(false);

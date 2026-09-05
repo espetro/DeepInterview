@@ -44,7 +44,9 @@ function tailOverlap(prev: string | undefined): string {
   if (!prev) return "";
   const tail = prev.slice(-CHUNK_OVERLAP);
   const cut = tail.search(/[.!?]\s|\n/);
-  return cut >= 0 && cut < tail.length - 1 ? `${tail.slice(cut + 1).trim()} ` : "";
+  return cut >= 0 && cut < tail.length - 1
+    ? `${tail.slice(cut + 1).trim()} `
+    : "";
 }
 
 function splitLong(p: string): string[] {
@@ -90,7 +92,9 @@ export async function parseDocument(
     }
     case "docx": {
       const mammoth = await import("mammoth");
-      const result = await mammoth.extractRawText({ buffer: Buffer.from(bytes) });
+      const result = await mammoth.extractRawText({
+        buffer: Buffer.from(bytes),
+      });
       return result.value;
     }
   }

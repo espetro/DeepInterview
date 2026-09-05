@@ -7,8 +7,18 @@
  *   prepare(sql) -> stmt with { reader, all(params), run(params) }
  * plus close().
  */
-import { Kysely, SqliteAdapter, SqliteIntrospector, SqliteQueryCompiler, sql } from "kysely";
-import type { Database, OpfsSAHPoolDatabase, Sqlite3Static } from "@sqlite.org/sqlite-wasm";
+import {
+  Kysely,
+  SqliteAdapter,
+  SqliteIntrospector,
+  SqliteQueryCompiler,
+  sql,
+} from "kysely";
+import type {
+  Database,
+  OpfsSAHPoolDatabase,
+  Sqlite3Static,
+} from "@sqlite.org/sqlite-wasm";
 
 // ---- schema (copied from server/src/store/db.ts; keep in sync) ----
 
@@ -150,7 +160,9 @@ function wrapForKysely(db: Database): Database {
   return db;
 }
 
-let wasmPromise: Promise<{ db: OpfsSAHPoolDatabase; sqlite3: Sqlite3Static }> | undefined;
+let wasmPromise:
+  | Promise<{ db: OpfsSAHPoolDatabase; sqlite3: Sqlite3Static }>
+  | undefined;
 
 /**
  * Boot sqlite-wasm, install the OPFS sahpool VFS (SyncAccessHandle pool, no
@@ -179,7 +191,8 @@ export async function createDatabase(name = "di.db"): Promise<Db> {
   return new Kysely<DbSchema>({
     dialect: {
       createAdapter: () => new SqliteAdapter(),
-      createDriver: () => new SqliteDriver({ database: wrapForKysely(raw) as never }),
+      createDriver: () =>
+        new SqliteDriver({ database: wrapForKysely(raw) as never }),
       createQueryCompiler: () => new SqliteQueryCompiler(),
       createIntrospector: (db: Kysely<any>) => new SqliteIntrospector(db),
     },

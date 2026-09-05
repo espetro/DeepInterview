@@ -46,7 +46,9 @@ describe("cors-check.html", () => {
       expect(typeof cfg.authHeader).toBe("string");
     }
     // Anthropic must send its non-standard headers (guarantees a preflight).
-    expect(extractProviders().anthropic.extraHeaders["anthropic-version"]).toBeTruthy();
+    expect(
+      extractProviders().anthropic.extraHeaders["anthropic-version"],
+    ).toBeTruthy();
   });
 
   test("page has run/clear controls and a results table", () => {

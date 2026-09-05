@@ -55,7 +55,11 @@ export interface DecodedWav {
  */
 export function decodeWav(wav: Uint8Array): DecodedWav {
   const buf = Buffer.isBuffer(wav) ? wav : Buffer.from(wav);
-  if (buf.length < 44 || buf.toString("ascii", 0, 4) !== "RIFF" || buf.toString("ascii", 8, 12) !== "WAVE") {
+  if (
+    buf.length < 44 ||
+    buf.toString("ascii", 0, 4) !== "RIFF" ||
+    buf.toString("ascii", 8, 12) !== "WAVE"
+  ) {
     throw new Error("not a WAV buffer");
   }
   const dataLength = buf.readUInt32LE(40);
@@ -87,7 +91,11 @@ export class WavBuffer {
   pushFrame(frame: AudioFrameLike): void {
     this.chunks.push(
       frame.data.buffer instanceof ArrayBuffer
-        ? new Uint8Array(frame.data.buffer, frame.data.byteOffset, frame.data.byteLength)
+        ? new Uint8Array(
+            frame.data.buffer,
+            frame.data.byteOffset,
+            frame.data.byteLength,
+          )
         : new Uint8Array(frame.data.slice().buffer),
     );
   }
@@ -133,7 +141,11 @@ export class WavBuffer {
  * Nearest-neighbor resampler for Int16 mono PCM. Quality is fine for speech
  * playback; avoids a full interpolation/SRC dependency.
  */
-export function resamplePcm16(pcm: Uint8Array, fromRate: number, toRate: number): Uint8Array {
+export function resamplePcm16(
+  pcm: Uint8Array,
+  fromRate: number,
+  toRate: number,
+): Uint8Array {
   if (fromRate === toRate || pcm.length === 0) return pcm;
   const inSamples = Math.floor(pcm.length / 2);
   const outSamples = Math.round((inSamples * toRate) / fromRate);

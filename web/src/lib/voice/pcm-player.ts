@@ -19,7 +19,11 @@ export interface AudioContextLike {
   readonly sampleRate: number;
   readonly currentTime: number;
   destination: unknown;
-  createBuffer(channels: number, length: number, sampleRate: number): AudioBufferLike;
+  createBuffer(
+    channels: number,
+    length: number,
+    sampleRate: number,
+  ): AudioBufferLike;
   createBufferSource(): AudioBufferSourceNodeLike;
   close(): Promise<void>;
 }
@@ -54,12 +58,18 @@ interface QueuedChunk {
  * running playhead. write() only enqueues, so the WS receive path never
  * blocks on audio.
  */
-export function createPcmPlayer(opts: { createContext?: () => AudioContextLike } = {}): PcmPlayer {
+export function createPcmPlayer(
+  opts: { createContext?: () => AudioContextLike } = {},
+): PcmPlayer {
   const ctx =
     opts.createContext?.() ??
-    (new (globalThis.AudioContext as unknown as new (o?: { sampleRate: number }) => AudioContextLike)({
+    new (
+      globalThis.AudioContext as unknown as new (o?: {
+        sampleRate: number;
+      }) => AudioContextLike
+    )({
       sampleRate: TTS_SAMPLE_RATE,
-    }));
+    });
 
   let playhead = 0;
   let drainedCb: (() => void) | null = null;

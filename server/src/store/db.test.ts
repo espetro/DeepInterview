@@ -34,7 +34,12 @@ describe("db", () => {
     await migrate(db);
     await db
       .insertInto("tool_state")
-      .values({ id: crypto.randomUUID(), editor: "e", whiteboard: "w", updated_at: new Date().toISOString() })
+      .values({
+        id: crypto.randomUUID(),
+        editor: "e",
+        whiteboard: "w",
+        updated_at: new Date().toISOString(),
+      })
       .execute();
     const rows = await db.selectFrom("tool_state").selectAll().execute();
     expect(rows).toHaveLength(1);

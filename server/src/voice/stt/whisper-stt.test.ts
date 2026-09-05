@@ -2,13 +2,20 @@ import { describe, it, expect } from "vitest";
 import { WhisperStt, encodePcmWav } from "./whisper-stt.ts";
 import { decodeWav } from "./wav.ts";
 
-function fetchStub(handler: (url: string, init?: RequestInit) => Response): typeof fetch {
+function fetchStub(
+  handler: (url: string, init?: RequestInit) => Response,
+): typeof fetch {
   return handler as unknown as typeof fetch;
 }
 
 describe("WhisperStt.transcribePcm", () => {
   it("wraps pcm in a 16k mono WAV and posts multipart", async () => {
-    const calls: { url: string; model: string; contentType: string; audio: Buffer }[] = [];
+    const calls: {
+      url: string;
+      model: string;
+      contentType: string;
+      audio: Buffer;
+    }[] = [];
     const stt = new WhisperStt({
       baseUrl: "http://fake.local/",
       model: "whisper-1",
@@ -16,12 +23,15 @@ describe("WhisperStt.transcribePcm", () => {
       fetchImpl: fetchStub((_url, init) => {
         const body = init!.body as FormData;
         const file = body.get("file") as File;
-        void file.arrayBuffer().then((b) => (calls[calls.length] = {
-          url: _url,
-          model: body.get("model") as string,
-          contentType: file.type,
-          audio: Buffer.from(b),
-        }));
+        void file.arrayBuffer().then(
+          (b) =>
+            (calls[calls.length] = {
+              url: _url,
+              model: body.get("model") as string,
+              contentType: file.type,
+              audio: Buffer.from(b),
+            }),
+        );
         // Synchronously capture the file bytes via clone before resolving.
         return new Response(JSON.stringify({ text: "hi mom" }), {
           headers: { "content-type": "application/json" },
@@ -66,7 +76,9 @@ describe("WhisperStt.transcribePcm", () => {
       events: { postEvent: async (_sid, type) => void events.push(type) },
       sessionId: "s1",
     });
-    await expect(stt.transcribePcm(new Uint8Array([0, 0]))).rejects.toThrow(/502/);
+    await expect(stt.transcribePcm(new Uint8Array([0, 0]))).rejects.toThrow(
+      /502/,
+    );
     expect(events).toEqual(["stt.request", "stt.failed"]);
   });
 

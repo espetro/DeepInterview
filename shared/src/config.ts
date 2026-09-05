@@ -60,7 +60,9 @@ export const CONFIG_ENV_PREFIX = "DI_";
 /** Nested keys use double underscore: DI_LLM__API_KEY overrides llm.api_key. */
 export const CONFIG_ENV_SEPARATOR = "__";
 
-export function describeConfigError(issues: v.InferIssue<typeof ConfigSchema>): string {
+export function describeConfigError(
+  issues: v.InferIssue<typeof ConfigSchema>,
+): string {
   return issues
     .map((i) => {
       const path = i.path?.map((p) => String(p.key)).join(".") ?? "(root)";

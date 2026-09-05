@@ -42,7 +42,10 @@ describe("tool state routes", () => {
     const res = await put({ editor: "def solve(): pass", whiteboard: "{}" });
     expect(res.status).toBe(200);
     const res2 = await app.request(`/v1/sessions/${id}/tools`);
-    expect(await res2.json()).toEqual({ editor: "def solve(): pass", whiteboard: "{}" });
+    expect(await res2.json()).toEqual({
+      editor: "def solve(): pass",
+      whiteboard: "{}",
+    });
     await put({ editor: "updated", whiteboard: "" });
     const res3 = await app.request(`/v1/sessions/${id}/tools`);
     expect(await res3.json()).toEqual({ editor: "updated", whiteboard: "" });
@@ -57,11 +60,14 @@ describe("tool state routes", () => {
       body: JSON.stringify({ editor: 42 }),
     });
     expect(bad.status).toBe(400);
-    const missing = await app.request(`/v1/sessions/${crypto.randomUUID()}/tools`, {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ editor: "", whiteboard: "" }),
-    });
+    const missing = await app.request(
+      `/v1/sessions/${crypto.randomUUID()}/tools`,
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ editor: "", whiteboard: "" }),
+      },
+    );
     expect(missing.status).toBe(404);
   });
 });

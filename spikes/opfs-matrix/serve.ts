@@ -20,4 +20,6 @@ Bun.serve({
   },
 });
 
-console.log(`opfs-matrix spike server: http://localhost:${port}/ (probe.html, two-tabs.html)`);
+console.log(
+  `opfs-matrix spike server: http://localhost:${port}/ (probe.html, two-tabs.html)`,
+);

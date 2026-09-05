@@ -26,10 +26,26 @@ export const Route = createFileRoute("/setup")({
 });
 
 const PRESETS = [
-  { id: "sysDesign", prompt: "Run a system design interview. Focus on scaling, caching and tradeoff reasoning." },
-  { id: "behavioral", prompt: "Run a behavioral interview using the STAR method. Probe for specifics." },
-  { id: "frontend", prompt: "Run a frontend interview. Mix of component design and JS fundamentals." },
-  { id: "ml", prompt: "Run a machine learning interview. Model choice, evaluation, and data hygiene." },
+  {
+    id: "sysDesign",
+    prompt:
+      "Run a system design interview. Focus on scaling, caching and tradeoff reasoning.",
+  },
+  {
+    id: "behavioral",
+    prompt:
+      "Run a behavioral interview using the STAR method. Probe for specifics.",
+  },
+  {
+    id: "frontend",
+    prompt:
+      "Run a frontend interview. Mix of component design and JS fundamentals.",
+  },
+  {
+    id: "ml",
+    prompt:
+      "Run a machine learning interview. Model choice, evaluation, and data hygiene.",
+  },
 ];
 
 const DURATIONS = [20, 30, 45, 60];
@@ -63,7 +79,9 @@ function Setup() {
     for (const f of incoming) {
       const ext = `.${f.name.split(".").pop()?.toLowerCase()}`;
       if (!ACCEPTED.includes(ext)) {
-        setError(intl.formatMessage({ id: "setup.filesBadType" }, { name: f.name }));
+        setError(
+          intl.formatMessage({ id: "setup.filesBadType" }, { name: f.name }),
+        );
         continue;
       }
       accepted.push(f);
@@ -71,7 +89,9 @@ function Setup() {
     setFiles((prev) => {
       const next = [...prev, ...accepted];
       if (next.length > MAX_FILES) {
-        setError(intl.formatMessage({ id: "setup.filesTooMany" }, { max: MAX_FILES }));
+        setError(
+          intl.formatMessage({ id: "setup.filesTooMany" }, { max: MAX_FILES }),
+        );
         return next.slice(0, MAX_FILES);
       }
       if (next.reduce((n, f) => n + f.size, 0) > MAX_TOTAL_BYTES) {
@@ -99,8 +119,10 @@ function Setup() {
     if (!parsed.success) {
       const issue = parsed.issues[0];
       const field = String(issue?.path?.[0]?.key ?? "");
-      if (field === "baseUrl") setProfileError(intl.formatMessage({ id: "setup.profile.invalidUrl" }));
-      else setProfileError(intl.formatMessage({ id: "setup.profile.required" }));
+      if (field === "baseUrl")
+        setProfileError(intl.formatMessage({ id: "setup.profile.invalidUrl" }));
+      else
+        setProfileError(intl.formatMessage({ id: "setup.profile.required" }));
       return;
     }
     setProfileError(null);
@@ -113,7 +135,10 @@ function Setup() {
     setError(null);
     try {
       const session = await createSession({
-        title: draft.title || PRESETS.find((p) => draft.prompt === p.prompt)?.id || "practice session",
+        title:
+          draft.title ||
+          PRESETS.find((p) => draft.prompt === p.prompt)?.id ||
+          "practice session",
         mode: draft.mode,
         duration_min: draft.durationMin,
       });
@@ -125,7 +150,10 @@ function Setup() {
           setError(err instanceof Error ? err.message : "upload failed");
         }
       }
-      navigate({ to: validate ? "/validate/$id" : "/interview/$id", params: { id: session.id } });
+      navigate({
+        to: validate ? "/validate/$id" : "/interview/$id",
+        params: { id: session.id },
+      });
     } finally {
       setBusy(false);
     }
@@ -134,20 +162,31 @@ function Setup() {
   return (
     <div className="ambient grain min-h-[100dvh] bg-cream">
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 pt-8 md:px-8">
-        <a href="/" className="font-display text-xl font-bold tracking-tight">di<span className="text-persimmon">.</span></a>
-        <h1 className="text-sm font-normal text-espresso-soft"><FormattedMessage id="setup.title" /></h1>
+        <a href="/" className="font-display text-xl font-bold tracking-tight">
+          di<span className="text-persimmon">.</span>
+        </a>
+        <h1 className="text-sm font-normal text-espresso-soft">
+          <FormattedMessage id="setup.title" />
+        </h1>
       </header>
 
       <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-10 md:px-8">
         <div className="rounded-shell bg-paper p-2 ring-1 ring-hairline">
           <div className="rounded-[calc(2rem-0.375rem)] bg-cream p-6 md:p-10">
-            <section className="rise-in" style={{ "--rise-delay": "0ms" } as React.CSSProperties}>
-              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft"><FormattedMessage id="setup.presets" /></h2>
+            <section
+              className="rise-in"
+              style={{ "--rise-delay": "0ms" } as React.CSSProperties}
+            >
+              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
+                <FormattedMessage id="setup.presets" />
+              </h2>
               <div className="mt-3 flex flex-wrap gap-2">
                 {PRESETS.map((p) => (
                   <button
                     key={p.id}
-                    onClick={() => $draft.set({ ...draft, prompt: p.prompt, title: p.id })}
+                    onClick={() =>
+                      $draft.set({ ...draft, prompt: p.prompt, title: p.id })
+                    }
                     className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] ${
                       draft.prompt === p.prompt
                         ? "bg-persimmon text-cream"
@@ -160,20 +199,35 @@ function Setup() {
               </div>
             </section>
 
-            <section className="rise-in mt-8" style={{ "--rise-delay": "120ms" } as React.CSSProperties}>
-              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft"><FormattedMessage id="setup.promptLabel" /></h2>
+            <section
+              className="rise-in mt-8"
+              style={{ "--rise-delay": "120ms" } as React.CSSProperties}
+            >
+              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
+                <FormattedMessage id="setup.promptLabel" />
+              </h2>
               <textarea
                 value={draft.prompt}
-                onChange={(e) => $draft.set({ ...draft, prompt: e.target.value })}
-                placeholder={intl.formatMessage({ id: "setup.promptPlaceholder" })}
+                onChange={(e) =>
+                  $draft.set({ ...draft, prompt: e.target.value })
+                }
+                placeholder={intl.formatMessage({
+                  id: "setup.promptPlaceholder",
+                })}
                 rows={4}
                 className="mt-3 w-full resize-none rounded-card bg-white p-4 text-sm ring-1 ring-hairline outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-espresso-soft focus:ring-2 focus:ring-persimmon/50"
               />
             </section>
 
-            <section className="rise-in mt-8" style={{ "--rise-delay": "240ms" } as React.CSSProperties}>
+            <section
+              className="rise-in mt-8"
+              style={{ "--rise-delay": "240ms" } as React.CSSProperties}
+            >
               <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
-                <FormattedMessage id="setup.files" /> <span className="normal-case tracking-normal text-espresso-soft">· <FormattedMessage id="setup.filesHint" /></span>
+                <FormattedMessage id="setup.files" />{" "}
+                <span className="normal-case tracking-normal text-espresso-soft">
+                  · <FormattedMessage id="setup.filesHint" />
+                </span>
               </h2>
               <input
                 ref={fileInput}
@@ -192,7 +246,8 @@ function Setup() {
                 aria-label={intl.formatMessage({ id: "setup.dropHint" })}
                 onClick={() => fileInput.current?.click()}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") fileInput.current?.click();
+                  if (e.key === "Enter" || e.key === " ")
+                    fileInput.current?.click();
                 }}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
@@ -206,13 +261,21 @@ function Setup() {
               {files.length > 0 && (
                 <ul className="mt-3 space-y-1.5">
                   {files.map((f, i) => (
-                    <li key={`${f.name}-${i}`} className="flex items-center justify-between rounded-full bg-white px-4 py-2 text-sm ring-1 ring-hairline">
+                    <li
+                      key={`${f.name}-${i}`}
+                      className="flex items-center justify-between rounded-full bg-white px-4 py-2 text-sm ring-1 ring-hairline"
+                    >
                       <span className="truncate text-espresso">{f.name}</span>
                       <span className="ml-3 flex shrink-0 items-center gap-3 text-xs text-espresso-soft">
                         {Math.round(f.size / 1024)} kb
                         <button
-                          aria-label={intl.formatMessage({ id: "setup.fileRemove" }, { name: f.name })}
-                          onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
+                          aria-label={intl.formatMessage(
+                            { id: "setup.fileRemove" },
+                            { name: f.name },
+                          )}
+                          onClick={() =>
+                            setFiles((prev) => prev.filter((_, j) => j !== i))
+                          }
                           className="text-espresso-soft transition-fluid hover:text-persimmon"
                         >
                           ×
@@ -223,27 +286,41 @@ function Setup() {
                 </ul>
               )}
               {error && (
-                <p role="alert" className="mt-3 text-sm text-persimmon-deep">{error}</p>
+                <p role="alert" className="mt-3 text-sm text-persimmon-deep">
+                  {error}
+                </p>
               )}
             </section>
 
-            <section className="rise-in mt-8" style={{ "--rise-delay": "300ms" } as React.CSSProperties}>
-              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft"><FormattedMessage id="setup.mic" /></h2>
+            <section
+              className="rise-in mt-8"
+              style={{ "--rise-delay": "300ms" } as React.CSSProperties}
+            >
+              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
+                <FormattedMessage id="setup.mic" />
+              </h2>
               <div className="mt-3">
                 <MicCheck />
               </div>
             </section>
 
-            <section className="rise-in mt-8 grid gap-6 md:grid-cols-2" style={{ "--rise-delay": "360ms" } as React.CSSProperties}>
+            <section
+              className="rise-in mt-8 grid gap-6 md:grid-cols-2"
+              style={{ "--rise-delay": "360ms" } as React.CSSProperties}
+            >
               <div>
-                <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft"><FormattedMessage id="setup.duration" /></h2>
+                <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
+                  <FormattedMessage id="setup.duration" />
+                </h2>
                 <div className="mt-3 flex gap-2">
                   {DURATIONS.map((d) => (
                     <button
                       key={d}
                       onClick={() => $draft.set({ ...draft, durationMin: d })}
                       className={`flex-1 rounded-full py-2 text-sm font-medium transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] ${
-                        draft.durationMin === d ? "bg-espresso text-cream" : "bg-white ring-1 ring-hairline text-espresso-soft"
+                        draft.durationMin === d
+                          ? "bg-espresso text-cream"
+                          : "bg-white ring-1 ring-hairline text-espresso-soft"
                       }`}
                     >
                       {d}
@@ -252,40 +329,61 @@ function Setup() {
                 </div>
               </div>
               <div>
-                <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft"><FormattedMessage id="setup.mode" /></h2>
+                <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
+                  <FormattedMessage id="setup.mode" />
+                </h2>
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={() => $draft.set({ ...draft, mode: "interview" })}
                     className={`flex-1 rounded-full py-2 text-sm font-medium transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] ${
-                      draft.mode === "interview" ? "bg-espresso text-cream" : "bg-white ring-1 ring-hairline text-espresso-soft"
+                      draft.mode === "interview"
+                        ? "bg-espresso text-cream"
+                        : "bg-white ring-1 ring-hairline text-espresso-soft"
                     }`}
                   >
                     <FormattedMessage id="setup.mode.interview" />
                   </button>
-                  <span title={intl.formatMessage({ id: "setup.coachHint" })} aria-disabled className="flex-1 cursor-not-allowed rounded-full bg-white/50 py-2 text-center text-sm font-medium text-espresso-soft ring-1 ring-hairline animate-pulse">
+                  <span
+                    title={intl.formatMessage({ id: "setup.coachHint" })}
+                    aria-disabled
+                    className="flex-1 cursor-not-allowed rounded-full bg-white/50 py-2 text-center text-sm font-medium text-espresso-soft ring-1 ring-hairline animate-pulse"
+                  >
                     <FormattedMessage id="setup.mode.coach" />
                   </span>
                 </div>
               </div>
             </section>
 
-            <section className="rise-in mt-8" style={{ "--rise-delay": "300ms" } as React.CSSProperties}>
-              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft"><FormattedMessage id="setup.runtime" /></h2>
+            <section
+              className="rise-in mt-8"
+              style={{ "--rise-delay": "300ms" } as React.CSSProperties}
+            >
+              <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
+                <FormattedMessage id="setup.runtime" />
+              </h2>
               <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => setMode("local-server")}
-                  title={intl.formatMessage({ id: "setup.runtime.localServerHint" })}
+                  title={intl.formatMessage({
+                    id: "setup.runtime.localServerHint",
+                  })}
                   className={`flex-1 rounded-full py-2 text-sm font-medium transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] ${
-                    runtimeMode === "local-server" ? "bg-espresso text-cream" : "bg-white ring-1 ring-hairline text-espresso-soft"
+                    runtimeMode === "local-server"
+                      ? "bg-espresso text-cream"
+                      : "bg-white ring-1 ring-hairline text-espresso-soft"
                   }`}
                 >
                   <FormattedMessage id="setup.runtime.localServer" />
                 </button>
                 <button
                   onClick={() => setMode("client-only")}
-                  title={intl.formatMessage({ id: "setup.runtime.clientOnlyHint" })}
+                  title={intl.formatMessage({
+                    id: "setup.runtime.clientOnlyHint",
+                  })}
                   className={`flex-1 rounded-full py-2 text-sm font-medium transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] ${
-                    runtimeMode === "client-only" ? "bg-espresso text-cream" : "bg-white ring-1 ring-hairline text-espresso-soft"
+                    runtimeMode === "client-only"
+                      ? "bg-espresso text-cream"
+                      : "bg-white ring-1 ring-hairline text-espresso-soft"
                   }`}
                 >
                   <FormattedMessage id="setup.runtime.clientOnly" />
@@ -293,41 +391,69 @@ function Setup() {
               </div>
             </section>
 
-            {(runtimeMode === "client-only" || effectiveRuntime === "client-only") && (
-              <form onSubmit={saveProfile} className="rise-in mt-8" style={{ "--rise-delay": "320ms" } as React.CSSProperties}>
-                <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft"><FormattedMessage id="setup.profile" /></h2>
+            {(runtimeMode === "client-only" ||
+              effectiveRuntime === "client-only") && (
+              <form
+                onSubmit={saveProfile}
+                className="rise-in mt-8"
+                style={{ "--rise-delay": "320ms" } as React.CSSProperties}
+              >
+                <h2 className="text-[10px] uppercase tracking-[0.2em] font-medium text-espresso-soft">
+                  <FormattedMessage id="setup.profile" />
+                </h2>
                 <div className="mt-3 space-y-3">
                   <label className="block">
-                    <span className="text-xs text-espresso-soft"><FormattedMessage id="setup.profile.baseUrl" /></span>
+                    <span className="text-xs text-espresso-soft">
+                      <FormattedMessage id="setup.profile.baseUrl" />
+                    </span>
                     <input
                       value={baseUrl}
                       onChange={(e) => setBaseUrl(e.target.value)}
-                      placeholder={intl.formatMessage({ id: "setup.profile.baseUrlPlaceholder" })}
+                      placeholder={intl.formatMessage({
+                        id: "setup.profile.baseUrlPlaceholder",
+                      })}
                       className="mt-1 w-full rounded-card bg-white px-4 py-2.5 text-sm ring-1 ring-hairline outline-none placeholder:text-espresso-soft focus:ring-2 focus:ring-persimmon/50"
                     />
                   </label>
                   <label className="block">
-                    <span className="text-xs text-espresso-soft"><FormattedMessage id="setup.profile.apiKey" /></span>
+                    <span className="text-xs text-espresso-soft">
+                      <FormattedMessage id="setup.profile.apiKey" />
+                    </span>
                     <input
                       type="password"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
-                      placeholder={profile ? intl.formatMessage({ id: "setup.profile.apiKeySaved" }, { key: redactKey(profile.apiKey) }) : intl.formatMessage({ id: "setup.profile.apiKeyPlaceholder" })}
+                      placeholder={
+                        profile
+                          ? intl.formatMessage(
+                              { id: "setup.profile.apiKeySaved" },
+                              { key: redactKey(profile.apiKey) },
+                            )
+                          : intl.formatMessage({
+                              id: "setup.profile.apiKeyPlaceholder",
+                            })
+                      }
                       className="mt-1 w-full rounded-card bg-white px-4 py-2.5 text-sm ring-1 ring-hairline outline-none placeholder:text-espresso-soft focus:ring-2 focus:ring-persimmon/50"
                     />
                   </label>
                   <label className="block">
-                    <span className="text-xs text-espresso-soft"><FormattedMessage id="setup.profile.llmModel" /></span>
+                    <span className="text-xs text-espresso-soft">
+                      <FormattedMessage id="setup.profile.llmModel" />
+                    </span>
                     <input
                       value={llmModel}
                       onChange={(e) => setLlmModel(e.target.value)}
-                      placeholder={intl.formatMessage({ id: "setup.profile.llmModelPlaceholder" })}
+                      placeholder={intl.formatMessage({
+                        id: "setup.profile.llmModelPlaceholder",
+                      })}
                       className="mt-1 w-full rounded-card bg-white px-4 py-2.5 text-sm ring-1 ring-hairline outline-none placeholder:text-espresso-soft focus:ring-2 focus:ring-persimmon/50"
                     />
                   </label>
                   <div className="grid gap-3 md:grid-cols-2">
                     <label className="block">
-                      <span className="text-xs text-espresso-soft"><FormattedMessage id="setup.profile.ttsVoice" /></span>
+                      <span className="text-xs text-espresso-soft">
+                        <FormattedMessage id="setup.profile.ttsVoice" />
+                      </span>
                       <input
                         value={ttsVoice}
                         onChange={(e) => setTtsVoice(e.target.value)}
@@ -335,7 +461,9 @@ function Setup() {
                       />
                     </label>
                     <label className="block">
-                      <span className="text-xs text-espresso-soft"><FormattedMessage id="setup.profile.ttsModel" /></span>
+                      <span className="text-xs text-espresso-soft">
+                        <FormattedMessage id="setup.profile.ttsModel" />
+                      </span>
                       <input
                         value={ttsModel}
                         onChange={(e) => setTtsModel(e.target.value)}
@@ -343,8 +471,16 @@ function Setup() {
                       />
                     </label>
                   </div>
-                  {profileError && <p role="alert" className="text-sm text-persimmon-deep">{profileError}</p>}
-                  {profileSaved && <p className="text-sm text-sage"><FormattedMessage id="setup.profile.saved" /></p>}
+                  {profileError && (
+                    <p role="alert" className="text-sm text-persimmon-deep">
+                      {profileError}
+                    </p>
+                  )}
+                  {profileSaved && (
+                    <p className="text-sm text-sage">
+                      <FormattedMessage id="setup.profile.saved" />
+                    </p>
+                  )}
                   <button
                     type="submit"
                     className="rounded-full bg-white px-6 py-2.5 text-sm font-medium ring-1 ring-hairline transition-fluid hover:ring-persimmon/50"
@@ -355,14 +491,19 @@ function Setup() {
               </form>
             )}
 
-            <section className="rise-in mt-10 flex flex-col items-center gap-3" style={{ "--rise-delay": "480ms" } as React.CSSProperties}>
+            <section
+              className="rise-in mt-10 flex flex-col items-center gap-3"
+              style={{ "--rise-delay": "480ms" } as React.CSSProperties}
+            >
               <button
                 onClick={() => void start(true)}
                 disabled={busy}
                 className="group inline-flex items-center gap-3 rounded-full bg-espresso px-8 py-4 font-display text-lg font-semibold text-cream transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-persimmon active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
               >
                 <FormattedMessage id="setup.validate" />
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-cream/15 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:scale-105">→</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-cream/15 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:scale-105">
+                  →
+                </span>
               </button>
               <button
                 onClick={() => void start(false)}

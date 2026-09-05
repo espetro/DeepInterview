@@ -27,7 +27,10 @@ app.route(
 );
 
 self.addEventListener("message", (e) => {
-  (e as ExtendableMessageEvent).source?.postMessage({ pong: true, data: e.data });
+  (e as ExtendableMessageEvent).source?.postMessage({
+    pong: true,
+    data: e.data,
+  });
 });
 
 addEventListener("fetch", (evt: FetchEvent) => {
