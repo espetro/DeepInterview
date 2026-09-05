@@ -16,7 +16,7 @@ export interface IngestOptions {
 export class CapError extends Error {
   constructor(
     message: string,
-    readonly status: number = 413,
+    readonly status: 413 | 415 | 503 = 413,
   ) {
     super(message);
   }
