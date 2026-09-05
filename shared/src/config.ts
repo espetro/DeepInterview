@@ -14,7 +14,7 @@ export const SttSchema = v.object({
   api_key: v.optional(v.string()),
   model: v.string(),
   /** Transport is streaming (WS frames); recognition is per-utterance buffered. Kept for compat. */
-  mode: v.picklist(["buffered"]),
+  mode: v.picklist(["buffered", "streaming"]),
 });
 export type Stt = v.InferOutput<typeof SttSchema>;
 
