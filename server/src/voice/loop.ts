@@ -1,5 +1,5 @@
 import { v } from "valibot";
-import type { Config, Turn, VoiceServerMessage } from "@di/shared";
+import type { Config, Turn, TurnMetrics, VoiceServerMessage } from "@di/shared";
 import {
   AUDIO_HEADER_BYTES,
   CAPTURE_SAMPLE_RATE,
@@ -11,8 +11,13 @@ import { WavBuffer } from "./stt/wav.ts";
 import { WhisperStt } from "./stt/whisper-stt.ts";
 import { PocketTts } from "./tts/pocket-tts.ts";
 import { OpenAiChatClient, type LlmMessage, type ToolDef } from "./llm.ts";
-import { buildPrompt, type SessionContext, type UpdateQuestionArgs } from "./prompt.ts";
-import { describeWhiteboardSnapshot } from "./whiteboard.ts";
+import {
+  VOICE_TOOLS,
+  buildPrompt,
+  describeWhiteboardSnapshot,
+  type SessionContext,
+  type UpdateQuestionArgs,
+} from "@di/shared";
 
 /** Injectable voice pipeline pieces (tests stub these). */
 export interface VoiceStt {
@@ -43,34 +48,6 @@ export interface VoiceLoopDeps {
 /** 20ms of PCM16 mono at 24k = 480 samples = 960 bytes. */
 const TTS_CHUNK_BYTES = (TTS_SAMPLE_RATE * 2 * 20) / 1000;
 const MAX_TOOL_OUTPUT = 4000;
-
-const VOICE_TOOLS: ToolDef[] = [
-  {
-    name: "update_question",
-    description:
-      "Rewrite or replace the current interview question and the evaluation hints shown to the candidate. Call whenever the interview focus moves to a new question.",
-    parameters: {
-      type: "object",
-      properties: {
-        question: { type: "string", description: "The new current question text" },
-        hints: { type: "array", items: { type: "string" }, description: "Evaluation hints for the new question" },
-      },
-      required: ["question"],
-    },
-  },
-  {
-    name: "read_editor",
-    description:
-      "Read the candidate's current code editor contents from their shared browser workspace. Call when you need to review what they wrote.",
-    parameters: { type: "object", properties: {} },
-  },
-  {
-    name: "read_whiteboard",
-    description:
-      "Read the candidate's shared whiteboard (drawn shapes and their text/connections). Call when you need to see what they sketched.",
-    parameters: { type: "object", properties: {} },
-  },
-];
 
 /**
  * Per-connection voice loop: accumulate streamed PCM frames, transcribe per
