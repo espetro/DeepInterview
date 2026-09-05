@@ -2,7 +2,6 @@ import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { FormattedMessage } from "react-intl";
 import { Reveal } from "./reveal";
-import { LandingLocaleSwitcher } from "./landing-locale-switcher";
 import { useLocaleNav, withLocale } from "../lib/locale-href";
 
 const IS_PUBLIC_SITE = import.meta.env.VITE_PUBLIC_SITE === "1";
@@ -49,32 +48,6 @@ export function LandingPage() {
   const { locale } = useLocaleNav();
   return (
     <div className="ambient grain min-h-[100dvh] bg-cream">
-      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-4 pt-8 md:px-8">
-        <Link
-          to={withLocale(locale, "/")}
-          className="font-display text-xl font-bold tracking-tight transition-fluid active:scale-[0.98]"
-        >
-          di<span className="text-persimmon">.</span>
-        </Link>
-        <nav className="flex items-center gap-6 text-sm text-espresso-soft">
-          <Link
-            to={withLocale(locale, "/history")}
-            className="transition-fluid hover:text-espresso"
-          >
-            <FormattedMessage id="nav.history" />
-          </Link>
-          <a
-            href="https://github.com/espetro/dits"
-            target="_blank"
-            rel="noreferrer"
-            className="transition-fluid hover:text-espresso"
-          >
-            <FormattedMessage id="common.github" />
-          </a>
-          <LandingLocaleSwitcher />
-        </nav>
-      </header>
-
       <main className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-32 pt-16 md:px-8 md:pt-28">
         <Reveal>
           <span className="inline-block rounded-full bg-espresso px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium text-cream">

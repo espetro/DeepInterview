@@ -19,18 +19,6 @@ function Validate() {
 
   return (
     <div className="ambient grain min-h-[100dvh] bg-cream">
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 pt-8 md:px-8">
-        <Link
-          to={withLocale(locale, "/")}
-          className="font-display text-xl font-bold tracking-tight"
-        >
-          di<span className="text-persimmon">.</span>
-        </Link>
-        <span className="text-sm text-espresso-soft">
-          <FormattedMessage id="validate.header" values={{ title: session?.title ?? "…" }} />
-        </span>
-      </header>
-
       <main className="mx-auto grid w-full max-w-6xl gap-6 px-4 pb-24 pt-10 md:grid-cols-[1.2fr_1fr] md:px-8">
         <div className="rise-in rounded-shell bg-paper p-2 ring-1 ring-hairline">
           <div className="flex h-96 flex-col items-center justify-center gap-3 rounded-[calc(2rem-0.375rem)] bg-cream p-8 text-center">

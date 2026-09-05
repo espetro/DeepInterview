@@ -170,15 +170,6 @@ function Setup() {
 
   return (
     <div className="ambient grain min-h-[100dvh] bg-cream">
-      <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 pt-8 md:px-8">
-        <a href="/" className="font-display text-xl font-bold tracking-tight">
-          di<span className="text-persimmon">.</span>
-        </a>
-        <h1 className="text-sm font-normal text-espresso-soft">
-          <FormattedMessage id="setup.title" />
-        </h1>
-      </header>
-
       <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-10 md:px-8">
         <div className="rounded-shell bg-paper p-2 ring-1 ring-hairline">
           <div className="rounded-[calc(2rem-0.375rem)] bg-cream p-6 md:p-10">

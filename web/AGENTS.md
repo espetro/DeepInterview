@@ -16,6 +16,10 @@ sync with these headings too.
 nanostores atoms for local/UI state; TanStack Router file routes with `$id`
 params. See `.agents/docs/screens/*.md` for the per-route contract.
 
+## Icons
+
+lucide-react only (project decision). Do not add other icon sets.
+
 ## Voice client (`src/lib/voice/`)
 
 `SpeechDriver` interface: a WebSocket `ServerVoiceDriver` (default) and a

@@ -131,18 +131,6 @@ function Report() {
 
   return (
     <div className="ambient grain min-h-[100dvh] bg-cream">
-      <header className="mx-auto flex w-full max-w-4xl items-center justify-between px-4 pt-8 md:px-8">
-        <Link
-          to={withLocale(locale, "/")}
-          className="font-display text-xl font-bold tracking-tight"
-        >
-          di<span className="text-persimmon">.</span>
-        </Link>
-        <span className="text-sm text-espresso-soft">
-          <FormattedMessage id="report.header" values={{ title: session?.title ?? "" }} />
-        </span>
-      </header>
-
       <main className="mx-auto w-full max-w-4xl px-4 pb-24 pt-10 md:px-8">
         {/* score bento */}
         <div className="grid gap-3 md:grid-cols-3">
