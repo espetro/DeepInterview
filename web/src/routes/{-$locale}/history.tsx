@@ -37,18 +37,6 @@ function History() {
 
   return (
     <div className="ambient grain min-h-[100dvh] bg-cream">
-      <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 pt-8 md:px-8">
-        <Link
-          to={withLocale(locale, "/")}
-          className="font-display text-xl font-bold tracking-tight"
-        >
-          di<span className="text-persimmon">.</span>
-        </Link>
-        <h1 className="text-sm font-normal text-espresso-soft">
-          <FormattedMessage id="history.title" />
-        </h1>
-      </header>
-
       <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-10 md:px-8">
         {isLoading ? (
           <p className="text-sm text-espresso-soft">
